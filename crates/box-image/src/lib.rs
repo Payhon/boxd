@@ -1522,7 +1522,7 @@ fn clone_private_file(
     Ok(CloneMethod::Copied)
 }
 
-#[cfg(unix)]
+#[cfg(target_os = "macos")]
 fn make_private_clone_writable(
     destination_directory: &File,
     name: &std::ffi::CStr,

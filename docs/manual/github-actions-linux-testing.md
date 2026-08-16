@@ -68,7 +68,8 @@ grep -qw pids /sys/fs/cgroup/cgroup.controllers
 ```
 
 还应安装 Git、curl、Python 3、ripgrep、Node/npm、Rustup，以及构建 libkrun 所需的
-系统依赖。不要让该 runner 访问生产数据库或生产密钥。
+系统依赖。仓库使用 `actions/checkout@v5` 和 `actions/setup-node@v5`，self-hosted
+runner 版本需不低于 `v2.327.1`。不要让该 runner 访问生产数据库或生产密钥。
 
 在 GitHub 仓库的 `Settings -> Actions -> Runners -> New self-hosted runner` 按官方
 命令注册。注册时添加自定义标签：

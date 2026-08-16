@@ -43,11 +43,11 @@ jobs:
       UPSTASH_BOX_BASE_URL: http://127.0.0.1:7331
       BOXD_SKIP_SOURCE_GATES: ${{ inputs.skip_source_gates && '1' || '0' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@1.94.0
         with:
           components: clippy,rustfmt
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm

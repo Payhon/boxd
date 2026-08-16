@@ -21,8 +21,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
       - name: Validate artifact and smoke scripts
@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@1.94.0
         with:
           components: clippy,rustfmt
@@ -92,7 +92,7 @@ jobs:
       BOXD_TEST_POSTGRES_URL: postgres://postgres:boxd_test_password@127.0.0.1:55432/boxd_test
       BOXD_TEST_MYSQL_URL: mysql://root:boxd_test_password@127.0.0.1:33306/boxd_test?ssl-mode=DISABLED
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@1.94.0
       - uses: Swatinem/rust-cache@v2
       - name: Run reversible migrations on PostgreSQL and MySQL
@@ -107,8 +107,8 @@ jobs:
       run:
         working-directory: compat/upstash-box-0.6.3
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -126,8 +126,8 @@ jobs:
       run:
         working-directory: web/console
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -147,8 +147,8 @@ jobs:
       run:
         working-directory: examples
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
