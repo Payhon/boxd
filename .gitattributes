@@ -1,0 +1,6 @@
+# These fixtures intentionally end with an SSE event separator.
+compat/upstash-box-0.6.3/fixtures/*.sse whitespace=-blank-at-eof
+
+# Vite/Rollup output is deterministic third-party generated code. Its source
+# formatting is validated by rebuilding and comparing the committed dist tree.
+web/console/dist/** whitespace=-blank-at-eol

@@ -1,0 +1,12 @@
+{
+  "blueprint_claim": 69,
+  "pinned_sdk_measurement": {
+    "raw_call_sites": 86,
+    "normalized_operation_dispatches": 80,
+    "direct_method_path_contracts": 77,
+    "response_linked_contracts": 1,
+    "total_server_contracts": 78
+  },
+  "definition": "TypeScript AST extraction from the pinned commit, with six source-evidenced normalization rules and one recording playlist response-linked capability.",
+  "why_not_69": "The pinned source exposes settings/env, labels, custom runner, network policy, recording download, streams and other calls separately. The blueprint estimate is not used to shape extraction."
+}

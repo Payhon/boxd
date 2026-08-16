@@ -1,0 +1,22 @@
+{
+  "schema": "boxd-phase1-redacted-evidence-manifest-v1",
+  "kind": "redacted_semantic_projection",
+  "files": {
+    "final-artifact.json": "7624367515a1e6d3a7b60f2e96a416c258fa9b3b5d8be1d9fcfbf0537b79559d",
+    "lifecycle.json": "b39563c231131538f9e8857ece7c1fe5edb81b580be7a965be40bb722817957a",
+    "restart.json": "c94894a739617b462a8116d1f40c0517547567ffae1eebfd1024982d66ea35f6",
+    "egress-lifecycle.json": "5af11db5f57b55fda8d39d98ff7e187dd67dbc944c9e543d1f343bd8dac3145a",
+    "egress-restart.json": "4c1716fb7e3b67eafc96fb2763870ee9599ff4b0298f2fa2bf46a25cdc2fa172"
+  },
+  "cross_links": {
+    "platform_lifecycle_projection_sha256": "b39563c231131538f9e8857ece7c1fe5edb81b580be7a965be40bb722817957a",
+    "egress_lifecycle_raw_sha256_used_by_restart": "8210171cdd38c6cd1247703c9fc10d027b78bdda1e2910743023d35c11380990",
+    "egress_lifecycle_redacted_projection_sha256": "5af11db5f57b55fda8d39d98ff7e187dd67dbc944c9e543d1f343bd8dac3145a"
+  },
+  "removed_fields": [
+    "box_id",
+    "bulk_delete_box_ids",
+    "restricted_box_id",
+    "deny_all_box_id"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "crate": "smoltcp",
+  "version": "0.12.0",
+  "source": "https://crates.io/api/v1/crates/smoltcp/0.12.0/download",
+  "crate_sha256": "dad095989c1533c1c266d9b1e8d70a1329dd3723c3edac6d03bbd67e7bf6f4bb",
+  "license": "0BSD",
+  "source_license_sha256": "beb2cad88fab8447f7975564e21f9506e733e14c344836f146fa02e811216694",
+  "archived_license_sha256": "6ec225bc249746e938e9567d461e15ef8808e617fc8408995a9f6945a6b39b61",
+  "default_features": false,
+  "features": [
+    "std",
+    "medium-ethernet",
+    "proto-ipv4",
+    "proto-dhcpv4",
+    "proto-dns",
+    "socket-tcp",
+    "socket-udp",
+    "socket-dhcpv4"
+  ],
+  "forbidden_features": [
+    "phy-raw_socket",
+    "phy-tuntap_interface",
+    "proto-ipv6",
+    "socket-raw",
+    "socket-icmp",
+    "multicast"
+  ]
+}

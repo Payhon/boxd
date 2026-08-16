@@ -1,0 +1,23 @@
+[package]
+name = "box-auth"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+argon2 = { version = "0.5", features = ["std"] }
+async-trait.workspace = true
+box-api = { path = "../box-api" }
+box-core = { path = "../box-core" }
+box-db = { path = "../box-db" }
+getrandom = "0.3"
+hex = "0.4"
+hmac = "0.12"
+sha2 = "0.10"
+uuid.workspace = true
+zeroize = { version = "1.8", features = ["derive"] }
+
+[dev-dependencies]
+sea-orm.workspace = true
+tokio.workspace = true

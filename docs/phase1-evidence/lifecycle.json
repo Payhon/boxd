@@ -1,0 +1,20 @@
+{
+  "schema": "boxd-phase1-platform-smoke-v2",
+  "source_commit": "677ca0827a6f54bc328b4b3e97d32a7cc5ac1934",
+  "async_create_initial_status": "creating",
+  "async_create_poll_count": 133,
+  "create_elapsed_ms": 266292,
+  "long_exec_elapsed_ms": 2017,
+  "typescript_exec": true,
+  "file_write_read_list": true,
+  "mtime_preserved": true,
+  "binary_bytes": 5242897,
+  "binary_sha256": "d97ad7b4df620ac2f558898cac08bab937b11379eb177b0a3afa05d8a747acfb",
+  "upload_download_over_4mib": true,
+  "nested_download_fail_closed": true,
+  "rootfs_df_bytes": 20957446144,
+  "invalid_init_command_keep_alive_false_rejected_by_sdk": true,
+  "init_command_keep_alive_true_separate_box": true,
+  "pause_resume": true,
+  "status": "idle"
+}

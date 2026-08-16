@@ -1,0 +1,38 @@
+[package]
+name = "box-agent"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "box-agent"
+path = "src/main.rs"
+
+[dependencies]
+box-agent-proto = { path = "../box-agent-proto" }
+box-egress = { path = "../box-egress" }
+async-trait = "0.1"
+base64.workspace = true
+futures-util = "0.3"
+reqwest = { workspace = true, features = ["json"] }
+serde.workspace = true
+tokio = { workspace = true, features = ["fs", "sync", "time", "io-util", "process", "macros", "rt-multi-thread", "signal"] }
+tokio-stream = { version = "0.1", features = ["net"] }
+tokio-tungstenite = "0.30"
+tonic = { version = "0.12", features = ["transport"] }
+tracing.workspace = true
+serde_json.workspace = true
+libc = "0.2"
+subtle = "2.6"
+getrandom = "0.3"
+tokio-vsock = "0.7"
+zeroize = "1.8"
+url.workspace = true
+
+[dev-dependencies]
+tempfile = "3"
+serial_test = "3.2"

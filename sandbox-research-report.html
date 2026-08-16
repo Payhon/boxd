@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="面向 AI Agent、Compute、Browser、Terminal 与 RPA 场景的开源 Sandbox-as-a-Service 选型研究报告。">
+  <title>开源 Sandbox-as-a-Service 选型研究报告</title>
+  <style>
+    :root {
+      --ink: #11201e;
+      --ink-2: #20342f;
+      --paper: #f4f1e7;
+      --white: #fffdf7;
+      --muted: #64706c;
+      --line: #d5dbd4;
+      --lime: #caff49;
+      --mint: #a6e9d2;
+      --orange: #ff8a5b;
+      --red: #c95135;
+      --yellow: #e3c148;
+      --green: #268060;
+      --shadow: 0 20px 55px rgb(16 32 30 / 9%);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--paper); color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; }
+    a { color: inherit; }
+    button { font: inherit; }
+    .wrap { margin: 0 auto; max-width: 1480px; padding-left: clamp(20px, 5vw, 76px); padding-right: clamp(20px, 5vw, 76px); }
+    .masthead {
+      background:
+        linear-gradient(90deg, rgb(255 255 255 / 5%) 1px, transparent 1px) 0 0 / 52px 52px,
+        linear-gradient(rgb(255 255 255 / 5%) 1px, transparent 1px) 0 0 / 52px 52px,
+        var(--ink);
+      color: #f7f5ea;
+    }
+    .topline { align-items: center; border-bottom: 1px solid rgb(255 255 255 / 16%); color: #aebbb6; display: flex; font-size: 11px; justify-content: space-between; letter-spacing: .08em; min-height: 58px; text-transform: uppercase; }
+    .topline strong { color: var(--lime); }
+    .hero { display: grid; gap: clamp(34px, 8vw, 110px); grid-template-columns: minmax(0, 1.45fr) minmax(270px, .55fr); padding-bottom: 62px; padding-top: 74px; }
+    .eyebrow { color: var(--lime); font-size: 10px; font-weight: 900; letter-spacing: .18em; margin: 0 0 26px; }
+    h1 { font-size: clamp(48px, 7.4vw, 104px); letter-spacing: -.068em; line-height: .91; margin: 0; }
+    h1 em { color: var(--lime); display: block; font-family: Georgia, "Times New Roman", serif; font-weight: 400; }
+    .lead { color: #bdc9c4; font-size: clamp(16px, 1.6vw, 21px); line-height: 1.7; margin: 34px 0 0; max-width: 800px; }
+    .verdict { align-self: end; border-left: 1px solid rgb(255 255 255 / 18%); padding: 8px 0 8px 28px; }
+    .verdict small { color: var(--orange); display: block; font-size: 10px; font-weight: 900; letter-spacing: .14em; margin-bottom: 14px; text-transform: uppercase; }
+    .verdict b { display: block; font-family: Georgia, serif; font-size: clamp(28px, 3vw, 44px); font-weight: 400; line-height: 1.08; }
+    .verdict p { color: #bdc9c4; line-height: 1.65; margin: 18px 0 26px; }
+    .verdict .count { border-top: 1px solid rgb(255 255 255 / 18%); color: #9facA7; font-size: 11px; padding-top: 17px; }
+    .verdict .count strong { color: var(--lime); font-size: 21px; margin-right: 5px; }
+    .gate { align-items: center; background: var(--lime); color: #17231e; display: flex; font-size: 12px; font-weight: 800; gap: 10px; padding: 13px 16px; }
+    .gate i { background: var(--ink); border-radius: 50%; color: var(--lime); display: inline-grid; font-style: normal; height: 21px; place-items: center; width: 21px; }
+    .nav { background: #e2e6dc; border-bottom: 1px solid #cbd1ca; position: sticky; top: 0; z-index: 20; }
+    .nav .wrap { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 10px; padding-top: 10px; }
+    .nav a { border-radius: 999px; color: #42504c; flex: 0 0 auto; font-size: 11px; font-weight: 800; padding: 8px 12px; text-decoration: none; }
+    .nav a:hover { background: var(--ink); color: var(--lime); }
+    section { padding-bottom: 82px; padding-top: 82px; }
+    .heading { align-items: end; border-bottom: 1px solid var(--line); display: grid; gap: 28px; grid-template-columns: 1fr minmax(260px, 470px); margin-bottom: 34px; padding-bottom: 24px; }
+    .heading small { color: #68746f; display: block; font-size: 9px; font-weight: 900; letter-spacing: .17em; margin-bottom: 12px; }
+    h2 { font-family: Georgia, serif; font-size: clamp(34px, 4.2vw, 58px); font-weight: 400; letter-spacing: -.04em; line-height: 1; margin: 0; }
+    .heading p { color: var(--muted); line-height: 1.7; margin: 0; }
+    .recommendations { display: grid; gap: 15px; grid-template-columns: 1.1fr 1fr 1fr; }
+    .rec { background: var(--white); border: 1px solid var(--line); min-height: 330px; padding: 27px; position: relative; }
+    .rec.primary { background: var(--lime); border-color: #a3d22b; }
+    .rec.accent { background: #dff2eb; }
+    .rec .num { color: #85908b; font-size: 11px; font-weight: 900; }
+    .rec .tag { background: var(--ink); color: white; float: right; font-size: 9px; font-weight: 900; letter-spacing: .08em; padding: 7px 9px; }
+    .rec h3 { font-family: Georgia, serif; font-size: clamp(32px, 3vw, 46px); font-weight: 400; letter-spacing: -.04em; margin: 56px 0 16px; }
+    .rec p { color: #38443f; line-height: 1.7; }
+    .rec strong { border-top: 1px solid rgb(17 32 30 / 18%); bottom: 25px; display: block; font-size: 11px; left: 27px; line-height: 1.55; padding-top: 15px; position: absolute; right: 27px; }
+    .scope-note { background: #efe0d8; border-left: 4px solid var(--orange); line-height: 1.7; margin-top: 18px; padding: 17px 20px; }
+    .scope-note strong { color: #773820; }
+    .workload-switch { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+    .workload-switch button { background: transparent; border: 1px solid #aab3ad; border-radius: 999px; color: #40504b; cursor: pointer; font-size: 12px; font-weight: 800; padding: 10px 16px; }
+    .workload-switch button.active { background: var(--ink); border-color: var(--ink); color: var(--lime); }
+    .ranking { border-top: 1px solid #bfc6c0; }
+    .rank { align-items: center; border-bottom: 1px solid #bfc6c0; display: grid; gap: 17px; grid-template-columns: 38px minmax(150px, 240px) minmax(130px, 1fr) 42px 130px; min-height: 73px; }
+    .rank.dim { color: #7c8581; }
+    .rank .idx { font-family: Georgia, serif; font-size: 18px; }
+    .rank .name strong, .rank .name small { display: block; }
+    .rank .name small { color: #77817c; font-size: 10px; margin-top: 4px; }
+    .bar { background: #d2d6d1; height: 7px; overflow: hidden; }
+    .bar i { background: var(--ink); display: block; height: 100%; transition: width .35s ease; }
+    .rank.dim .bar i { background: var(--orange); }
+    .rank .score { font-size: 21px; text-align: right; }
+    .badge { font-size: 9px; font-weight: 900; letter-spacing: .04em; padding: 7px 8px; text-align: center; }
+    .badge.pass { background: var(--lime); }
+    .badge.fail { background: #ffd2c1; color: #78341d; }
+    .ranking-note { color: var(--muted); font-size: 11px; line-height: 1.6; margin-top: 16px; }
+    .matrix-scroll { overflow-x: auto; }
+    table { border-collapse: collapse; min-width: 1080px; width: 100%; }
+    th, td { border-bottom: 1px solid var(--line); padding: 17px 11px; text-align: left; vertical-align: middle; }
+    thead th { color: #727d78; font-size: 9px; letter-spacing: .09em; text-transform: uppercase; }
+    tbody th { min-width: 210px; }
+    tbody th a { font-size: 14px; text-decoration: none; }
+    tbody th small { color: #78827e; display: block; font-size: 9px; font-weight: 400; margin-top: 4px; }
+    .fit { align-items: center; display: inline-flex; flex-direction: column; font-size: 9px; font-weight: 900; gap: 5px; min-width: 62px; }
+    .dots { display: flex; gap: 3px; }
+    .dots i { background: #d1d6cf; border-radius: 50%; height: 7px; width: 7px; }
+    .fit.s5 .dots i, .fit.s4 .dots i:nth-child(-n+4), .fit.s3 .dots i:nth-child(-n+3), .fit.s2 .dots i:nth-child(-n+2), .fit.s1 .dots i:first-child { background: var(--ink); }
+    .fit.s5 { color: var(--green); }
+    .fit.s5 .dots i { background: var(--green); }
+    .fit.s2, .fit.s1 { color: var(--red); }
+    .fit.s2 .dots i:nth-child(-n+2), .fit.s1 .dots i:first-child { background: var(--red); }
+    .category { border: 1px solid #b8c0ba; border-radius: 999px; font-size: 9px; font-weight: 800; padding: 6px 8px; white-space: nowrap; }
+    .details { background: #e7eae2; }
+    .details .wrap { max-width: 1480px; }
+    .project { background: var(--white); border: 1px solid var(--line); margin-bottom: 12px; }
+    .project summary { align-items: center; cursor: pointer; display: grid; gap: 17px; grid-template-columns: 30px minmax(180px, .75fr) minmax(230px, 1fr) 130px; list-style: none; min-height: 82px; padding: 0 22px; }
+    .project summary::-webkit-details-marker { display: none; }
+    .project summary::after { content: "+"; font-family: Georgia, serif; font-size: 26px; position: absolute; right: 25px; }
+    .project[open] summary::after { content: "−"; }
+    .status { border-radius: 50%; display: grid; font-size: 12px; height: 26px; place-items: center; width: 26px; }
+    .status.pass { background: var(--lime); }
+    .status.fail { background: #ffd2c1; color: #7d351d; }
+    .project-title strong, .project-title small { display: block; }
+    .project-title strong { font-size: 17px; }
+    .project-title small { color: #75807b; font-size: 9px; margin-top: 4px; }
+    .one-line { color: #3f4c48; font-weight: 800; }
+    .project-type { color: #75807b; font-size: 10px; text-align: right; }
+    .project-body { border-top: 1px solid var(--line); padding: 34px; }
+    .project-intro { font-family: Georgia, serif; font-size: clamp(20px, 2vw, 29px); line-height: 1.42; margin: 0 0 28px; max-width: 1100px; }
+    .metrics { border-bottom: 1px solid var(--line); border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 30px; }
+    .metric { border-right: 1px solid var(--line); padding: 13px 9px; }
+    .metric:last-child { border-right: 0; }
+    .metric small { color: #77817d; display: block; font-size: 8px; font-weight: 900; letter-spacing: .05em; margin-bottom: 8px; text-transform: uppercase; }
+    .metric b { font-size: 16px; }
+    .detail-grid { display: grid; gap: 27px 32px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .detail-grid h4 { font-size: 10px; letter-spacing: .06em; margin: 0 0 8px; text-transform: uppercase; }
+    .detail-grid p { color: #4f5a56; line-height: 1.7; margin: 0; }
+    .evidence { border-radius: 999px; font-size: 8px; font-weight: 900; letter-spacing: 0; margin-left: 6px; padding: 4px 7px; text-transform: none; }
+    .evidence.strong { background: #c9eddf; color: #255f4a; }
+    .evidence.medium { background: #f3e6aa; color: #6c5914; }
+    .evidence.weak { background: #efd6cd; color: #75402e; }
+    .risk-source { display: grid; gap: 17px; grid-template-columns: 1.5fr 1fr; margin-top: 30px; }
+    .risk, .sources { background: #edf0e9; padding: 20px; }
+    .risk strong, .sources strong { display: block; font-size: 9px; letter-spacing: .09em; margin-bottom: 10px; text-transform: uppercase; }
+    .risk ul { margin: 0; padding-left: 18px; }
+    .risk li { color: #4d5954; line-height: 1.6; margin: 5px 0; }
+    .sources a { border-bottom: 1px solid #cbd1ca; display: block; font-size: 11px; padding: 8px 0; text-decoration: none; }
+    .sources a::before { content: "↗"; margin-right: 7px; }
+    .build { background: var(--ink); color: #f6f4e9; }
+    .build .heading { border-color: rgb(255 255 255 / 16%); }
+    .build .heading small { color: var(--lime); }
+    .build .heading p { color: #b6c2bd; }
+    .diagram { align-items: center; display: grid; gap: 12px; grid-template-columns: 1fr auto 1.3fr auto 1.1fr; margin: 52px 0 82px; position: relative; }
+    .box { border: 1px solid rgb(255 255 255 / 24%); display: flex; flex-direction: column; gap: 6px; min-height: 112px; padding: 19px; }
+    .box.control { background: var(--lime); border-color: var(--lime); color: var(--ink); }
+    .box.node { background: #213833; min-height: 82px; }
+    .nodes { display: grid; gap: 8px; }
+    .box small, .storage small { font-size: 8px; font-weight: 900; letter-spacing: .12em; }
+    .box span { color: #adbbb5; font-size: 10px; }
+    .box.control span { color: #46543f; }
+    .arrow { color: var(--lime); font-size: 23px; }
+    .storage { background: #25413b; border-top: 2px solid var(--mint); bottom: -39px; left: 29%; padding: 11px 19px; position: absolute; right: 3%; }
+    .storage small { color: var(--mint); margin-right: 13px; }
+    .storage strong { font-size: 11px; }
+    .build-cards { background: rgb(255 255 255 / 16%); display: grid; gap: 1px; grid-template-columns: repeat(4, 1fr); }
+    .build-card { background: var(--ink); min-height: 310px; padding: 24px; }
+    .build-card > small { color: var(--mint); font-size: 9px; font-weight: 900; letter-spacing: .1em; }
+    .build-card h3 { font-family: Georgia, serif; font-size: 27px; font-weight: 400; margin: 43px 0 16px; }
+    .build-card ul { color: #b6c2bd; line-height: 1.65; margin: 0; padding-left: 18px; }
+    .build-card li { margin: 6px 0; }
+    .build-verdict { background: var(--lime); color: var(--ink); line-height: 1.7; margin-top: 22px; padding: 22px; }
+    .build-verdict strong { display: block; margin-bottom: 5px; }
+    .timeline { list-style: none; margin: 0; padding: 0; }
+    .timeline li { border-bottom: 1px solid var(--line); display: grid; gap: 24px; grid-template-columns: 70px 1fr; padding: 23px 0; }
+    .timeline li > span { color: #9db51e; font-family: Georgia, serif; font-size: 29px; }
+    .timeline strong { font-size: 16px; }
+    .timeline p { color: var(--muted); line-height: 1.7; margin: 6px 0 0; }
+    .accept { display: grid; gap: 16px; grid-template-columns: 1fr 1fr; margin-top: 30px; }
+    .accept > div { background: #e4e8df; display: flex; flex-wrap: wrap; gap: 7px; padding: 20px; }
+    .accept strong { flex: 0 0 100%; font-size: 10px; letter-spacing: .07em; margin-bottom: 3px; text-transform: uppercase; }
+    .accept span { background: var(--white); border-radius: 999px; font-size: 10px; font-weight: 800; padding: 7px 10px; }
+    .method-grid { display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); }
+    .method-card { background: var(--white); border: 1px solid var(--line); padding: 23px; }
+    .method-card small { color: #78827e; font-size: 9px; font-weight: 900; letter-spacing: .1em; }
+    .method-card h3 { font-family: Georgia, serif; font-size: 25px; font-weight: 400; margin: 26px 0 11px; }
+    .method-card p { color: var(--muted); line-height: 1.7; margin: 0; }
+    footer { background: var(--lime); display: grid; gap: 45px; grid-template-columns: 1.45fr 1fr auto; padding-bottom: 46px; padding-top: 46px; }
+    footer strong { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+    footer p { line-height: 1.7; margin: 7px 0 0; }
+    footer > span { align-self: end; font-size: 9px; font-weight: 900; white-space: nowrap; }
+    .print-button { background: transparent; border: 1px solid currentColor; color: inherit; cursor: pointer; font-size: 10px; font-weight: 900; padding: 8px 11px; text-transform: uppercase; }
+    @media (max-width: 1020px) {
+      .hero, .heading { grid-template-columns: 1fr; }
+      .verdict { max-width: 650px; }
+      .recommendations { grid-template-columns: 1fr; }
+      .rec { min-height: 280px; }
+      .metrics { grid-template-columns: repeat(4, 1fr); }
+      .build-cards { grid-template-columns: repeat(2, 1fr); }
+      .method-grid { grid-template-columns: 1fr; }
+      footer { grid-template-columns: 1fr 1fr; }
+      footer > span { grid-column: 1 / -1; }
+    }
+    @media (max-width: 720px) {
+      .topline { align-items: flex-start; flex-direction: column; gap: 6px; justify-content: center; }
+      .hero { padding-bottom: 44px; padding-top: 50px; }
+      h1 { font-size: 48px; }
+      section { padding-bottom: 62px; padding-top: 62px; }
+      .rank { gap: 9px; grid-template-columns: 28px minmax(110px, 1fr) 38px; padding: 12px 0; }
+      .rank .bar { grid-column: 2 / 4; grid-row: 2; }
+      .rank .badge { display: none; }
+      .project summary { gap: 10px; grid-template-columns: 28px 1fr; padding: 13px 48px 13px 15px; }
+      .one-line, .project-type { display: none; }
+      .project-body { padding: 23px 17px; }
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+      .detail-grid, .risk-source, .accept { grid-template-columns: 1fr; }
+      .diagram { align-items: stretch; grid-template-columns: 1fr; }
+      .arrow { text-align: center; transform: rotate(90deg); }
+      .storage { margin-top: 8px; position: static; }
+      .build-cards { grid-template-columns: 1fr; }
+      footer { grid-template-columns: 1fr; }
+    }
+    @media print {
+      :root { --paper: white; }
+      .nav, .print-button, .workload-switch { display: none !important; }
+      .masthead { background: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .project:not([open]) .project-body { display: block; }
+      .project summary::after { display: none; }
+      section { break-inside: avoid; padding-bottom: 36px; padding-top: 36px; }
+      a { text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="masthead">
+    <div class="wrap topline"><span><strong>Sandbox Research</strong> / Architecture Decision Brief</span><span>公开资料快照：2026-08-12 <button class="print-button" type="button" onclick="window.print()">打印 / PDF</button></span></div>
+    <div class="wrap hero">
+      <div><p class="eyebrow">OPEN-SOURCE · SELF-HOSTED · KUBERNETES</p><h1>开源沙箱平台<em>选型研究报告</em></h1><p class="lead">面向 AI Agent、Compute、可查看的 Browser / Terminal 与 RPA 四类场景，对 Kubernetes 原生平台、非 K8s 全栈、运行时组件及“单机底座补集群”路线做同一套证据分级评估。</p></div>
+      <aside class="verdict"><small>当前建议</small><b>OpenSandbox<br>进入主 PoC</b><p>Agent Sandbox 做 K8s 原生对照；Mitos 仅进入 live-fork 性能专项。E2B 作为产品体验标杆，不进入本轮 K8s 直接候选。</p><div class="count"><strong>4</strong> 项通过 K8s 硬门槛　<strong>3</strong> 项作为对照或自研路线</div></aside>
+    </div>
+    <div class="wrap"><div class="gate"><i>✓</i>硬门槛：开源、可在自有 Kubernetes 集群部署，并能形成多租户 Sandbox 服务；只有 VMM、containerd shim 或非 K8s 拓扑不算直接候选。</div></div>
+  </header>
+
+  <nav class="nav" aria-label="报告目录"><div class="wrap"><a href="#decision">结论</a><a href="#ranking">动态排序</a><a href="#matrix">场景矩阵</a><a href="#projects">项目详评</a><a href="#smolvm">SmolVM 集群化</a><a href="#poc">PoC 方案</a><a href="#method">方法与边界</a></div></nav>
+
+  <main>
+    <section id="decision"><div class="wrap">
+      <div class="heading"><div><small>01 / DECISION</small><h2>先给结论，再看分数</h2></div><p>评分用于组织团队讨论，不替代同硬件 PoC。未通过 K8s 硬门槛的项目，即使 Browser/RPA 得分很高，也不会成为本轮直接采用建议。</p></div>
+      <div class="recommendations">
+        <article class="rec primary"><span class="num">01</span><span class="tag">主 PoC</span><h3>OpenSandbox</h3><p>最接近完整 Sandbox-as-a-Service：统一生命周期 API、多语言 SDK、K8s controller、资源池、网络组件，以及 Browser/VNC/VS Code 示例位于同一项目边界。</p><strong>验证重点：RuntimeClass 隔离、池化 P95、RPA 会话稳定性、升级路径</strong></article>
+        <article class="rec"><span class="num">02</span><span class="tag">架构对照</span><h3>Agent Sandbox</h3><p>Kubernetes 治理、CRD 和原生资源模型更克制可信。若团队愿意自建上层 API、控制台和 RPA 产品面，它可能是更标准、更低锁定的编排底座。</p><strong>验证重点：router、warm pool、PVC、gVisor/Kata 与 Browser 镜像组合</strong></article>
+        <article class="rec accent"><span class="num">03</span><span class="tag">性能专项</span><h3>Mitos</h3><p>核心差异是 Firecracker live-fork：适合同一 warm state 分叉多条 Agent 探索路线。性能证据透明，但项目年轻，Browser/RPA 产品面明显不足。</p><strong>验证重点：fork 密度、节点故障、snapshot 分发与路径能力差异</strong></article>
+      </div>
+      <div class="scope-note"><strong>名称与层级校正：</strong>清单中的 “Mitosis” 本报告按当前项目 <b>Mitos（mitos-run/mitos）</b> 评估；“Firecracker Shim”按 <b>firecracker-containerd</b> 评估。Alibaba OpenSandbox 仓库当前组织名为 <b>opensandbox-group/OpenSandbox</b>。这三处均保留用户原意，同时按现行官方项目核验。</div>
+    </div></section>
+
+    <section id="ranking" style="background:#e7eae2"><div class="wrap">
+      <div class="heading"><div><small>02 / WEIGHTED VIEW</small><h2>切换场景，看排序如何变化</h2></div><p id="profile-note">综合场景：四类业务相对均衡，并强调 K8s、隔离、运维与成熟度。</p></div>
+      <div class="workload-switch" role="group" aria-label="工作负载权重"><button class="active" data-profile="balanced">综合场景</button><button data-profile="agent">AI Agent</button><button data-profile="compute">Compute</button><button data-profile="interactive">Browser + Terminal</button><button data-profile="rpa">RPA</button></div>
+      <div id="ranking-list" class="ranking"></div>
+      <p class="ranking-note">综合分为 1–5 工程评分的加权结果。硬门槛未通过者用橙色显示；其高分只能说明产品体验或底层技术值得参考，不代表满足本次部署目标。</p>
+    </div></section>
+
+    <section id="matrix"><div class="wrap">
+      <div class="heading"><div><small>03 / USE-CASE MATRIX</small><h2>四类需求适配矩阵</h2></div><p>“强”表示已有直接能力或成熟组合；“需集成”表示能承载工作负载，但需要团队自己补 API、镜像、gateway、权限或控制台。</p></div>
+      <div class="matrix-scroll"><table><thead><tr><th>项目</th><th>AI Agent</th><th>Compute</th><th>Browser</th><th>Terminal</th><th>RPA</th><th>K8s</th><th>项目层级</th></tr></thead><tbody id="matrix-body"></tbody></table></div>
+    </div></section>
+
+    <section id="projects" class="details"><div class="wrap">
+      <div class="heading"><div><small>04 / DEEP DIVE</small><h2>逐项证据与工程判断</h2></div><p>社区数字为 2026-08-12 快照。启动速度保留官方原始操作口径：warm claim、VM restore、create API 和 first exec 不能混为同一指标。</p></div>
+      <div id="project-list"></div>
+    </div></section>
+
+    <section id="smolvm" class="build"><div class="wrap">
+      <div class="heading"><div><small>05 / BUILD PATH</small><h2>基于 SmolVM 补集群：能做，但不是“加一个 scheduler”</h2></div><p>可复用的是 VMM adapter、guest control、Browser/VNC 与 benchmark；必须新建的是分布式控制面、状态一致性与多租户安全语义。</p></div>
+      <div class="diagram" aria-label="SmolVM 集群化目标架构"><div class="box"><small>CLIENTS</small><strong>SDK / Agent / Console</strong><span>REST · WebSocket · PTY · CDP/VNC</span></div><span class="arrow">→</span><div class="box control"><small>NEW CONTROL PLANE</small><strong>Auth · Scheduler · Lease · API</strong><span>Postgres · quota · audit · reconcile</span></div><span class="arrow">→</span><div class="nodes"><div class="box node"><small>K8S NODE A</small><strong>smolvm-node</strong><span>Firecracker / KVM</span></div><div class="box node"><small>K8S NODE B</small><strong>smolvm-node</strong><span>Firecracker / KVM</span></div></div><div class="storage"><small>SHARED ARTIFACT PLANE</small><strong>S3 / MinIO · image · snapshot · recording</strong></div></div>
+      <div class="build-cards">
+        <article class="build-card"><small>可直接复用</small><h3>Node runtime</h3><ul><li>Firecracker / QEMU / libkrun adapters</li><li>SSH / vsock guest control</li><li>CDP、noVNC/VNC、Desktop 与 CLI</li><li>本机 benchmark 与 image 准备逻辑</li></ul></article>
+        <article class="build-card"><small>必须新增</small><h3>Cluster control plane</h3><ul><li>tenant、API key、RBAC、quota、audit</li><li>node heartbeat、capacity、placement、lease</li><li>幂等 operation 与 restart reconciliation</li><li>endpoint gateway 与短期会话票据</li></ul></article>
+        <article class="build-card"><small>必须重构</small><h3>State & artifacts</h3><ul><li>进程内 live registry → DB 真相源</li><li>本地镜像/快照 → 对象存储 + node cache</li><li>本机网络 → CNI、egress policy、metadata block</li><li>单机 lifecycle → node loss、retry、fencing</li></ul></article>
+        <article class="build-card"><small>工作量判断</small><h3>不是短平快路线</h3><ul><li>内部 beta：约 16–24 engineer-weeks</li><li>生产多租户：约 40–70 engineer-weeks</li><li>另需 KVM 真机、故障注入和安全评审</li><li>Browser/RPA 是最值得保留的优势</li></ul></article>
+      </div>
+      <div class="build-verdict"><strong>建议的自研边界</strong>若采用 SmolVM，不要把它 fork 成一个巨型控制面。把它收敛为节点级 <code>smolvm-node</code>，控制面保持 runtime-neutral；先交付单租户、静态节点和可恢复 lifecycle，再做多租户、自动扩缩和跨节点快照。若目标是尽快上线生产 K8s，直接采用 OpenSandbox / Agent Sandbox 更经济。</div>
+    </div></section>
+
+    <section id="poc"><div class="wrap">
+      <div class="heading"><div><small>06 / FOUR-WEEK POC</small><h2>用同一把尺结束纸面争论</h2></div><p>PoC 只选择 OpenSandbox、Agent Sandbox、Mitos；固定同一 Kubernetes 版本、同一裸机 KVM 节点、同一镜像、同一网络策略与同一负载脚本。</p></div>
+      <ol class="timeline"><li><span>W1</span><div><strong>部署与安全基线</strong><p>安装、升级、卸载；gVisor 与 microVM profile；metadata/私网阻断；tenant 越权、secret 泄漏、镜像供应链与未实现能力是否显式失败。</p></div></li><li><span>W2</span><div><strong>Compute 与 Agent</strong><p>cold/warm TTI P50/P95/P99、首次命令、并发 1/10/100、失败清理、包安装、文件、PTY、24 小时会话与节点重启恢复。</p></div></li><li><span>W3</span><div><strong>Browser 与 RPA</strong><p>Chromium ready、CDP/VNC 人工接管、断线重连、上传下载、中文字体、剪贴板、录屏、两小时 RPA 成功率和每会话带宽。</p></div></li><li><span>W4</span><div><strong>成本与运维</strong><p>每节点稳定密度、warm pool 空转、镜像/快照存储、滚动升级中断、日志/指标/审计、每 1,000 sandbox-hour 的全成本。</p></div></li></ol>
+      <div class="accept"><div><strong>必须量化</strong><span>TTI P95</span><span>最大安全密度</span><span>RPA 成功率</span><span>恢复时间 RTO</span><span>单位成本</span></div><div><strong>一票否决</strong><span>隔离语义不清</span><span>参数静默忽略</span><span>节点丢失后泄漏</span><span>无可审计会话</span><span>无法无损升级</span></div></div>
+    </div></section>
+
+    <section id="method" style="background:#e7eae2"><div class="wrap">
+      <div class="heading"><div><small>07 / METHOD & LIMITS</small><h2>证据等级与验证边界</h2></div><p>本报告用于形成候选集和 PoC 设计，不是最终采购决策。所有结论均应在目标集群和真实业务脚本上复核。</p></div>
+      <div class="method-grid"><article class="method-card"><small>LEVEL A</small><h3>可复现实测</h3><p>官方给出硬件、脚本、原始结果或可执行 benchmark。当前主要是 Mitos 的 warm-claim 与 fork 数据；仍不可跨项目直接比较不同操作口径。</p></article><article class="method-card"><small>LEVEL B</small><h3>官方能力或自报数字</h3><p>仓库/文档明确描述能力，但缺少统一硬件与完整 P50/P95。OpenSandbox、Agent Sandbox、K8E、E2B、SmolVM 多数速度信息属于这一层。</p></article><article class="method-card"><small>LEVEL C</small><h3>工程推断或未知</h3><p>从架构、依赖和现有实现推断维护成本、资源结构与集群化工作量。页面明确标出未知项，不用营销数字填空。</p></article></div>
+    </div></section>
+  </main>
+
+  <footer class="wrap"><div><strong>最终建议</strong><p>先验证 OpenSandbox 能否以可接受的运维成本覆盖四类场景；若团队愿意自建产品面，Agent Sandbox 是更标准的 K8s 底座。只有当 live-fork 是核心业务优势时才押注 Mitos。SmolVM 集群化是战略自研路线，不是当前快速替代方案。</p></div><div><strong>验证边界</strong><p>未在同一硬件运行基准，未完成真实 K8s 生产、真机或安全渗透验证。成本估算不包含特定云价格，社区数字可能随时间变化。</p></div><span>Standalone report · 2026-08-12</span></footer>
+
+  <script>
+    const projects = [
+      {
+        id:'opensandbox', name:'OpenSandbox', repo:'opensandbox-group/OpenSandbox', type:'K8s 平台', gate:true, label:'主 PoC 候选',
+        intro:'覆盖面最接近团队需求：统一生命周期 API、多语言 SDK、Docker/Kubernetes 后端、资源池、网络组件，并提供 Chrome/Playwright、VNC、VS Code 等环境示例。',
+        scores:{k8s:5,agent:5,compute:5,browser:5,terminal:5,rpa:4,startup:4,efficiency:4,security:5,operations:3,maturity:4,community:5,cost:4},
+        architecture:'FastAPI 控制面 + Kubernetes Controller/CRD + execd + ingress/egress。隔离由 gVisor、Kata 或 Firecracker RuntimeClass 提供，项目本身不会自动把普通容器变成 microVM。',
+        startup:'资源池可减少获取延迟，但官方没有发布可与其他项目同口径比较的端到端 P50/P95。非池化路径仍受调度、拉镜像和安全运行时冷启动影响。', evidence:'weak', evidenceText:'缺少同口径数据',
+        resources:'池化会占用预热容量。容器/gVisor 密度较高；Kata/Firecracker 隔离更强，但每实例内存、内核与节点成本更高。',
+        operations:'中等偏高：需要维护 server、controller、CRD、入口/出口组件、镜像和安全运行时。优点是协议、组件边界与多语言 SDK 相对完整。',
+        cost:'Apache-2.0，无软件许可费；成本来自 K8s 节点、预热池、镜像/快照存储和平台人力。可用不同 RuntimeClass 做风险/成本分层。',
+        community:'12,490 stars / 1,051 forks；持续更新与发布，多语言 SDK 覆盖最广。项目历史仍较短，API/组件快速演进。',
+        interaction:'命令、文件、代码解释器是一等能力；示例覆盖浏览器、VNC 与 VS Code。RPA 的长会话、接管、录屏和审计仍需按真实流程验收。',
+        risks:['安全等级取决于部署时选择的 RuntimeClass。','池化延迟、并发密度和暂停/恢复必须在目标集群复测。','K8s 公共 snapshot 与内部 pause/resume snapshot 的能力边界不同。'],
+        sources:[['项目仓库','https://github.com/opensandbox-group/OpenSandbox'],['Kubernetes Controller','https://github.com/opensandbox-group/OpenSandbox/blob/main/kubernetes/README.md'],['架构说明','https://github.com/opensandbox-group/OpenSandbox/blob/main/docs/architecture.md'],['安全运行时','https://github.com/opensandbox-group/OpenSandbox/blob/main/docs/guides/secure-container.md']]
+      },
+      {
+        id:'agent-sandbox', name:'Agent Sandbox', repo:'kubernetes-sigs/agent-sandbox', type:'K8s 平台', gate:true, label:'K8s 原生底座',
+        intro:'Kubernetes SIG Apps 旗下声明式 Sandbox CRD/controller，擅长稳定身份、PVC、生命周期、router 与 warm pool；更像标准化编排底座，而不是开箱即用的 RPA 产品。',
+        scores:{k8s:5,agent:5,compute:5,browser:3,terminal:4,rpa:3,startup:4,efficiency:4,security:4,operations:4,maturity:4,community:5,cost:4},
+        architecture:'Sandbox、SandboxClaim、SandboxWarmPool CRD + controller + sandbox-router。工作负载是 Pod，可通过 RuntimeClass 接入 gVisor/Kata；隔离等级必须由部署策略明确。',
+        startup:'官方称 warm pool 可在毫秒级分配，但没有固定、跨环境可比的端到端数值；cold path 本质仍是 Kubernetes Pod 调度和启动。', evidence:'medium', evidenceText:'官方定性',
+        resources:'控制器本身较轻，主要开销来自 sandbox Pod、PVC、router 和 warm pool 闲置副本。实例开销由 runc/gVisor/Kata 决定。',
+        operations:'中等：沿用 Kubernetes controller、GitOps、RBAC、NetworkPolicy 和可观测体系，平台团队学习成本低；上层产品 API 和 GUI 需组合或自建。',
+        cost:'已有 K8s 集群时增量成本较低；成本旋钮主要是 warm pool、PVC、安全 RuntimeClass 与专用节点池。',
+        community:'3,486 stars / 443 forks；Kubernetes SIG 治理，v0.5.4，API 已到 v1beta1，发布和压力测试体系持续增强。',
+        interaction:'Python/Go client、router、exec/file 能力可支撑 Terminal；有 Chrome、VS Code 与 Computer Use 示例，但 RPA 控制、录屏和审计不是统一核心 API。',
+        risks:['Pod 并非隔离承诺，必须固定 RuntimeClass 和威胁模型。','Browser/RPA 主要是镜像与示例集成。','warm pool 用成本换延迟，必须建立容量模型。'],
+        sources:[['项目仓库','https://github.com/kubernetes-sigs/agent-sandbox'],['官方文档','https://agent-sandbox.sigs.k8s.io/docs/'],['Releases','https://github.com/kubernetes-sigs/agent-sandbox/releases'],['Python Client','https://github.com/kubernetes-sigs/agent-sandbox/tree/main/clients/python/agentic-sandbox-client']]
+      },
+      {
+        id:'mitos', name:'Mitos', repo:'mitos-run/mitos', type:'K8s 平台', gate:true, label:'性能专项候选',
+        intro:'清单中的“Mitosis”按当前项目 Mitos 评估。核心差异是 K8s 上 Firecracker microVM 的内存快照恢复与 live fork，适合 Agent 分支探索、RL 和 Eval。',
+        scores:{k8s:5,agent:5,compute:5,browser:2,terminal:4,rpa:2,startup:5,efficiency:5,security:5,operations:3,maturity:2,community:1,cost:4},
+        architecture:'CRD + controller + warm husk pods + /dev/kvm device plugin + Firecracker。Workspace/Revision 和内容寻址快照支撑持久化与 CoW fork。',
+        startup:'官方可复现基准：warm-claim activate P50 约 27ms；fork 到首次 exec 约 104ms，reflink + NVMe 约 67ms。它们不是公网 create API 的相同口径。', evidence:'strong', evidenceText:'可复现实测',
+        resources:'Fork 共享内存页；官方基准称 8 个 fork 的增量驻留约 35MiB。warm pool、快照存储、KVM 节点和 CoW 文件系统仍有固定成本。',
+        operations:'偏高：需 KVM 节点、设备插件、快照/分发、CoW 能力和专用调度知识。Helm/CRD 降低安装门槛，但故障域比普通 Pod 复杂。',
+        cost:'普通工作负载未必占优；同一 warm state 大规模分叉时，CoW 密度可能显著降低内存与重复初始化成本。',
+        community:'80 stars / 6 forks；2026-05 创建，公开采用面很小。性能材料透明，但升级和生产事件经验有限。',
+        interaction:'exec、streaming 和 PTY 已有实现路径；缺少与 E2B Desktop/OpenSandbox 类似的一等 Browser/RPA 产品面，需自建 CDP/VNC gateway 与会话审计。',
+        risks:['项目非常年轻，社区和生产案例少。','能力仍区分 husk 默认路径与 raw-forkd engine path。','Pod NetworkPolicy/ResourceQuota 不会自动等价约束 microVM 内 workload。'],
+        sources:[['项目仓库','https://github.com/mitos-run/mitos'],['Benchmark 目录','https://github.com/mitos-run/mitos/tree/main/bench'],['威胁模型','https://mitos.run/docs/threat-model'],['架构说明','https://mitos.run/docs/architecture']]
+      },
+      {
+        id:'k8e', name:'K8E', repo:'xiaods/k8e', type:'K8s 发行版', gate:true, label:'绿地/边缘候选',
+        intro:'它不是安装到任意现有集群上的普通 Operator，而是一套面向 Agent Sandbox 的轻量 Kubernetes 发行版；单二进制、Cilium、gVisor/Kata/Firecracker 与专用 CLI 一起交付。',
+        scores:{k8s:4,agent:4,compute:4,browser:2,terminal:4,rpa:2,startup:4,efficiency:4,security:4,operations:3,maturity:3,community:2,cost:4},
+        architecture:'Kubernetes 发行版 + containerd + Cilium + Sandbox Matrix gRPC gateway；默认 gVisor，可注册 Kata/Firecracker RuntimeClass。',
+        startup:'项目文档列出 gVisor ~10ms、Kata ~500ms、Firecracker ~125ms，并称 warm pool claim <500ms；缺少统一硬件、样本和端到端口径，必须独立复测。', evidence:'medium', evidenceText:'官方自报数字',
+        resources:'发行二进制小于 100MB，但运行后仍有完整控制面、etcd、Cilium、containerd 和 sandbox 组件；不能用二进制大小代表常驻资源。',
+        operations:'绿地安装简单；长期需承担一套定制 Kubernetes 发行版的升级、安全补丁和兼容性。对已有 EKS/GKE/ACK 团队，迁移成本可能更高。',
+        cost:'小规模裸机或边缘绿地成本友好；已有托管 K8s 时重复建设控制面和节点运维，TCO 未必更低。',
+        community:'465 stars / 30 forks；仓库历史包含上游发行版演进，不能把总 commit 数直接视为独立 sandbox 社区规模。',
+        interaction:'Terminal、文件、命令和日志是强项；尚未看到一等 CDP、VNC、桌面接管或 RPA 会话 API。',
+        risks:['选择的是 Kubernetes 发行版而不只是应用，退出和升级成本高。','启动数字不是统一端到端 TTI。','Browser/RPA 与多租户产品控制面仍需扩展。'],
+        sources:[['项目仓库','https://github.com/xiaods/k8e'],['Sandbox CLI','https://github.com/xiaods/k8e/tree/main/pkg/sandboxcli'],['Releases','https://github.com/xiaods/k8e/releases']]
+      },
+      {
+        id:'e2b', name:'E2B Infra', repo:'e2b-dev/infra', type:'非 K8s 全栈', gate:false, label:'体验标杆，非候选',
+        intro:'完整度与 Terminal/Desktop 开发体验很强，但开源自托管路径是 Terraform + Nomad/Consul + Firecracker，当前不满足 Kubernetes 本地部署硬门槛。',
+        scores:{k8s:1,agent:5,compute:5,browser:5,terminal:5,rpa:5,startup:5,efficiency:5,security:5,operations:2,maturity:5,community:4,cost:2},
+        architecture:'独立 control/data plane；Postgres、Redis、ClickHouse、对象存储、Nomad/Consul、节点 orchestrator 与 Firecracker snapshot/COW。',
+        startup:'预启动内存/磁盘快照 + userfaultfd 懒加载，官方描述为几百毫秒级。必须区分模板恢复、API 往返和首次命令完成。', evidence:'medium', evidenceText:'官方定性',
+        resources:'快照懒加载与 COW 效率高，但完整自托管基础设施固定成本很高；AWS 参考拓扑包含多类独立节点池和数据服务。',
+        operations:'高：Packer、Terraform、Cloudflare、Postgres、Nomad/Consul、Redis、ClickHouse、对象存储、专用 Firecracker 节点及镜像构建链。',
+        cost:'商业云可按使用付费；开源自托管参考架构基础容量与人力昂贵，不适合“小集群快速启动”。',
+        community:'infra 1,319 stars / 382 forks，7k+ commits、持续发布，商业云长期承载真实流量，是完整 S-aa-S 产品与 SDK 的成熟标杆。',
+        interaction:'一等 PTY；Desktop SDK 提供截图、鼠标、键盘和 VNC 浏览器查看。四类场景覆盖最好，但云端 Browser/Desktop 能力需确认开源自托管的等价覆盖。',
+        risks:['直接不满足 Kubernetes 硬门槛。','默认自托管拓扑体量与依赖多。','部分云端 Browser 能力可能依赖外部服务。'],
+        sources:[['项目仓库','https://github.com/e2b-dev/infra'],['架构说明','https://github.com/e2b-dev/infra/blob/main/docs/ARCHITECTURE.md'],['自托管指南','https://github.com/e2b-dev/infra/blob/main/self-host.md'],['Computer Use','https://e2b.dev/docs/use-cases/computer-use'],['交互式 PTY','https://e2b.dev/docs/sandbox/pty']]
+      },
+      {
+        id:'firecracker', name:'Firecracker Shim', repo:'firecracker-microvm/firecracker-containerd', type:'运行时组件', gate:false, label:'仅作数据面组件',
+        intro:'按 firecracker-containerd 评估。它让 containerd 管理 Firecracker microVM，是隔离运行时构件，不是具备租户、服务 API、调度、Browser、RPA 和计费的 Sandbox-as-a-Service。',
+        scores:{k8s:2,agent:1,compute:3,browser:1,terminal:1,rpa:1,startup:4,efficiency:4,security:4,operations:1,maturity:3,community:4,cost:1},
+        architecture:'定制 containerd control plugin + out-of-process shim + VM 内 agent/runc + rootfs builder + CNI；需要专用 firecracker-containerd 二进制。',
+        startup:'Firecracker VMM 本身快、开销小，但项目未给与平台候选同口径的 sandbox-ready 或 first-exec 数据。', evidence:'weak', evidenceText:'缺少同口径数据',
+        resources:'microVM 低于传统 VM；真实密度由 guest kernel/rootfs、每 VM 内存、devmapper/CNI 和镜像缓存决定。',
+        operations:'很高：需自建整个 S-aa-S 控制面，并维护定制 containerd、内核/rootfs、agent、snapshotter、CNI、镜像和节点安全。',
+        cost:'无许可费，但工程建设成本最高。只有团队明确自研数据面且具备虚拟化/容器运行时能力时才合理。',
+        community:'2,894 stars / 243 forks；历史长、Firecracker 背书强，但没有稳定 release 流，README 仍将 CRI/K8s conformance、打包和 jailer 加固列入 roadmap。',
+        interaction:'Browser、Terminal 产品和 RPA 均需自行实现 guest API、PTY、CDP/VNC、路由、鉴权、会话与审计。',
+        risks:['README 明确提示多租户使用需自行承担风险。','不是完整 CRI/Kubernetes 成品，安装和升级复杂。','缺失 S-aa-S 绝大多数控制面与用户体验。'],
+        sources:[['项目仓库','https://github.com/firecracker-microvm/firecracker-containerd'],['架构说明','https://github.com/firecracker-microvm/firecracker-containerd/blob/main/docs/architecture.md'],['Getting Started','https://github.com/firecracker-microvm/firecracker-containerd/blob/main/docs/getting-started.md']]
+      },
+      {
+        id:'smolvm', name:'SmolVM', repo:'CelestoAI/SmolVM', type:'单机底座', gate:false, label:'自研集群备选底座',
+        intro:'单机能力与目标场景高度贴合：Firecracker/QEMU/libkrun、Python/HTTP API、Terminal、Browser CDP、noVNC/VNC、快照和 Linux/macOS；但集群控制面尚不存在。',
+        scores:{k8s:1,agent:4,compute:4,browser:5,terminal:5,rpa:5,startup:4,efficiency:4,security:4,operations:2,maturity:2,community:3,cost:2},
+        architecture:'本地 SmolVM facade/manager + runtime adapters + SSH/vsock + SQLite/Postgres metadata + FastAPI。当前 HTTP API 的 live object registry 仍是进程内真相源。',
+        startup:'README 声称 API 返回前约 500ms 可用，并提供 cold/TTI/first-command benchmark harness；没有公开同机同镜像的跨项目结果。', evidence:'medium', evidenceText:'官方自报 + benchmark 工具',
+        resources:'单机 microVM 成本可控；集群化后还需 control plane、对象存储、gateway、节点 daemon、镜像缓存和录屏存储。',
+        operations:'当前单机低到中；补集群后转为高，需要自建调度、租约、恢复、路由、共享存储、多租户和版本兼容。',
+        cost:'单机低；集群能力的主要成本是约 40–70 engineer-weeks 的生产化工程，而非许可。',
+        community:'754 stars / 59 forks，v0.0.29；活跃但很早期。测试和 benchmark 工具透明，server lifecycle 尚不具备集群 HA 语义。',
+        interaction:'单机 Browser/RPA 最完整之一：CDP、viewer_url、VNC、desktop、CLI shell/exec；适合复用体验层与 node runtime。',
+        risks:['进程内 live registry 不支持重启与跨节点接管。','本地磁盘、网络、镜像必须拆为 node agent 与共享 artifact plane。','多租户 auth、配额、审计、mTLS、调度和一致性均需新增。'],
+        sources:[['项目仓库','https://github.com/CelestoAI/SmolVM'],['贡献者架构','https://github.com/CelestoAI/SmolVM/blob/main/docs/contributing/architecture.md'],['Benchmark 口径','https://github.com/CelestoAI/SmolVM/blob/main/scripts/benchmarks/README.md'],['HTTP server','https://github.com/CelestoAI/SmolVM/blob/main/src/smolvm/server/app.py'],['Browser 示例','https://github.com/CelestoAI/SmolVM/blob/main/examples/browser_sandbox.py']]
+      }
+    ];
+
+    const profileConfig = {
+      balanced:{note:'综合场景：四类业务相对均衡，并强调 K8s、隔离、运维与成熟度。',weights:{k8s:14,agent:10,compute:8,browser:8,terminal:7,rpa:8,startup:7,efficiency:6,security:10,operations:8,maturity:6,community:3,cost:5}},
+      agent:{note:'AI Agent：偏重 Agent API、隔离、启动、状态复用和交互式 Terminal。',weights:{k8s:12,agent:18,compute:8,browser:5,terminal:10,rpa:4,startup:10,efficiency:8,security:10,operations:6,maturity:4,community:2,cost:3}},
+      compute:{note:'Compute：偏重吞吐、密度、启动和成本，弱化 GUI 能力。',weights:{k8s:12,agent:5,compute:20,browser:1,terminal:6,rpa:1,startup:14,efficiency:14,security:9,operations:7,maturity:5,community:2,cost:4}},
+      interactive:{note:'Browser + Terminal：偏重可视化会话、PTY、CDP/VNC 和人工接管。',weights:{k8s:11,agent:7,compute:4,browser:17,terminal:16,rpa:12,startup:6,efficiency:3,security:9,operations:6,maturity:4,community:2,cost:3}},
+      rpa:{note:'RPA：偏重桌面/浏览器控制、可观察性、长会话与网络安全。',weights:{k8s:11,agent:6,compute:3,browser:17,terminal:8,rpa:20,startup:4,efficiency:3,security:11,operations:7,maturity:5,community:2,cost:3}}
+    };
+
+    const dimensionNames={k8s:'K8s',startup:'启动',efficiency:'资源',security:'安全',operations:'运维',maturity:'成熟度',community:'社区'};
+    const workloadKeys=['agent','compute','browser','terminal','rpa','k8s'];
+    const fitLabel=n=>n>=5?'强':n>=4?'较强':n>=3?'需集成':n>=2?'弱':'不具备';
+    const dots=n=>`<span class="dots">${[1,2,3,4,5].map(()=>'<i></i>').join('')}</span>`;
+
+    function weightedScore(project, profile) {
+      const weights=profileConfig[profile].weights;
+      const total=Object.values(weights).reduce((a,b)=>a+b,0);
+      return Math.round(Object.entries(weights).reduce((sum,[key,w])=>sum+(project.scores[key]/5)*w,0)/total*100);
+    }
+    function renderRanking(profile='balanced') {
+      const list=[...projects].sort((a,b)=>weightedScore(b,profile)-weightedScore(a,profile));
+      document.getElementById('profile-note').textContent=profileConfig[profile].note;
+      document.getElementById('ranking-list').innerHTML=list.map((p,i)=>{const s=weightedScore(p,profile);return `<div class="rank ${p.gate?'':'dim'}"><span class="idx">${String(i+1).padStart(2,'0')}</span><span class="name"><strong>${p.name}</strong><small>${p.type}</small></span><span class="bar"><i style="width:${s}%"></i></span><strong class="score">${s}</strong><span class="badge ${p.gate?'pass':'fail'}">${p.gate?'硬门槛通过':'不进入直接候选'}</span></div>`}).join('');
+    }
+    function renderMatrix() {
+      document.getElementById('matrix-body').innerHTML=projects.map(p=>`<tr><th><a href="${p.sources[0][1]}" target="_blank" rel="noreferrer">${p.name}</a><small>${p.repo}</small></th>${workloadKeys.map(k=>`<td><span class="fit s${p.scores[k]}">${dots(p.scores[k])}${fitLabel(p.scores[k])}</span></td>`).join('')}<td><span class="category">${p.type}</span></td></tr>`).join('');
+    }
+    function renderProjects() {
+      document.getElementById('project-list').innerHTML=projects.map((p,i)=>`<details class="project" ${i===0?'open':''}><summary><span class="status ${p.gate?'pass':'fail'}">${p.gate?'✓':'!'}</span><span class="project-title"><strong>${p.name}</strong><small>${p.repo}</small></span><span class="one-line">${p.label}</span><span class="project-type">${p.type}</span></summary><div class="project-body"><p class="project-intro">${p.intro}</p><div class="metrics">${Object.entries(dimensionNames).map(([k,n])=>`<div class="metric"><small>${n}</small><b>${p.scores[k]}/5</b></div>`).join('')}</div><div class="detail-grid"><div><h4>架构与隔离</h4><p>${p.architecture}</p></div><div><h4>启动速度 <span class="evidence ${p.evidence}">${p.evidenceText}</span></h4><p>${p.startup}</p></div><div><h4>资源占用</h4><p>${p.resources}</p></div><div><h4>维护难度</h4><p>${p.operations}</p></div><div><h4>使用成本与协议</h4><p>${p.cost} <b>开源协议：Apache-2.0。</b></p></div><div><h4>社区与成熟度</h4><p>${p.community}</p></div><div><h4>Browser / Terminal / RPA</h4><p>${p.interaction}</p></div><div><h4>本轮判断</h4><p>${p.gate?'通过 Kubernetes 硬门槛，可进入限定范围 PoC。':'不满足本轮直接采用硬门槛，仅保留为体验标杆、运行时组件或战略自研路线。'}</p></div></div><div class="risk-source"><div class="risk"><strong>关键风险</strong><ul>${p.risks.map(r=>`<li>${r}</li>`).join('')}</ul></div><div class="sources"><strong>官方来源</strong>${p.sources.map(s=>`<a href="${s[1]}" target="_blank" rel="noreferrer">${s[0]}</a>`).join('')}</div></div></div></details>`).join('');
+    }
+    document.querySelectorAll('[data-profile]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-profile]').forEach(x=>x.classList.remove('active'));button.classList.add('active');renderRanking(button.dataset.profile)}));
+    renderRanking(); renderMatrix(); renderProjects();
+  </script>
+</body>
+</html>

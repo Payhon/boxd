@@ -1,0 +1,18 @@
+{
+  "request": {
+    "create_box": {"name":"fixture-box","labels":["ci:fixture"],"size":"small","env_vars":{"UNICODE":"你好"},"agent":{"harness":"custom","model":"custom","customHarness":{"command":"fixture-harness","protocol":"box-sse-v1"}}},
+    "write_file": {"path":"/workspace/你好.txt","content":"hello 你好"},
+    "exec": {"command":"printf stdout; printf stderr >&2; exit 7"}
+  },
+  "response": {
+    "box": {"id":"box_fixture","status":"running","name":"fixture-box","labels":["ci:fixture"]},
+    "exec": {"stdout":"stdout","stderr":"stderr","exit_code":0},
+    "error": {"error":"fixture failure"}
+  },
+  "responses": {
+    "box": {"id":"box_fixture","status":"running","size":"small","keep_alive":true,"agent":"codex","labels":[],"enabled_skills":[],"expires_at":99},
+    "exec": {"output":"ok","error":"","exit_code":0},
+    "download": {"files_bytes_sha256":"0eb3e36bfb24dcd9bb1d1bece1531216b59539a8fde17ee80224af0653c92aa3","recording_bytes_sha256":"862c4ec62defaadafbf7638961214d286015c38ed4ccc7b10d52bdf434e5bee1"}
+  },
+  "required": {"header":"X-Box-Api-Key","prefix":"/v2/box","wire_case":"snake_case"}
+}

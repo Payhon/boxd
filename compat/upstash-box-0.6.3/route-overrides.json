@@ -1,0 +1,4 @@
+{
+  "purpose": "AST extraction resolves every pinned client.ts business dispatch. If an override becomes necessary it must contain source_line, node_hash, and a route, and the extractor must consume it exactly once.",
+  "overrides": []
+}

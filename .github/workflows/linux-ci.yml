@@ -1,0 +1,157 @@
+name: linux-ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: linux-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_INCREMENTAL: "0"
+  CARGO_TERM_COLOR: always
+
+jobs:
+  runtime-artifact-tools:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate artifact and smoke scripts
+        run: |
+          bash -n scripts/runtime/build-node22-arm64-bundle.sh scripts/runtime/build-runtime-bundle.sh scripts/phase1-linux-kvm-smoke.sh scripts/phase1-runtime-matrix-smoke.sh
+          python3 -m py_compile scripts/runtime/*.py
+          python3 scripts/test_run_bounded.py
+          python3 scripts/test_phase1_runner_preflight.py
+          python3 scripts/test_embedded_python.py
+          python3 scripts/verify_phase1_evidence.py
+          python3 scripts/runtime/test_metadata_tools.py
+          python3 scripts/runtime/test_build_runtime_matrix.py
+          node --check scripts/phase1-sdk-smoke.mjs
+          node --check scripts/phase1-egress-smoke.mjs
+          node --check scripts/phase1-runtime-matrix-smoke.mjs
+          node --check scripts/phase3-browser-smoke.mjs
+          node --check scripts/phase3-browser-restart-smoke.mjs
+          node --check scripts/phase3-model-otlp-fixture.mjs
+      - name: Install ShellCheck
+        run: sudo apt-get update && sudo apt-get install --yes shellcheck
+      - name: ShellCheck artifact and platform gates
+        run: shellcheck scripts/runtime/build-node22-arm64-bundle.sh scripts/runtime/build-runtime-bundle.sh scripts/phase1-linux-kvm-smoke.sh scripts/phase1-runtime-matrix-smoke.sh
+
+  rust:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.94.0
+        with:
+          components: clippy,rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - run: git diff --check
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+      - run: cargo test --workspace --all-features
+
+  database-matrix:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: boxd_test_password
+          POSTGRES_DB: boxd_test
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d boxd_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: boxd_test_password
+          MYSQL_DATABASE: boxd_test
+        ports:
+          - 33306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -pboxd_test_password"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      BOXD_TEST_POSTGRES_URL: postgres://postgres:boxd_test_password@127.0.0.1:55432/boxd_test
+      BOXD_TEST_MYSQL_URL: mysql://root:boxd_test_password@127.0.0.1:33306/boxd_test?ssl-mode=DISABLED
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.94.0
+      - uses: Swatinem/rust-cache@v2
+      - name: Run reversible migrations on PostgreSQL and MySQL
+        run: cargo test -p box-migration optional_postgres_and_mysql_migrations -- --nocapture --test-threads=1
+      - name: Run the portable repository suite on PostgreSQL and MySQL
+        run: cargo test -p box-db optional_postgres_and_mysql_repository_matrix -- --nocapture --test-threads=1
+
+  pinned-sdk-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: compat/upstash-box-0.6.3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: compat/upstash-box-0.6.3/package-lock.json
+      - run: npm ci
+      - run: npm run check:manifest
+      - run: npm run check:coverage
+      - run: npm test
+      - run: git diff --exit-code -- coverage-table.json fixtures/public-captures.json
+
+  embedded-console:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: web/console
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/console/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test -- --run
+      - run: npm run build
+      - run: npm run test:e2e
+      - run: git diff --exit-code -- dist
+
+  sdk-examples:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: examples
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: examples/package-lock.json
+      - run: npm ci
+      - run: npm run check

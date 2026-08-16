@@ -1,0 +1,3 @@
+python traceback
+event: error
+data: {"error":"execution failed"}

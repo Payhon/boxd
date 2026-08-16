@@ -1,0 +1,21 @@
+event: run_start
+data: {"run_id":"run_fixture"}
+
+event: text
+data: {"text":"hello"}
+
+event: thinking
+data: {"text":"considering"}
+
+event: tool
+data: {"tool_call_id":"tool_1","name":"shell","input":{"command":"pwd"}}
+
+event: tool_result
+data: {"tool_call_id":"tool_1","output":"/workspace"}
+
+event: stats
+data: {"cpu_ns":42,"memory_peak_bytes":1024}
+
+event: done
+data: {"output":"hello","input_tokens":1,"output_tokens":1,"cached_input_tokens":0,"total_cost_usd":0,"session_id":"session_fixture"}
+

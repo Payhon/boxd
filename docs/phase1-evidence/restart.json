@@ -1,0 +1,11 @@
+{
+  "schema": "boxd-phase1-platform-restart-v2",
+  "source_commit": "677ca0827a6f54bc328b4b3e97d32a7cc5ac1934",
+  "lifecycle_evidence_sha256": "b39563c231131538f9e8857ece7c1fe5edb81b580be7a965be40bb722817957a",
+  "daemon_restart_reconcile": true,
+  "persisted_file": true,
+  "post_restart_exec": true,
+  "bulk_delete_count": 2,
+  "bulk_delete": true,
+  "status": "deleted"
+}

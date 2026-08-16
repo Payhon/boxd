@@ -1,0 +1,26 @@
+[package]
+name = "box-db"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+async-trait.workspace = true
+box-core = { path = "../box-core" }
+box-migration = { path = "../box-migration" }
+box-scheduler = { path = "../box-scheduler" }
+box-browser = { path = "../box-browser" }
+sea-orm.workspace = true
+sea-orm-migration.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2 = "0.10"
+hmac = "0.12"
+uuid.workspace = true
+fs2 = "0.4"
+hex = "0.4"
+
+[dev-dependencies]
+tokio.workspace = true
+tempfile = "3"

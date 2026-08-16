@@ -1,0 +1,20 @@
+{
+  "schema": "boxd-phase1-egress-restart-v1",
+  "source_commit": "677ca0827a6f54bc328b4b3e97d32a7cc5ac1934",
+  "lifecycle_evidence_sha256": "8210171cdd38c6cd1247703c9fc10d027b78bdda1e2910743023d35c11380990",
+  "daemon_restart_reconcile": true,
+  "restricted_policy_persisted": true,
+  "deny_all_policy_persisted": true,
+  "restricted": {
+    "dns_public": true,
+    "http_80": true,
+    "https_443": true,
+    "metadata_blocked": true,
+    "loopback_blocked": true,
+    "private_blocked": true,
+    "non_web_port_blocked": true
+  },
+  "deny_all": { "public_https_blocked": true },
+  "bulk_delete_count": 2,
+  "status": "deleted"
+}

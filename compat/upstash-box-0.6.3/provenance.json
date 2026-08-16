@@ -1,0 +1,20 @@
+{
+  "package": "@upstash/box",
+  "version": "0.6.3",
+  "npm": {
+    "shasum": "e16e93c739121db0702194a12fc9554a0d164513",
+    "integrity": "sha512-K/T61by0OFR6WgOc/uG3httkp7yn5mon/YPAZaeZtDWwnHPJ8qjpwBubwSm7OesXYv5paR0JrR03ksFKudqtGA=="
+  },
+  "upstream": {
+    "repository": "https://github.com/upstash/box",
+    "commit": "677ca0827a6f54bc328b4b3e97d32a7cc5ac1934",
+    "files": {
+      "packages/sdk/src/client.ts": "8ae634cf5da6de07ecb5f2d6769d1b8cba866d2590c3275b2c0637a1ed1ab4e8",
+      "packages/sdk/src/types.ts": "fb2e5776db1b15b8a1438fa53e0e85a90bd83c58d8739515a7791bb34ff47ea1",
+      "packages/sdk/src/custom-harness.ts": "f6ec633e46575eb11ec819536b4b691a7cccc45b4a458d55b7e4ddd9d252f90f",
+      "packages/sdk/src/telemetry.ts": "6ebb26faaaaf9a72b9a57d8cecfb59fcb980980f70222fe1e1ceec1183004a8b",
+      "packages/sdk/src/version.ts": "51e3e8d5722f947bbb645adb4e2f55d69a94d4200c97f72b95246031b25138d4",
+      "packages/sdk/src/index.ts": "18041c41bbf0595ae7870f31c72cd771d726d62131415c38a0f3488f51913fa6"
+    }
+  }
+}

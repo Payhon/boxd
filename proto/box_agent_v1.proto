@@ -1,0 +1,60 @@
+syntax = "proto3";
+package box.agent.v1;
+service BoxAgentV1 { rpc Health(HealthRequest) returns (HealthResponse); rpc Exec(ExecRequest) returns (stream ExecFrame); rpc Cancel(CancelRequest) returns (CancelResponse); rpc ReadFile(ReadFileRequest) returns (stream BytesFrame); rpc WriteFile(stream WriteFileFrame) returns (WriteFileResponse); rpc ListFiles(ListFilesRequest) returns (ListFilesResponse); rpc Git(GitRequest) returns (stream ExecFrame); rpc RunHarness(RunHarnessRequest) returns (stream HarnessEvent); rpc InstallSkill(InstallSkillRequest) returns (SkillMutationResponse); rpc RemoveSkill(RemoveSkillRequest) returns (SkillMutationResponse); rpc Quiesce(QuiesceRequest) returns (QuiesceResponse); rpc Shutdown(ShutdownRequest) returns (ShutdownResponse); rpc Dial(stream TunnelFrame) returns (stream TunnelFrame); rpc Browser(BrowserRequest) returns (stream BrowserFrame); rpc Stats(StatsRequest) returns (stream StatsFrame); }
+message Handshake { uint32 protocol_version=1; string box_id=2; bytes boot_nonce=3; string runtime=4; string arch=5; string agent_version=6; repeated string capabilities=7; }
+message HealthRequest { Handshake handshake=1; } message HealthResponse { Handshake handshake=1; }
+message ExecRequest { repeated string argv=1; string cwd=2; string execution_id=3; uint64 timeout_ms=4; uint64 max_output_bytes=5; map<string,string> environment=6; } message ExecFrame { uint64 sequence=1; bytes stdout=2; bytes stderr=3; int32 exit_code=4; bool exited=5; string execution_id=6; }
+message CancelRequest { string execution_id=1; } message CancelResponse { bool cancelled=1; }
+message ReadFileRequest { string path=1; } message BytesFrame { uint64 sequence=1; bytes data=2; bool eof=3; }
+message WriteFileFrame { string path=1; bytes data=2; bool eof=3; } message WriteFileResponse { uint64 bytes_written=1; }
+message ListFilesRequest { string path=1; } message FileEntry { string path=1; bool directory=2; uint64 size=3; int64 modified_at_unix_millis=4; } message ListFilesResponse { repeated FileEntry entries=1; }
+message GitRequest {
+  string execution_id=1;
+  repeated string args=2;
+  string cwd=3;
+  map<string,string> environment=4;
+  uint64 timeout_ms=5;
+  uint64 max_output_bytes=6;
+}
+message RunHarnessRequest {
+  string execution_id=1;
+  string command=2;
+  repeated string args=3;
+  string prompt=4;
+  string model=5;
+  string session_id=6;
+  string cwd=7;
+  map<string,string> environment=8;
+  uint64 timeout_ms=9;
+  uint64 max_output_bytes=10;
+}
+message HarnessEvent {
+  uint64 sequence=1;
+  string event_type=2;
+  string payload_json=3;
+  bool terminal=4;
+  string execution_id=5;
+  bytes stderr=6;
+}
+message SkillFile { string path=1; bytes content=2; }
+message InstallSkillRequest { string skill_id=1; string name=2; repeated SkillFile files=3; }
+message RemoveSkillRequest { string name=1; }
+message SkillMutationResponse { bool changed=1; }
+message QuiesceRequest {} message QuiesceResponse { bool quiesced=1; } message ShutdownRequest {} message ShutdownResponse { bool accepted=1; }
+message TunnelFrame { bytes data=1; uint32 port=2; bool eof=3; }
+message BrowserRequest {
+  string operation=1;
+  string tab_id=2;
+  string url=3;
+  string wait_until=4;
+  uint64 timeout_ms=5;
+  bool full_page=6;
+  string json_payload=7;
+}
+message BrowserFrame {
+  uint64 sequence=1;
+  string json_payload=2;
+  bytes data=3;
+  bool eof=4;
+}
+message StatsRequest {} message StatsFrame { uint64 cpu_ns=1; uint64 memory_bytes=2; }

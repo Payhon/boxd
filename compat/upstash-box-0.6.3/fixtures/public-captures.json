@@ -1,0 +1,2460 @@
+{
+  "schema": 1,
+  "captures": [
+    {
+      "method": "GET",
+      "path": "/v2/box",
+      "query": [
+        [
+          "label",
+          "label fixture"
+        ]
+      ],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "DELETE",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "ids": [
+          "box_fixture"
+        ]
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/v2/box/snapshots",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "ids": [
+          "snap_fixture"
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/from-snapshot",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "snapshot_id": "snap_fixture"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/from-snapshot",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "snapshot_id": "snap_fixture",
+        "ephemeral": true,
+        "ttl": 60
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "ephemeral": true,
+        "ttl": 60
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v2/box/{box_id}",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/v2/box/{box_id}",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v2/box/{box_id}/status",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/pause",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/resume",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v2/box/{box_id}/startup",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/v2/box/{box_id}/startup",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "init_command": "echo init"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/v2/box/{box_id}/startup",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/v2/box/{box_id}/config/model",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "model": "openai/gpt-5"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "keep_alive": true,
+        "model": "custom",
+        "agent": "custom",
+        "custom_runner": {
+          "command": "runner"
+        }
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/v2/box/{box_id}/config/custom-runner",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "custom_runner": {
+          "command": "runner"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/v2/box/{box_id}/config/network-policy",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {}
+    },
+    {
+      "method": "GET",
+      "path": "/v2/box/settings/env",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "PUT",
+      "path": "/v2/box/settings/env",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "env_vars": {
+          "A": "1"
+        }
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/v2/box/settings/env/{key}",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "value": "1"
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/v2/box/settings/env/{key}",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/run",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "prompt": "hello",
+        "webhook": {
+          "url": "https://example.invalid/hook"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/run/stream",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "prompt": "hello"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/run",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "prompt": "hello",
+        "webhook": {
+          "url": "https://example.invalid/hook"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/runs/{run_id}/cancel",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v2/box/{box_id}/runs",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v2/box/{box_id}/logs",
+      "query": [
+        [
+          "limit",
+          "2"
+        ]
+      ],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/exec",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "command": [
+          "sh",
+          "-c",
+          "echo hello"
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/exec-stream",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "command": [
+          "sh",
+          "-c",
+          "echo hello"
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/code",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "code": "1+1",
+        "language": "javascript"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/code-stream",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "code": "1+1",
+        "language": "javascript"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/exec",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "command": [
+          "ls",
+          "/workspace/home/src"
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v2/box/{box_id}/files/read",
+      "query": [
+        [
+          "encoding",
+          "base64"
+        ],
+        [
+          "path",
+          "/workspace/home/a.txt"
+        ]
+      ],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/files/write",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "path": "/workspace/home/a.txt",
+        "content": "hello"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v2/box/{box_id}/files/list",
+      "query": [
+        [
+          "folder",
+          "/workspace/home/src"
+        ]
+      ],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/files/upload",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "multipart/form-data; boundary=<generated>"
+      },
+      "body_kind": "multipart",
+      "body": [
+        {
+          "name": "files",
+          "filename": "remote.txt",
+          "type": "application/octet-stream",
+          "sha256": "ff4085ad157354dc8ea67a848e7c2270b4a19282713cf3a7ecf8e0ffbb159ed1"
+        },
+        {
+          "name": "paths",
+          "value": "/workspace/home/remote.txt"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v2/box/{box_id}/files/list",
+      "query": [
+        [
+          "folder",
+          "/workspace/home/src"
+        ]
+      ],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "GET",
+      "path": "/v2/box/{box_id}/files/download",
+      "query": [
+        [
+          "folder",
+          "/workspace/home/src/a.txt"
+        ]
+      ],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/snapshots",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "snap"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v2/box/{box_id}/snapshots",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/v2/box/{box_id}/snapshots/{snapshot_id}",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/git/clone",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "repo": "https://example.invalid/repo.git"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v2/box/{box_id}/git/diff",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v2/box/{box_id}/git/status",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/git/commit",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "message": "m"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/v2/box/{box_id}/git-config",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "git_user_name": "n"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/git/push",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "branch": "main"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/git/create-pr",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "title": "t",
+        "body": "b",
+        "base": "main"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/git/exec",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "args": [
+          "status"
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/git/checkout",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "branch": "main"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/config/skills",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "skill_id": "owner/repo/skill"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/v2/box/{box_id}/config/skills/{skill_id+}",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v2/box/{box_id}",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/config/labels",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "label": "label"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/v2/box/{box_id}/config/labels/{label}",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v2/box/{box_id}",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/schedules",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "type": "exec",
+        "cron": "* * * * *",
+        "command": "echo",
+        "folder": "/workspace/home"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/schedules",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "type": "prompt",
+        "cron": "* * * * *",
+        "prompt": "hi",
+        "folder": "/workspace/home"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v2/box/{box_id}/schedules",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v2/box/{box_id}/schedules/{id}",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "PATCH",
+      "path": "/v2/box/{box_id}/schedules/{id}",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "cron": "*/2 * * * *"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/schedules/{id}/pause",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/schedules/{id}/resume",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/v2/box/{box_id}/schedules/{id}",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/preview",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "port": 3000
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v2/box/{box_id}/preview",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/v2/box/{box_id}/preview/{port}",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/browser/tabs",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "url": "https://example.invalid"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v2/box/{box_id}/browser/tabs",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/browser/goto",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "url": "https://example.invalid",
+        "tab": "tab_fixture"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/browser/extract",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "instruction": "extract",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "tab": "tab_fixture"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/browser/observe",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "instruction": "body",
+        "tab": "tab_fixture"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/browser/act",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "instruction": "click",
+        "tab": "tab_fixture"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/browser/run",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "prompt": "do",
+        "tab": "tab_fixture"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v2/box/{box_id}/browser/content",
+      "query": [
+        [
+          "tab",
+          "tab_fixture"
+        ]
+      ],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v2/box/{box_id}/browser/screenshot",
+      "query": [
+        [
+          "encoding",
+          "base64"
+        ],
+        [
+          "tab",
+          "tab_fixture"
+        ]
+      ],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/browser/screencast",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "tab": "tab_fixture"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/browser/connect",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/browser/recordings",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {}
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/browser/recordings/stop",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v2/box/{box_id}/browser/recordings",
+      "query": [
+        [
+          "limit",
+          "100"
+        ]
+      ],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v2/box/{box_id}/browser/recordings/{id}",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v2/box/{box_id}/browser/recordings/{id}/download",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "name": "fixture",
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/v2/box/{box_id}/browser/tabs/{tab_id}",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "keep_alive": true,
+        "model": "openai/gpt-5",
+        "agent": "codex",
+        "agent_api_key": "agent-key",
+        "browser": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/v2/box/{box_id}/browser/recordings/{id}",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": null
+      },
+      "body_kind": "none",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/v2/box/{box_id}/run/stream",
+      "query": [],
+      "headers": {
+        "api_key": "fixture-api-key",
+        "content_type": "application/json"
+      },
+      "body_kind": "json",
+      "body": {
+        "prompt": "hello"
+      }
+    }
+  ]
+}

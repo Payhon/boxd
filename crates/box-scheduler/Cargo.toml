@@ -1,0 +1,17 @@
+[package]
+name = "box-scheduler"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+async-trait.workspace = true
+box-core = { path = "../box-core" }
+chrono.workspace = true
+cron.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2 = "0.10"
+tokio.workspace = true
+uuid.workspace = true

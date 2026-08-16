@@ -1,0 +1,6 @@
+event: text
+data: {"text":"hello"}
+
+event: done
+data: {"output":"hello","input_tokens":1,"output_tokens":1,"cached_input_tokens":0,"total_cost_usd":0,"session_id":"session_fixture"}
+

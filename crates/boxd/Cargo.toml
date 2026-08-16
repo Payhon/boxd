@@ -1,0 +1,63 @@
+[package]
+name = "boxd"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+build = "build.rs"
+
+[[bin]]
+name = "boxd"
+path = "src/main.rs"
+
+[dependencies]
+box-api = { path = "../box-api" }
+box-auth = { path = "../box-auth" }
+box-browser = { path = "../box-browser" }
+box-core = { path = "../box-core" }
+box-db = { path = "../box-db" }
+box-egress = { path = "../box-egress" }
+box-image = { path = "../box-image" }
+box-observability = { path = "../box-observability" }
+box-migration = { path = "../box-migration" }
+box-preview = { path = "../box-preview" }
+box-runtime = { path = "../box-runtime" }
+box-runtime-libkrun = { path = "../box-runtime-libkrun" }
+box-scheduler = { path = "../box-scheduler" }
+box-secrets = { path = "../box-secrets" }
+box-service = { path = "../box-service" }
+base64.workspace = true
+async-trait.workspace = true
+clap.workspace = true
+figment.workspace = true
+hex = "0.4"
+getrandom = "0.3"
+fs2 = "0.4.3"
+serde.workspace = true
+serde_json.workspace = true
+reqwest = { workspace = true, features = ["json"] }
+rust-embed.workspace = true
+mime_guess.workspace = true
+opentelemetry.workspace = true
+opentelemetry_sdk.workspace = true
+opentelemetry-otlp.workspace = true
+salvo.workspace = true
+hyper = { version = "1.6", features = ["client", "http1"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+sha2 = "0.10"
+sysinfo = "=0.38.4"
+tokio = { workspace = true, features = ["fs", "io-util", "process", "sync", "time"] }
+futures-util = "0.3"
+tracing.workspace = true
+tracing-opentelemetry.workspace = true
+tracing-subscriber.workspace = true
+url.workspace = true
+uuid.workspace = true
+zeroize = "1.8"
+
+[dev-dependencies]
+serial_test = "3.2"
+tempfile = "3.15"
+
+[build-dependencies]
+sha2 = "0.10"

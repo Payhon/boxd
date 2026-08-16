@@ -1,0 +1,1966 @@
+{
+  "sdk": "@upstash/box@0.6.3",
+  "source_commit": "677ca0827a6f54bc328b4b3e97d32a7cc5ac1934",
+  "source_sha256": {
+    "packages/sdk/src/client.ts": "8ae634cf5da6de07ecb5f2d6769d1b8cba866d2590c3275b2c0637a1ed1ab4e8",
+    "packages/sdk/src/types.ts": "fb2e5776db1b15b8a1438fa53e0e85a90bd83c58d8739515a7791bb34ff47ea1",
+    "packages/sdk/src/custom-harness.ts": "f6ec633e46575eb11ec819536b4b691a7cccc45b4a458d55b7e4ddd9d252f90f",
+    "packages/sdk/src/telemetry.ts": "6ebb26faaaaf9a72b9a57d8cecfb59fcb980980f70222fe1e1ceec1183004a8b",
+    "packages/sdk/src/version.ts": "51e3e8d5722f947bbb645adb4e2f55d69a94d4200c97f72b95246031b25138d4",
+    "packages/sdk/src/index.ts": "18041c41bbf0595ae7870f31c72cd771d726d62131415c38a0f3488f51913fa6"
+  },
+  "extraction": {
+    "raw_call_sites": 86,
+    "normalized_operation_dispatches": 80,
+    "direct_method_path_contracts": 77,
+    "response_linked_contracts": 1,
+    "total_server_contracts": 78,
+    "transport_counts": {
+      "_request": 64,
+      "fetch": 22
+    }
+  },
+  "normalization": [
+    {
+      "dispatch_id": "client_l972_477d4dfbcc12",
+      "source_line": 972,
+      "role": "poll",
+      "normalized_into": "client_l1122_8e787c3e6f2e",
+      "reason": "create polls the canonical box-get contract"
+    },
+    {
+      "dispatch_id": "client_l1496_2e591a98e8cc",
+      "source_line": 1496,
+      "role": "retry",
+      "normalized_into": "client_l1337_2e591a98e8cc",
+      "reason": "stream helper reuses the canonical run-stream contract"
+    },
+    {
+      "dispatch_id": "client_l2023_82834829a0a6",
+      "source_line": 2023,
+      "role": "contract_reuse",
+      "normalized_into": "client_l1704_df1710b6fcd4",
+      "reason": "cd verifies a directory through the canonical exec contract"
+    },
+    {
+      "dispatch_id": "client_l2359_477d4dfbcc12",
+      "source_line": 2359,
+      "role": "poll",
+      "normalized_into": "client_l1122_8e787c3e6f2e",
+      "reason": "fromSnapshot polls the canonical box-get contract"
+    },
+    {
+      "dispatch_id": "client_l2842_b9bffd0d93d5",
+      "source_line": 2842,
+      "role": "contract_reuse",
+      "normalized_into": "client_l1122_8e787c3e6f2e",
+      "reason": "skill list reads enabled_skills from the canonical box-get contract"
+    },
+    {
+      "dispatch_id": "client_l2866_b9bffd0d93d5",
+      "source_line": 2866,
+      "role": "contract_reuse",
+      "normalized_into": "client_l1122_8e787c3e6f2e",
+      "reason": "label list reads labels from the canonical box-get contract"
+    }
+  ],
+  "dispatches": [
+    {
+      "dispatch_id": "client_l314_0754f09946ab",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 314,
+        "node_hash": "0754f09946ab5d9e2fd6e6476c3d602e89c442f7d41182a1326eacc22f36d048"
+      },
+      "owner": {
+        "class": "Run",
+        "method": "cancel"
+      },
+      "raw_expression": "this._box\n      ._request(\"POST\", `/v2/box/${this._box.id}/runs/${this._id}/cancel`)",
+      "raw_url_expression": "`/v2/box/${this._box.id}/runs/${this._id}/cancel`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/runs/{run_id}/cancel",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "empty",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l438_866eeac6e80a",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 438,
+        "node_hash": "866eeac6e80a04e67f1c87304bc15db376a6f5fabd49c033d5bedaed713565f2"
+      },
+      "owner": {
+        "class": "Tab",
+        "method": "goto"
+      },
+      "raw_expression": "this.box._request<BrowserContent>(\"POST\", `/v2/box/${this.box.id}/browser/goto`, {\n      body: { url, tab: this.id },\n      timeout: 60000,\n    })",
+      "raw_url_expression": "`/v2/box/${this.box.id}/browser/goto`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/browser/goto",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l446_c2ae7eb2be4a",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 446,
+        "node_hash": "c2ae7eb2be4a70c6df84170c54482df576279b250816099b2caad74561cda703"
+      },
+      "owner": {
+        "class": "Tab",
+        "method": "content"
+      },
+      "raw_expression": "this.box._request<BrowserContent>(\n      \"GET\",\n      `/v2/box/${this.box.id}/browser/content?tab=${this.id}`,\n      { timeout: 60000 },\n    )",
+      "raw_url_expression": "`/v2/box/${this.box.id}/browser/content?tab=${this.id}`",
+      "method": "GET",
+      "canonical_path": "/v2/box/{box_id}/browser/content",
+      "query": [
+        {
+          "name": "tab",
+          "required": true,
+          "encoding": "sdk"
+        }
+      ],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l465_6009de912e0d",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 465,
+        "node_hash": "6009de912e0d95d64ec8df8af978996b64c1580e2501bc8d7c5e72598a70c413"
+      },
+      "owner": {
+        "class": "Tab",
+        "method": "_screenshotData"
+      },
+      "raw_expression": "this.box._request<{ data: string }>(\n      \"GET\",\n      `/v2/box/${this.box.id}/browser/screenshot?${params.toString()}`,\n      { timeout: 60000 },\n    )",
+      "raw_url_expression": "`/v2/box/${this.box.id}/browser/screenshot?${params.toString()}`",
+      "method": "GET",
+      "canonical_path": "/v2/box/{box_id}/browser/screenshot",
+      "query": [
+        {
+          "name": "encoding",
+          "required": true,
+          "encoding": "url"
+        },
+        {
+          "name": "full_page",
+          "required": false,
+          "encoding": "url"
+        },
+        {
+          "name": "tab",
+          "required": true,
+          "encoding": "url"
+        }
+      ],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l481_58186cffc188",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 481,
+        "node_hash": "58186cffc1881ffff51341f557e424214c13c39eb18d9dca09e92748bd689d64"
+      },
+      "owner": {
+        "class": "Tab",
+        "method": "extract"
+      },
+      "raw_expression": "this.box._request<{ data?: unknown }>(\n      \"POST\",\n      `/v2/box/${this.box.id}/browser/extract`,\n      {\n        body: {\n          instruction,\n          schema: jsonSchema,\n          tab: this.id,\n          ...(options?.model ? { model: options.model } : {}),\n        },\n        timeout: 180000,\n      },\n    )",
+      "raw_url_expression": "`/v2/box/${this.box.id}/browser/extract`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/browser/extract",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l503_748769a3ba34",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 503,
+        "node_hash": "748769a3ba3496e974013194cf10108c07dd968c89be2d4697e4018629cdd3c6"
+      },
+      "owner": {
+        "class": "Tab",
+        "method": "observe"
+      },
+      "raw_expression": "this.box._request<{ elements?: BrowserObserveResult[\"elements\"] }>(\n      \"POST\",\n      `/v2/box/${this.box.id}/browser/observe`,\n      {\n        body: { instruction, tab: this.id, ...(options?.model ? { model: options.model } : {}) },\n        timeout: 180000,\n      },\n    )",
+      "raw_url_expression": "`/v2/box/${this.box.id}/browser/observe`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/browser/observe",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l516_e2ff00a4999d",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 516,
+        "node_hash": "e2ff00a4999d374c393ece1f46bf6af84063b7ffa604c86bc68c4744dcc4b68e"
+      },
+      "owner": {
+        "class": "Tab",
+        "method": "act"
+      },
+      "raw_expression": "this.box._request<{\n      success?: boolean;\n      message?: string;\n      action_description?: string;\n      actions?: BrowserActResult[\"actions\"];\n      cache_status?: \"HIT\" | \"MISS\";\n      input_tokens?: number;\n      output_tokens?: number;\n    }>(\"POST\", `/v2/box/${this.box.id}/browser/act`, {\n      body: { instruction, tab: this.id, ...(options?.model ? { model: options.model } : {}) },\n      timeout: 180000,\n    })",
+      "raw_url_expression": "`/v2/box/${this.box.id}/browser/act`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/browser/act",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l560_cd8dd98efc9f",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 560,
+        "node_hash": "cd8dd98efc9f376084adf9aac6be2023080a07d0975caf8aa877f68e76bfca6b"
+      },
+      "owner": {
+        "class": "Tab",
+        "method": "run"
+      },
+      "raw_expression": "this.box._request<{\n      result?: string;\n      data?: unknown;\n      completed?: boolean;\n      steps?: BrowserRunStep[];\n      step_count?: number;\n      input_tokens?: number;\n      output_tokens?: number;\n    }>(\"POST\", `/v2/box/${this.box.id}/browser/run`, {\n      body: {\n        prompt,\n        tab: this.id,\n        ...(jsonSchema ? { schema: jsonSchema } : {}),\n        ...(options.maxSteps ? { max_steps: options.maxSteps } : {}),\n        ...(options.model ? { model: options.model } : {}),\n      },\n      timeout: 600000,\n    })",
+      "raw_url_expression": "`/v2/box/${this.box.id}/browser/run`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/browser/run",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l600_67c8b161c261",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 600,
+        "node_hash": "67c8b161c2619f41eae84cdd1a018cbdd6940ec47a196cd4cfccfe0403c641b9"
+      },
+      "owner": {
+        "class": "Tab",
+        "method": "close"
+      },
+      "raw_expression": "this.box._request(\"DELETE\", `/v2/box/${this.box.id}/browser/tabs/${this.id}`)",
+      "raw_url_expression": "`/v2/box/${this.box.id}/browser/tabs/${this.id}`",
+      "method": "DELETE",
+      "canonical_path": "/v2/box/{box_id}/browser/tabs/{tab_id}",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "empty",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l952_a22f53bb7278",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 952,
+        "node_hash": "a22f53bb7278aea176415576142694c0138fef322327d1e087819f8c0ed6ad08"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "create"
+      },
+      "raw_expression": "fetch(`${baseUrl}/v2/box`, {\n      method: \"POST\",\n      headers: { ...headers, \"Content-Type\": \"application/json\" },\n      body: JSON.stringify(body),\n    })",
+      "raw_url_expression": "`${baseUrl}/v2/box`",
+      "method": "POST",
+      "canonical_path": "/v2/box",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "fetch",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l972_477d4dfbcc12",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 972,
+        "node_hash": "477d4dfbcc129f64ca3b2b94aae5c5df196f6ef0059bc03f9e76e17ac6da2f39"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "create"
+      },
+      "raw_expression": "fetch(`${baseUrl}/v2/box/${data.id}`, { headers })",
+      "raw_url_expression": "`${baseUrl}/v2/box/${data.id}`",
+      "method": "GET",
+      "canonical_path": "/v2/box/{box_id}",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "fetch",
+      "role": "poll",
+      "normalization_reason": "create polls the canonical box-get contract",
+      "normalized_into": "client_l1122_8e787c3e6f2e"
+    },
+    {
+      "dispatch_id": "client_l1014_aa68c0af95ab",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 1014,
+        "node_hash": "aa68c0af95abfda221c1cde0c176833faa070618b7f6b8cd2b254e3c020c5252"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "list"
+      },
+      "raw_expression": "fetch(`${baseUrl}/v2/box${query}`, { headers })",
+      "raw_url_expression": "`${baseUrl}/v2/box${query}`",
+      "method": "GET",
+      "canonical_path": "/v2/box",
+      "query": [
+        {
+          "name": "label",
+          "required": false,
+          "encoding": "sdk"
+        }
+      ],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "fetch",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l1052_dbdcbb592b3b",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 1052,
+        "node_hash": "dbdcbb592b3bd3c626c42260b12a1f1213e18ecc4d17891100138b5160c17605"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "deleteSnapshots"
+      },
+      "raw_expression": "fetch(`${baseUrl}/v2/box/snapshots`, {\n      method: \"DELETE\",\n      headers,\n      body: JSON.stringify(body),\n    })",
+      "raw_url_expression": "`${baseUrl}/v2/box/snapshots`",
+      "method": "DELETE",
+      "canonical_path": "/v2/box/snapshots",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "fetch",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l1088_7d0917ccb4ef",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 1088,
+        "node_hash": "7d0917ccb4ef08d68aabbedcaee357f182cbceb5cfff96169dc69b8b96e5d91e"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "delete"
+      },
+      "raw_expression": "fetch(`${baseUrl}/v2/box`, {\n      method: \"DELETE\",\n      headers,\n      body: JSON.stringify({ ids }),\n    })",
+      "raw_url_expression": "`${baseUrl}/v2/box`",
+      "method": "DELETE",
+      "canonical_path": "/v2/box",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "empty",
+      "transport": "fetch",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l1122_8e787c3e6f2e",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 1122,
+        "node_hash": "8e787c3e6f2e70b71a4f991f663796ec90f55ac9883d116f0d8973590f5b344f"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "get"
+      },
+      "raw_expression": "fetch(`${baseUrl}/v2/box/${boxId}`, { headers })",
+      "raw_url_expression": "`${baseUrl}/v2/box/${boxId}`",
+      "method": "GET",
+      "canonical_path": "/v2/box/{box_id}",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "fetch",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l1157_e89573a97f07",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 1157,
+        "node_hash": "e89573a97f078875d7d132ec0d01434ca4c328fe878b3c44f306b4da2d0e7f4b"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "setEnv"
+      },
+      "raw_expression": "fetch(`${baseUrl}/v2/box/settings/env/${encodeURIComponent(key)}`, {\n      method: \"PUT\",\n      headers: { ...headers, \"Content-Type\": \"application/json\" },\n      body: JSON.stringify({ value }),\n    })",
+      "raw_url_expression": "`${baseUrl}/v2/box/settings/env/${encodeURIComponent(key)}`",
+      "method": "PUT",
+      "canonical_path": "/v2/box/settings/env/{key}",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "empty",
+      "transport": "fetch",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l1178_ef8be8817778",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 1178,
+        "node_hash": "ef8be8817778f7b7fd6225752af14586a9e1e90a7a6fde5e3bd6b8ca60da830f"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "listEnv"
+      },
+      "raw_expression": "fetch(`${baseUrl}/v2/box/settings/env`, { headers })",
+      "raw_url_expression": "`${baseUrl}/v2/box/settings/env`",
+      "method": "GET",
+      "canonical_path": "/v2/box/settings/env",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "fetch",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l1197_2a6bc9f1b243",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 1197,
+        "node_hash": "2a6bc9f1b243af5657efd8d0a62da28de9d58c177686cf71400fe9b45494b16b"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "deleteEnv"
+      },
+      "raw_expression": "fetch(`${baseUrl}/v2/box/settings/env/${encodeURIComponent(key)}`, {\n      method: \"DELETE\",\n      headers,\n    })",
+      "raw_url_expression": "`${baseUrl}/v2/box/settings/env/${encodeURIComponent(key)}`",
+      "method": "DELETE",
+      "canonical_path": "/v2/box/settings/env/{key}",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "empty",
+      "transport": "fetch",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l1220_12c4b7cb5aa7",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 1220,
+        "node_hash": "12c4b7cb5aa7f33389743bc92bc93c59389561bf756979be32ceb1727eed1f98"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "setAllEnv"
+      },
+      "raw_expression": "fetch(`${baseUrl}/v2/box/settings/env`, {\n      method: \"PUT\",\n      headers: { ...headers, \"Content-Type\": \"application/json\" },\n      body: JSON.stringify({ env_vars: vars }),\n    })",
+      "raw_url_expression": "`${baseUrl}/v2/box/settings/env`",
+      "method": "PUT",
+      "canonical_path": "/v2/box/settings/env",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "empty",
+      "transport": "fetch",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l1272_fcd33cb7b7ac",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 1272,
+        "node_hash": "fcd33cb7b7ac546e674cf06e1b8fb2be0d7d9b480af5a19c93fa7f6edbc293b5"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_executeWebhookRun"
+      },
+      "raw_expression": "fetch(url, {\n      method: \"POST\",\n      headers: fetchHeaders,\n      body: fetchBody,\n    })",
+      "raw_url_expression": "url",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/run",
+      "query": [],
+      "body_kind": "json|multipart",
+      "response_kind": "json",
+      "transport": "fetch",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l1337_2e591a98e8cc",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 1337,
+        "node_hash": "2e591a98e8cc93a7b1faa885ad7cc25f0b5979ffdf60483d3f53d28c36b54dcb"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_executeRun"
+      },
+      "raw_expression": "fetch(url, {\n      method: \"POST\",\n      headers: fetchHeaders,\n      body: fetchBody,\n      signal: abortController.signal,\n    })",
+      "raw_url_expression": "url",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/run/stream",
+      "query": [],
+      "body_kind": "json|multipart",
+      "response_kind": "sse",
+      "transport": "fetch",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l1496_2e591a98e8cc",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 1496,
+        "node_hash": "2e591a98e8cc93a7b1faa885ad7cc25f0b5979ffdf60483d3f53d28c36b54dcb"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_stream"
+      },
+      "raw_expression": "fetch(url, {\n      method: \"POST\",\n      headers: fetchHeaders,\n      body: fetchBody,\n      signal: abortController.signal,\n    })",
+      "raw_url_expression": "url",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/run/stream",
+      "query": [],
+      "body_kind": "json|multipart",
+      "response_kind": "sse",
+      "transport": "fetch",
+      "role": "retry",
+      "normalization_reason": "stream helper reuses the canonical run-stream contract",
+      "normalized_into": "client_l1337_2e591a98e8cc"
+    },
+    {
+      "dispatch_id": "client_l1704_df1710b6fcd4",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 1704,
+        "node_hash": "df1710b6fcd40ea86e539ad936bf62ca85bcadba234184e4975820348335a86c"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_execCommand"
+      },
+      "raw_expression": "this._request<ExecResult>(\"POST\", `/v2/box/${this.id}/exec`, {\n      body: { command: [\"sh\", \"-c\", command], ...(folder ? { folder } : {}) },\n    })",
+      "raw_url_expression": "`/v2/box/${this.id}/exec`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/exec",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l1727_211ef894f18b",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 1727,
+        "node_hash": "211ef894f18b11319dda64763d144f70865fa9e9aa5782a16a7d3dc7c4c4cff7"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_execCode"
+      },
+      "raw_expression": "this._request<CodeExecutionResult>(\"POST\", `/v2/box/${this.id}/code`, {\n      body: {\n        code: options.code,\n        language: options.lang,\n        ...(options.timeout !== undefined && { timeout: options.timeout }),\n        ...(folder ? { folder } : {}),\n      },\n    })",
+      "raw_url_expression": "`/v2/box/${this.id}/code`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/code",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l1757_b934377551d9",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 1757,
+        "node_hash": "b934377551d97c7f8fe95204638f8496fdb79bc119b0af516e5ef41ce91bc75c"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_execStream"
+      },
+      "raw_expression": "fetch(url, {\n      method: \"POST\",\n      headers: { ...this._headers, \"Content-Type\": \"application/json\" },\n      body: JSON.stringify({ command: [\"sh\", \"-c\", command], ...(folder ? { folder } : {}) }),\n    })",
+      "raw_url_expression": "url",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/exec-stream",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "raw+sse",
+      "transport": "fetch",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l1821_2fa63308222a",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 1821,
+        "node_hash": "2fa63308222a064a155393c17b54b019acadc2b503c21f4becb654efc768c8e6"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_execStreamCode"
+      },
+      "raw_expression": "fetch(url, {\n      method: \"POST\",\n      headers: { ...this._headers, \"Content-Type\": \"application/json\" },\n      body: JSON.stringify({\n        code: options.code,\n        language: options.lang,\n        ...(options.timeout !== undefined && { timeout: options.timeout }),\n        ...(folder ? { folder } : {}),\n      }),\n    })",
+      "raw_url_expression": "url",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/code-stream",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "raw+sse",
+      "transport": "fetch",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2023_82834829a0a6",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2023,
+        "node_hash": "82834829a0a6e237fe6c37d44b6d4bb518468a997bf1faaa4f3b11b8a16cce0c"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "cd"
+      },
+      "raw_expression": "this._request<ExecResult>(\"POST\", `/v2/box/${this.id}/exec`, {\n      body: { command: [\"ls\", newPath] },\n    })",
+      "raw_url_expression": "`/v2/box/${this.id}/exec`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/exec",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "contract_reuse",
+      "normalization_reason": "cd verifies a directory through the canonical exec contract",
+      "normalized_into": "client_l1704_df1710b6fcd4"
+    },
+    {
+      "dispatch_id": "client_l2070_b823a188ded9",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2070,
+        "node_hash": "b823a188ded9de1de295702c7cdbf96a588d2977dfa0c0e9cae1d3db6f82e105"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_readFile"
+      },
+      "raw_expression": "this._request<{ content: string }>(\"GET\", url)",
+      "raw_url_expression": "url",
+      "method": "GET",
+      "canonical_path": "/v2/box/{box_id}/files/read",
+      "query": [
+        {
+          "name": "encoding",
+          "required": false,
+          "encoding": "url"
+        },
+        {
+          "name": "path",
+          "required": true,
+          "encoding": "url"
+        }
+      ],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2076_a9d324bf6778",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2076,
+        "node_hash": "a9d324bf6778e9720cf393278aae18fe47a4ae4e8c2d88fe3481f3813aea4630"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_writeFile"
+      },
+      "raw_expression": "this._request(\"POST\", `/v2/box/${this.id}/files/write`, {\n      body: { path: resolved, content, ...(encoding && { encoding }) },\n    })",
+      "raw_url_expression": "`/v2/box/${this.id}/files/write`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/files/write",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "empty",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2090_477cf9b28c9e",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2090,
+        "node_hash": "477cf9b28c9ed813c21f81817ac97ca4b3293d4e256ffd2694f07ca8a97ba2cf"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_listFiles"
+      },
+      "raw_expression": "this._request<{ files: FileEntry[] | null }>(\n      \"GET\",\n      `/v2/box/${this.id}/files/list${qs}`,\n    )",
+      "raw_url_expression": "`/v2/box/${this.id}/files/list${qs}`",
+      "method": "GET",
+      "canonical_path": "/v2/box/{box_id}/files/list",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2110_e7144900b3d0",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2110,
+        "node_hash": "e7144900b3d0227c9bbe9c42c9d52bacd9ec03549d55ef643e430b481b1c1542"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_uploadFiles"
+      },
+      "raw_expression": "fetch(url, {\n      method: \"POST\",\n      headers: this._headers,\n      body: formData,\n    })",
+      "raw_url_expression": "url",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/files/upload",
+      "query": [],
+      "body_kind": "multipart",
+      "response_kind": "empty",
+      "transport": "fetch",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2139_88612654295d",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2139,
+        "node_hash": "88612654295d1ba68427380b5e3ba0c5669ca8964e49e4493947b800c79ea922"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_downloadFiles"
+      },
+      "raw_expression": "fetch(url, { headers: this._headers })",
+      "raw_url_expression": "url",
+      "method": "GET",
+      "canonical_path": "/v2/box/{box_id}/files/download",
+      "query": [
+        {
+          "name": "folder",
+          "required": true,
+          "encoding": "url"
+        }
+      ],
+      "body_kind": "none",
+      "response_kind": "binary",
+      "transport": "fetch",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2154_e136d96e0623",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2154,
+        "node_hash": "e136d96e0623405b89540a50730c9a40605a5cfaf74ca058061ad2f9e0fc0e2f"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "getStatus"
+      },
+      "raw_expression": "this._request<{ status: string }>(\"GET\", `/v2/box/${this.id}/status`)",
+      "raw_url_expression": "`/v2/box/${this.id}/status`",
+      "method": "GET",
+      "canonical_path": "/v2/box/{box_id}/status",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2161_158df511bc07",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2161,
+        "node_hash": "158df511bc07cc9d357051ab70d085f706361a4104affad02a25396bf886beb9"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "configureModel"
+      },
+      "raw_expression": "this._request(\"PUT\", `/v2/box/${this.id}/config/model`, {\n      body: { model },\n    })",
+      "raw_url_expression": "`/v2/box/${this.id}/config/model`",
+      "method": "PUT",
+      "canonical_path": "/v2/box/{box_id}/config/model",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "empty",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2177_592714503606",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2177,
+        "node_hash": "5927145036067030e29e1c9f538232910501c5247d2d973b7ab285b7cbd1a0ab"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "configureCustomHarness"
+      },
+      "raw_expression": "this._request(\"PUT\", `/v2/box/${this.id}/config/custom-runner`, {\n      body: { custom_runner: customHarness },\n    })",
+      "raw_url_expression": "`/v2/box/${this.id}/config/custom-runner`",
+      "method": "PUT",
+      "canonical_path": "/v2/box/{box_id}/config/custom-runner",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "empty",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2187_5867391d60c0",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2187,
+        "node_hash": "5867391d60c06aefc2bf0ebfc009e7ce02cb019de33fb258c75534c651782f48"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "updateNetworkPolicy"
+      },
+      "raw_expression": "this._request(\"PUT\", `/v2/box/${this.id}/config/network-policy`, {\n      body: serializeNetworkPolicy(policy),\n    })",
+      "raw_url_expression": "`/v2/box/${this.id}/config/network-policy`",
+      "method": "PUT",
+      "canonical_path": "/v2/box/{box_id}/config/network-policy",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "empty",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2198_f1df98cb9505",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2198,
+        "node_hash": "f1df98cb9505a1d158a613a78a9e537005655e3255401331aad076f3638e1fd0"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "getInitCommand"
+      },
+      "raw_expression": "this._request<{ init_command?: string }>(\n      \"GET\",\n      `/v2/box/${this.id}/startup`,\n    )",
+      "raw_url_expression": "`/v2/box/${this.id}/startup`",
+      "method": "GET",
+      "canonical_path": "/v2/box/{box_id}/startup",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2213_181706af529d",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2213,
+        "node_hash": "181706af529dd840c553d0df3e6204c3d8b050f78e90a52ef8b7f77f84458c6e"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "setInitCommand"
+      },
+      "raw_expression": "this._request(\"PUT\", `/v2/box/${this.id}/startup`, {\n      body: { init_command: initCommand },\n    })",
+      "raw_url_expression": "`/v2/box/${this.id}/startup`",
+      "method": "PUT",
+      "canonical_path": "/v2/box/{box_id}/startup",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "empty",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2223_674dc0fd5048",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2223,
+        "node_hash": "674dc0fd5048cbf9a7a4aa9ca243a5c35fc999f78399fd6c977f97f3f36ae5c3"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "deleteInitCommand"
+      },
+      "raw_expression": "this._request(\"DELETE\", `/v2/box/${this.id}/startup`)",
+      "raw_url_expression": "`/v2/box/${this.id}/startup`",
+      "method": "DELETE",
+      "canonical_path": "/v2/box/{box_id}/startup",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "empty",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2233_a3e70ad85e1e",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2233,
+        "node_hash": "a3e70ad85e1e4c7536805c08f62b4f2767d2a9b1f060f4c06b4c60bf60955bea"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "pause"
+      },
+      "raw_expression": "this._request(\"POST\", `/v2/box/${this.id}/pause`)",
+      "raw_url_expression": "`/v2/box/${this.id}/pause`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/pause",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "empty",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2240_4d026db8c852",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2240,
+        "node_hash": "4d026db8c852e3535af9004cbc164cef65669d074c157881f7d7e84335011972"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "resume"
+      },
+      "raw_expression": "this._request(\"POST\", `/v2/box/${this.id}/resume`)",
+      "raw_url_expression": "`/v2/box/${this.id}/resume`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/resume",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "empty",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2247_6b3dabd61d44",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2247,
+        "node_hash": "6b3dabd61d44f2b876d4577966a5a38982c06591f0515901e33172d74d0b36d3"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "delete"
+      },
+      "raw_expression": "this._request(\"DELETE\", `/v2/box/${this.id}`)",
+      "raw_url_expression": "`/v2/box/${this.id}`",
+      "method": "DELETE",
+      "canonical_path": "/v2/box/{box_id}",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "empty",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2255_bc096bc95aac",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2255,
+        "node_hash": "bc096bc95aacec09e73ee3b69a7a495d3b3c09073c4419d1e43744707c26b9cd"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "snapshot"
+      },
+      "raw_expression": "this._request<Snapshot>(\"POST\", `/v2/box/${this.id}/snapshots`, {\n      body: { name: options.name },\n    })",
+      "raw_url_expression": "`/v2/box/${this.id}/snapshots`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/snapshots",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2286_1b5a1dd7aada",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2286,
+        "node_hash": "1b5a1dd7aadab4192c5dd05b85a5081d04b504a7c818cafa2ef71e6852592adc"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "listSnapshots"
+      },
+      "raw_expression": "this._request<{ snapshots: Snapshot[] }>(\n      \"GET\",\n      `/v2/box/${this.id}/snapshots`,\n    )",
+      "raw_url_expression": "`/v2/box/${this.id}/snapshots`",
+      "method": "GET",
+      "canonical_path": "/v2/box/{box_id}/snapshots",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2297_17d32700e8ff",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2297,
+        "node_hash": "17d32700e8ff922f1adb6c75ad55a37031bbc44e8ee19d96f6077f0a2aa41324"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "deleteSnapshot"
+      },
+      "raw_expression": "this._request(\"DELETE\", `/v2/box/${this.id}/snapshots/${snapshotId}`)",
+      "raw_url_expression": "`/v2/box/${this.id}/snapshots/${snapshotId}`",
+      "method": "DELETE",
+      "canonical_path": "/v2/box/{box_id}/snapshots/{snapshot_id}",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "empty",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2339_3e2be68d84d8",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2339,
+        "node_hash": "3e2be68d84d803201ea6601bbe82a790ba9169434ab23d8a8320298ed07b33b1"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "fromSnapshot"
+      },
+      "raw_expression": "fetch(`${baseUrl}/v2/box/from-snapshot`, {\n      method: \"POST\",\n      headers: { ...headers, \"Content-Type\": \"application/json\" },\n      body: JSON.stringify(body),\n    })",
+      "raw_url_expression": "`${baseUrl}/v2/box/from-snapshot`",
+      "method": "POST",
+      "canonical_path": "/v2/box/from-snapshot",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "fetch",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2359_477d4dfbcc12",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2359,
+        "node_hash": "477d4dfbcc129f64ca3b2b94aae5c5df196f6ef0059bc03f9e76e17ac6da2f39"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "fromSnapshot"
+      },
+      "raw_expression": "fetch(`${baseUrl}/v2/box/${data.id}`, { headers })",
+      "raw_url_expression": "`${baseUrl}/v2/box/${data.id}`",
+      "method": "GET",
+      "canonical_path": "/v2/box/{box_id}",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "fetch",
+      "role": "poll",
+      "normalization_reason": "fromSnapshot polls the canonical box-get contract",
+      "normalized_into": "client_l1122_8e787c3e6f2e"
+    },
+    {
+      "dispatch_id": "client_l2390_39b184150c8e",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2390,
+        "node_hash": "39b184150c8e03bca0232c8012a07b4248b92f2db86cf7cef0e2887b78bfbcf6"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "logs"
+      },
+      "raw_expression": "this._request<{ logs: LogEntry[] }>(\"GET\", `/v2/box/${this.id}/logs${qs}`)",
+      "raw_url_expression": "`/v2/box/${this.id}/logs${qs}`",
+      "method": "GET",
+      "canonical_path": "/v2/box/{box_id}/logs",
+      "query": [
+        {
+          "name": "limit",
+          "required": false,
+          "encoding": "url"
+        },
+        {
+          "name": "offset",
+          "required": false,
+          "encoding": "url"
+        }
+      ],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2398_1b91309bb12f",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2398,
+        "node_hash": "1b91309bb12f4c401567c6d43b33ab36e9f8d07df1150007207c674eb5af1d91"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "listRuns"
+      },
+      "raw_expression": "this._request<{ runs: BoxRunData[] }>(\"GET\", `/v2/box/${this.id}/runs`)",
+      "raw_url_expression": "`/v2/box/${this.id}/runs`",
+      "method": "GET",
+      "canonical_path": "/v2/box/{box_id}/runs",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2416_a1be3c27b3a8",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2416,
+        "node_hash": "a1be3c27b3a8a88aca17e33d96b09b57af5728053beb0eae477c4a1540e10f18"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_browserCreateTab"
+      },
+      "raw_expression": "this._request<{ id: string; url?: string; title?: string }>(\n      \"POST\",\n      `/v2/box/${this.id}/browser/tabs`,\n      {\n        body: {\n          url,\n          ...(options?.waitUntil ? { wait_until: options.waitUntil } : {}),\n          ...(options?.timeout !== undefined ? { timeout: options.timeout } : {}),\n        },\n        timeout: operationTimeout === undefined ? 60000 : Math.max(60000, operationTimeout + 5000),\n      },\n    )",
+      "raw_url_expression": "`/v2/box/${this.id}/browser/tabs`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/browser/tabs",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2432_4e767e0f196a",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2432,
+        "node_hash": "4e767e0f196a01670d333af954874dec2b820cd5bda62469d7d85aceffae9a36"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_browserListTabs"
+      },
+      "raw_expression": "this._request<{ tabs?: { id: string; url?: string; title?: string }[] }>(\n      \"GET\",\n      `/v2/box/${this.id}/browser/tabs`,\n      { timeout: 60000 },\n    )",
+      "raw_url_expression": "`/v2/box/${this.id}/browser/tabs`",
+      "method": "GET",
+      "canonical_path": "/v2/box/{box_id}/browser/tabs",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2441_972fa54bdd39",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2441,
+        "node_hash": "972fa54bdd3988161d3bb5520d146fb3ee5d5ec638dfc43647cee0f6eacd88b0"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_browserCDPUrl"
+      },
+      "raw_expression": "this._request<{ cdp_url?: string }>(\n      \"POST\",\n      `/v2/box/${this.id}/browser/connect`,\n      { timeout: 60000 },\n    )",
+      "raw_url_expression": "`/v2/box/${this.id}/browser/connect`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/browser/connect",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2483_a1b0f564c69a",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2483,
+        "node_hash": "a1b0f564c69a0c37b6341ab1e90f3ac112eb091977b986cb59266c5295140f53"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_recordingStart"
+      },
+      "raw_expression": "this._request<Record<string, unknown>>(\n      \"POST\",\n      `/v2/box/${this.id}/browser/recordings`,\n      {\n        body: options?.maxDurationSeconds\n          ? { max_duration_seconds: options.maxDurationSeconds }\n          : {},\n        timeout: 60000,\n      },\n    )",
+      "raw_url_expression": "`/v2/box/${this.id}/browser/recordings`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/browser/recordings",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2508_c4c1f7a142b8",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2508,
+        "node_hash": "c4c1f7a142b8372db7d281b84a6831af198b00421690d855f6d2105b0dcdc9d4"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_recordingStop"
+      },
+      "raw_expression": "this._request<Record<string, unknown>>(\n      \"POST\",\n      `/v2/box/${this.id}/browser/recordings/stop`,\n      { timeout: 180000 },\n    )",
+      "raw_url_expression": "`/v2/box/${this.id}/browser/recordings/stop`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/browser/recordings/stop",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2522_8fd6e2d34dc7",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2522,
+        "node_hash": "8fd6e2d34dc7fee0dcbf3b39b8ac97f56be01d36d1f608872258626bf1533244"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_recordingList"
+      },
+      "raw_expression": "this._request<{\n        recordings?: Record<string, unknown>[];\n        next_cursor?: string;\n      }>(\"GET\", `/v2/box/${this.id}/browser/recordings?${params.toString()}`)",
+      "raw_url_expression": "`/v2/box/${this.id}/browser/recordings?${params.toString()}`",
+      "method": "GET",
+      "canonical_path": "/v2/box/{box_id}/browser/recordings",
+      "query": [
+        {
+          "name": "cursor",
+          "required": false,
+          "encoding": "url"
+        },
+        {
+          "name": "limit",
+          "required": true,
+          "encoding": "url"
+        }
+      ],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2533_817dbe03c90a",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2533,
+        "node_hash": "817dbe03c90aa22e7c5f8dba642f2e82f5e438c4fcdf7ab50838a14e3916a367"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_recordingGet"
+      },
+      "raw_expression": "this._request<Record<string, unknown>>(\n      \"GET\",\n      `/v2/box/${this.id}/browser/recordings/${recordingId}`,\n    )",
+      "raw_url_expression": "`/v2/box/${this.id}/browser/recordings/${recordingId}`",
+      "method": "GET",
+      "canonical_path": "/v2/box/{box_id}/browser/recordings/{id}",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2549_ef9b7bd7be8c",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2549,
+        "node_hash": "ef9b7bd7be8c3bddbe4ba950a7562a4c3abb0fe80e50006c5c4e067020e5221b"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_recordingDownload"
+      },
+      "raw_expression": "fetch(url, { headers: this._headers, signal: controller.signal })",
+      "raw_url_expression": "url",
+      "method": "GET",
+      "canonical_path": "/v2/box/{box_id}/browser/recordings/{id}/download",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "binary",
+      "transport": "fetch",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2609_f2de901be246",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2609,
+        "node_hash": "f2de901be24698cbe4ff79e90b14e7642c5a968e1276dd1c62f8febe2bce1fe6"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_browserLiveViewUrl"
+      },
+      "raw_expression": "this._request<{ screencast_url?: string }>(\n      \"POST\",\n      `/v2/box/${this.id}/browser/screencast`,\n      { body: tabId ? { tab: tabId } : {}, timeout: 60000 },\n    )",
+      "raw_url_expression": "`/v2/box/${this.id}/browser/screencast`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/browser/screencast",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2676_9a0bf884a8d8",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2676,
+        "node_hash": "9a0bf884a8d857ddaca23bfb23f534e62371e3f687f809652a88351f2ff246a3"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_scheduleExec"
+      },
+      "raw_expression": "this._request<Schedule>(\"POST\", `/v2/box/${this.id}/schedules`, { body })",
+      "raw_url_expression": "`/v2/box/${this.id}/schedules`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/schedules",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2691_9a0bf884a8d8",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2691,
+        "node_hash": "9a0bf884a8d857ddaca23bfb23f534e62371e3f687f809652a88351f2ff246a3"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_scheduleAgent"
+      },
+      "raw_expression": "this._request<Schedule>(\"POST\", `/v2/box/${this.id}/schedules`, { body })",
+      "raw_url_expression": "`/v2/box/${this.id}/schedules`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/schedules",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2695_37dc5ee4c40a",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2695,
+        "node_hash": "37dc5ee4c40a6acf283a320de4a75059015c0641ee37b8288d1edf7d6b3fc798"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_scheduleList"
+      },
+      "raw_expression": "this._request<Schedule[]>(\"GET\", `/v2/box/${this.id}/schedules`)",
+      "raw_url_expression": "`/v2/box/${this.id}/schedules`",
+      "method": "GET",
+      "canonical_path": "/v2/box/{box_id}/schedules",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2699_fc09cbea8500",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2699,
+        "node_hash": "fc09cbea85009bce836876868b4e5c5ce97e4305f9780249b52ebefbdc76fe50"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_scheduleGet"
+      },
+      "raw_expression": "this._request<Schedule>(\"GET\", `/v2/box/${this.id}/schedules/${id}`)",
+      "raw_url_expression": "`/v2/box/${this.id}/schedules/${id}`",
+      "method": "GET",
+      "canonical_path": "/v2/box/{box_id}/schedules/{id}",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2723_67e1dfaec41c",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2723,
+        "node_hash": "67e1dfaec41c70f796e7bf7a6a739ea734c4416c561aef3bda92ae9443ffe99c"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_scheduleUpdate"
+      },
+      "raw_expression": "this._request<Schedule>(\"PATCH\", `/v2/box/${this.id}/schedules/${id}`, { body })",
+      "raw_url_expression": "`/v2/box/${this.id}/schedules/${id}`",
+      "method": "PATCH",
+      "canonical_path": "/v2/box/{box_id}/schedules/{id}",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2727_2ec2d42af034",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2727,
+        "node_hash": "2ec2d42af034984d18ad440135559ba849665371f296f1b1986b4bff5d53dddc"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_schedulePause"
+      },
+      "raw_expression": "this._request(\"POST\", `/v2/box/${this.id}/schedules/${id}/pause`)",
+      "raw_url_expression": "`/v2/box/${this.id}/schedules/${id}/pause`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/schedules/{id}/pause",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "empty",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2731_adc2d3ef7e6c",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2731,
+        "node_hash": "adc2d3ef7e6c566ec4f9399f041b726d3ec148f1fe2f87c68a7c6dc04f053996"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_scheduleResume"
+      },
+      "raw_expression": "this._request(\"POST\", `/v2/box/${this.id}/schedules/${id}/resume`)",
+      "raw_url_expression": "`/v2/box/${this.id}/schedules/${id}/resume`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/schedules/{id}/resume",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "empty",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2735_86cad76b1aea",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2735,
+        "node_hash": "86cad76b1aea7e5acb50f6759bda08eecc99c31682ceee3402fdef6418f85fd2"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_scheduleDelete"
+      },
+      "raw_expression": "this._request(\"DELETE\", `/v2/box/${this.id}/schedules/${id}`)",
+      "raw_url_expression": "`/v2/box/${this.id}/schedules/${id}`",
+      "method": "DELETE",
+      "canonical_path": "/v2/box/{box_id}/schedules/{id}",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "empty",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2742_c83c1c3d79e1",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2742,
+        "node_hash": "c83c1c3d79e16e5168aed88d783fb63065acafd98a0240e6cd57780e65f91463"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_gitClone"
+      },
+      "raw_expression": "this._request(\"POST\", `/v2/box/${this.id}/git/clone`, {\n      body: {\n        repo: options.repo,\n        branch: options.branch,\n        depth: options.depth,\n        github_token: this._gitToken,\n        ...(folder ? { folder } : {}),\n      },\n    })",
+      "raw_url_expression": "`/v2/box/${this.id}/git/clone`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/git/clone",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "empty",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2756_fc43ae87a9a4",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2756,
+        "node_hash": "fc43ae87a9a4732582551da88e99e67690e52137ddcc12ff140101cbf487089d"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_gitDiff"
+      },
+      "raw_expression": "this._request<{ diff: string }>(\"GET\", `/v2/box/${this.id}/git/diff${qs}`)",
+      "raw_url_expression": "`/v2/box/${this.id}/git/diff${qs}`",
+      "method": "GET",
+      "canonical_path": "/v2/box/{box_id}/git/diff",
+      "query": [
+        {
+          "name": "folder",
+          "required": false,
+          "encoding": "sdk"
+        }
+      ],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2763_7aa0fae6062b",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2763,
+        "node_hash": "7aa0fae6062bc797a775ea0b334f3e8f2b358c8897270a1d770b966073734a0e"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_gitStatus"
+      },
+      "raw_expression": "this._request<{ status: string }>(\n      \"GET\",\n      `/v2/box/${this.id}/git/status${qs}`,\n    )",
+      "raw_url_expression": "`/v2/box/${this.id}/git/status${qs}`",
+      "method": "GET",
+      "canonical_path": "/v2/box/{box_id}/git/status",
+      "query": [
+        {
+          "name": "folder",
+          "required": false,
+          "encoding": "sdk"
+        }
+      ],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2772_0532dfbd2891",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2772,
+        "node_hash": "0532dfbd2891c697238dfdcd856e52d7b372086f12da387f327deb01680a490c"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_gitCommit"
+      },
+      "raw_expression": "this._request<GitCommitResult>(\"POST\", `/v2/box/${this.id}/git/commit`, {\n      body: {\n        message: options.message,\n        author_name: options.authorName,\n        author_email: options.authorEmail,\n        ...(folder ? { folder } : {}),\n      },\n    })",
+      "raw_url_expression": "`/v2/box/${this.id}/git/commit`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/git/commit",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2787_413fc2fcd3fb",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2787,
+        "node_hash": "413fc2fcd3fb81a06c455cb8b130ef3616003b56f251def7bbfccfebc5a16048"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_gitUpdateConfig"
+      },
+      "raw_expression": "this._request<GitConfig>(\"PUT\", `/v2/box/${this.id}/git-config`, {\n      body: {\n        git_user_name: options.userName,\n        git_user_email: options.userEmail,\n      },\n    })",
+      "raw_url_expression": "`/v2/box/${this.id}/git-config`",
+      "method": "PUT",
+      "canonical_path": "/v2/box/{box_id}/git-config",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2797_c455dee5d620",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2797,
+        "node_hash": "c455dee5d620b8636e921604ec486c68b5d07c9d8f622586071cb7a24b9f01c4"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_gitPush"
+      },
+      "raw_expression": "this._request(\"POST\", `/v2/box/${this.id}/git/push`, {\n      body: { branch: options?.branch, ...(folder ? { folder } : {}) },\n    })",
+      "raw_url_expression": "`/v2/box/${this.id}/git/push`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/git/push",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "empty",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2804_117d12ee9992",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2804,
+        "node_hash": "117d12ee999256ccc2eca9e6c7068426f95b0e56668beeb7682ba2a179351a17"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_gitCreatePR"
+      },
+      "raw_expression": "this._request<PullRequest>(\"POST\", `/v2/box/${this.id}/git/create-pr`, {\n      body: {\n        title: options.title,\n        body: options.body,\n        base: options.base,\n        ...(folder ? { folder } : {}),\n      },\n    })",
+      "raw_url_expression": "`/v2/box/${this.id}/git/create-pr`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/git/create-pr",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2816_f7543ccf3962",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2816,
+        "node_hash": "f7543ccf3962162fd9b5053b4c5c81fe1211f5058e4be976feca2a5338de4b32"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_gitExec"
+      },
+      "raw_expression": "this._request<GitExecResult>(\"POST\", `/v2/box/${this.id}/git/exec`, {\n      body: { args: options.args, ...(folder ? { folder } : {}) },\n    })",
+      "raw_url_expression": "`/v2/box/${this.id}/git/exec`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/git/exec",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2823_154a507c6559",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2823,
+        "node_hash": "154a507c6559e520794ad55e2e24ee440241af1a6d178d01fad8086d55178bca"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_gitCheckout"
+      },
+      "raw_expression": "this._request(\"POST\", `/v2/box/${this.id}/git/checkout`, {\n      body: { branch: options.branch, ...(folder ? { folder } : {}) },\n    })",
+      "raw_url_expression": "`/v2/box/${this.id}/git/checkout`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/git/checkout",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "empty",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2831_4e75e65ec7c7",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2831,
+        "node_hash": "4e75e65ec7c7c46ccec7f5abfb3e49c47bb8c74830af88fee3dd0e439108af07"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_skillAdd"
+      },
+      "raw_expression": "this._request(\"POST\", `/v2/box/${this.id}/config/skills`, {\n      body: { skill_id: skillId },\n    })",
+      "raw_url_expression": "`/v2/box/${this.id}/config/skills`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/config/skills",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "empty",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2838_7fd328eb7171",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2838,
+        "node_hash": "7fd328eb7171239bae6d354876f0c8df71fe7ecd9170d8e08d9df2d742f7631a"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_skillRemove"
+      },
+      "raw_expression": "this._request(\"DELETE\", `/v2/box/${this.id}/config/skills/${skillId}`)",
+      "raw_url_expression": "`/v2/box/${this.id}/config/skills/${skillId}`",
+      "method": "DELETE",
+      "canonical_path": "/v2/box/{box_id}/config/skills/{skill_id+}",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "empty",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2842_b9bffd0d93d5",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2842,
+        "node_hash": "b9bffd0d93d5ceec5c56f30c4b19b8b4cdd8e75c0443034af269cddc0d891517"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_skillList"
+      },
+      "raw_expression": "this._request<BoxData>(\"GET\", `/v2/box/${this.id}`)",
+      "raw_url_expression": "`/v2/box/${this.id}`",
+      "method": "GET",
+      "canonical_path": "/v2/box/{box_id}",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "contract_reuse",
+      "normalization_reason": "skill list reads enabled_skills from the canonical box-get contract",
+      "normalized_into": "client_l1122_8e787c3e6f2e"
+    },
+    {
+      "dispatch_id": "client_l2849_a34938e1e2a6",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2849,
+        "node_hash": "a34938e1e2a652be5431b7c0d52e4cd59a0bb9f237e506bfa5ea47b963f84328"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_labelAdd"
+      },
+      "raw_expression": "this._request<{ labels?: string[] }>(\n      \"POST\",\n      `/v2/box/${this.id}/config/labels`,\n      { body: { label } },\n    )",
+      "raw_url_expression": "`/v2/box/${this.id}/config/labels`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/config/labels",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2858_97ae10cccd75",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2858,
+        "node_hash": "97ae10cccd7584079dfee01e6a26151caa11763c0ab7901cc1f7872223b2df65"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_labelRemove"
+      },
+      "raw_expression": "this._request<{ labels?: string[] }>(\n      \"DELETE\",\n      `/v2/box/${this.id}/config/labels/${encodeURIComponent(label)}`,\n    )",
+      "raw_url_expression": "`/v2/box/${this.id}/config/labels/${encodeURIComponent(label)}`",
+      "method": "DELETE",
+      "canonical_path": "/v2/box/{box_id}/config/labels/{label}",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2866_b9bffd0d93d5",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2866,
+        "node_hash": "b9bffd0d93d5ceec5c56f30c4b19b8b4cdd8e75c0443034af269cddc0d891517"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "_labelList"
+      },
+      "raw_expression": "this._request<BoxData>(\"GET\", `/v2/box/${this.id}`)",
+      "raw_url_expression": "`/v2/box/${this.id}`",
+      "method": "GET",
+      "canonical_path": "/v2/box/{box_id}",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "contract_reuse",
+      "normalization_reason": "label list reads labels from the canonical box-get contract",
+      "normalized_into": "client_l1122_8e787c3e6f2e"
+    },
+    {
+      "dispatch_id": "client_l2876_6f9aad4afdea",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2876,
+        "node_hash": "6f9aad4afdeac7b668c390bb868cc253426bec863111fb1a950496271ba90e2c"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "getPublicURL"
+      },
+      "raw_expression": "this._request<PublicURL>(\"POST\", `/v2/box/${this.id}/preview`, {\n      body: {\n        port,\n        ...(options?.bearerToken !== undefined && { bearer_token: options.bearerToken }),\n        ...(options?.basicAuth !== undefined && { basic_auth: options.basicAuth }),\n      },\n    })",
+      "raw_url_expression": "`/v2/box/${this.id}/preview`",
+      "method": "POST",
+      "canonical_path": "/v2/box/{box_id}/preview",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2886_a42164733495",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2886,
+        "node_hash": "a421647334950fdab0fc3992b4df0092fe62f94983945abf56525c2f9b0b25fc"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "listPublicURLs"
+      },
+      "raw_expression": "this._request<{ previews: PublicURL[] }>(\n      \"GET\",\n      `/v2/box/${this.id}/preview`,\n    )",
+      "raw_url_expression": "`/v2/box/${this.id}/preview`",
+      "method": "GET",
+      "canonical_path": "/v2/box/{box_id}/preview",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "json",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l2894_dd7835af84c4",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 2894,
+        "node_hash": "dd7835af84c4aa22f0ced5f7869e072a7ab53ef6a949629125e5c82a4d0f08a5"
+      },
+      "owner": {
+        "class": "Box",
+        "method": "deletePublicURL"
+      },
+      "raw_expression": "this._request(\"DELETE\", `/v2/box/${this.id}/preview/${port}`)",
+      "raw_url_expression": "`/v2/box/${this.id}/preview/${port}`",
+      "method": "DELETE",
+      "canonical_path": "/v2/box/{box_id}/preview/{port}",
+      "query": [],
+      "body_kind": "none",
+      "response_kind": "empty",
+      "transport": "_request",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l3118_a22f53bb7278",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 3118,
+        "node_hash": "a22f53bb7278aea176415576142694c0138fef322327d1e087819f8c0ed6ad08"
+      },
+      "owner": {
+        "class": "EphemeralBox",
+        "method": "create"
+      },
+      "raw_expression": "fetch(`${baseUrl}/v2/box`, {\n      method: \"POST\",\n      headers: { ...headers, \"Content-Type\": \"application/json\" },\n      body: JSON.stringify(body),\n    })",
+      "raw_url_expression": "`${baseUrl}/v2/box`",
+      "method": "POST",
+      "canonical_path": "/v2/box",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "fetch",
+      "role": "operation"
+    },
+    {
+      "dispatch_id": "client_l3185_3e2be68d84d8",
+      "source": {
+        "file": "packages/sdk/src/client.ts",
+        "line": 3185,
+        "node_hash": "3e2be68d84d803201ea6601bbe82a790ba9169434ab23d8a8320298ed07b33b1"
+      },
+      "owner": {
+        "class": "EphemeralBox",
+        "method": "fromSnapshot"
+      },
+      "raw_expression": "fetch(`${baseUrl}/v2/box/from-snapshot`, {\n      method: \"POST\",\n      headers: { ...headers, \"Content-Type\": \"application/json\" },\n      body: JSON.stringify(body),\n    })",
+      "raw_url_expression": "`${baseUrl}/v2/box/from-snapshot`",
+      "method": "POST",
+      "canonical_path": "/v2/box/from-snapshot",
+      "query": [],
+      "body_kind": "json",
+      "response_kind": "json",
+      "transport": "fetch",
+      "role": "operation"
+    }
+  ]
+}

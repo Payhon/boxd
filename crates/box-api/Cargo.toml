@@ -1,0 +1,29 @@
+[package]
+name = "box-api"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+async-trait.workspace = true
+base64.workspace = true
+box-browser = { path = "../box-browser" }
+box-core = { path = "../box-core" }
+box-observability = { path = "../box-observability" }
+opentelemetry.workspace = true
+salvo.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2 = "0.10"
+uuid.workspace = true
+url.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-opentelemetry.workspace = true
+futures-util = "0.3"
+salvo_extra = { version = "0.95", features = ["websocket"] }
+tokio-tungstenite = "0.30"
+
+[dev-dependencies]
+tokio.workspace = true

@@ -1,0 +1,4 @@
+{
+  "401": {"error":"unauthorized"}, "404": {"error":"not found"}, "409": {"error":"conflict"},
+  "413": {"error":"payload too large"}, "422": {"error":"unprocessable"}, "429": {"error":"rate limited"}, "501": {"error":"feature_not_supported"}
+}

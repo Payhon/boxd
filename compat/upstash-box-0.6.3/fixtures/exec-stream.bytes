@@ -1,0 +1,4 @@
+stdout: raw
+stderr: raw
+event: exit
+data: {"exit_code":7,"cpu_ns":42}

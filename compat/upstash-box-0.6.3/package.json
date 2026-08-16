@@ -1,0 +1,23 @@
+{
+  "name": "boxd-upstash-box-contract",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --test --test-concurrency=1 test/*.test.mjs",
+    "check:manifest": "node scripts/check-manifest.mjs",
+    "generate:manifest": "node scripts/generate-manifest.mjs",
+    "check:coverage": "node scripts/capture-runner.mjs",
+    "list:cases": "node scripts/capture-runner.mjs --list-cases",
+    "generate:coverage": "node scripts/generate-coverage.mjs",
+    "check:official-readonly": "node scripts/official-differential.mjs",
+    "vendor:upstream": "node scripts/vendor-upstream.mjs",
+    "verify:upstream": "node scripts/vendor-upstream.mjs && node scripts/check-manifest.mjs"
+  },
+  "dependencies": {
+    "@upstash/box": "0.6.3"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

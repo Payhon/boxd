@@ -1,0 +1,22 @@
+{
+  "captured_at": "2026-08-12T06:24:40Z",
+  "source": "https://us-east-1.box.upstash.com",
+  "request": {
+    "method": "GET",
+    "path": "/v2/box",
+    "headers": {
+      "Accept": "application/json",
+      "X-Box-Api-Key": "<invalid-fixture-key>"
+    }
+  },
+  "response": {
+    "status": 401,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "error": "Invalid box API key"
+    }
+  },
+  "scope": "Read-only authentication error sample; this is not evidence for authenticated or success behavior."
+}

@@ -1,0 +1,21 @@
+{
+  "source": {
+    "commit": "677ca0827a6f54bc328b4b3e97d32a7cc5ac1934",
+    "file": "packages/sdk/src/telemetry.ts",
+    "sha256": "6ebb26faaaaf9a72b9a57d8cecfb59fcb980980f70222fe1e1ceec1183004a8b"
+  },
+  "default": {
+    "enable_telemetry": true,
+    "disabled_when": [
+      "UPSTASH_DISABLE_TELEMETRY is defined",
+      "enableTelemetry is false"
+    ],
+    "precedence": "UPSTASH_DISABLE_TELEMETRY is evaluated before enableTelemetry"
+  },
+  "headers": {
+    "Upstash-Telemetry-Sdk": "@upstash/box@${VERSION}; VERSION is imported from packages/sdk/src/version.ts",
+    "Upstash-Telemetry-Runtime": "edge-light, bun@${process.versions.bun}, deno@${process.versions.deno}, node@${process.version}, or unknown",
+    "Upstash-Telemetry-Platform": "console, vercel, cloudflare, aws, ci, or unknown, selected from non-secret runtime environment markers"
+  },
+  "privacy": "No API key, request payload, identifier, or environment value is represented in this fixture."
+}

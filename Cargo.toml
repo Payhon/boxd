@@ -1,0 +1,35 @@
+[workspace]
+members = ["crates/*"]
+resolver = "3"
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.94"
+license = "Apache-2.0"
+
+[workspace.dependencies]
+anyhow = "1.0"
+async-trait = "0.1"
+base64 = "0.22"
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4.5", features = ["derive"] }
+cron = "0.17"
+figment = { version = "0.10", features = ["env", "toml"] }
+salvo = { version = "0.95", features = ["oapi", "sse", "websocket", "serve-static", "compression", "cors", "request-id", "timeout"] }
+sea-orm = { version = "2.0", default-features = false, features = ["runtime-tokio-rustls", "sqlx-sqlite", "sqlx-postgres", "sqlx-mysql"] }
+sea-orm-migration = { version = "2.0", default-features = false, features = ["runtime-tokio-rustls", "sqlx-sqlite", "sqlx-postgres", "sqlx-mysql"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+smoltcp = { version = "=0.12.0", default-features = false, features = ["std", "medium-ethernet", "proto-ipv4", "proto-dhcpv4", "proto-dns", "socket-tcp", "socket-udp", "socket-dhcpv4"] }
+opentelemetry = { version = "=0.32.0", default-features = false, features = ["trace"] }
+opentelemetry_sdk = { version = "=0.32.0", default-features = false, features = ["trace", "rt-tokio"] }
+opentelemetry-otlp = { version = "=0.32.0", default-features = false, features = ["trace", "http-proto", "reqwest-blocking-client", "reqwest-rustls-webpki-roots"] }
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"] }
+rust-embed = "8.7"
+mime_guess = "2.0"
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread", "signal"] }
+tracing = "0.1"
+tracing-opentelemetry = { version = "=0.33.0", default-features = false }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
+url = "2.5"
+uuid = { version = "1.18.1", features = ["serde", "v7"] }

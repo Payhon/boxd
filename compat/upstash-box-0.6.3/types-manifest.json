@@ -1,0 +1,2445 @@
+{
+  "sdk": "@upstash/box@0.6.3",
+  "source_commit": "677ca0827a6f54bc328b4b3e97d32a7cc5ac1934",
+  "source_sha256": {
+    "packages/sdk/src/client.ts": "8ae634cf5da6de07ecb5f2d6769d1b8cba866d2590c3275b2c0637a1ed1ab4e8",
+    "packages/sdk/src/types.ts": "fb2e5776db1b15b8a1438fa53e0e85a90bd83c58d8739515a7791bb34ff47ea1",
+    "packages/sdk/src/custom-harness.ts": "f6ec633e46575eb11ec819536b4b691a7cccc45b4a458d55b7e4ddd9d252f90f",
+    "packages/sdk/src/telemetry.ts": "6ebb26faaaaf9a72b9a57d8cecfb59fcb980980f70222fe1e1ceec1183004a8b",
+    "packages/sdk/src/version.ts": "51e3e8d5722f947bbb645adb4e2f55d69a94d4200c97f72b95246031b25138d4",
+    "packages/sdk/src/index.ts": "18041c41bbf0595ae7870f31c72cd771d726d62131415c38a0f3488f51913fa6"
+  },
+  "declarations": [
+    {
+      "kind": "type",
+      "name": "Runtime",
+      "type": "| \"node\"\n  | \"python\"\n  | \"golang\"\n  | \"ruby\"\n  | \"rust\"\n  | \"node-alpine\"\n  | \"python-alpine\"\n  | \"golang-alpine\"\n  | \"ruby-alpine\"\n  | \"rust-alpine\"",
+      "fields": []
+    },
+    {
+      "kind": "type",
+      "name": "BoxSize",
+      "type": "\"small\" | \"medium\" | \"large\"",
+      "fields": []
+    },
+    {
+      "kind": "enum",
+      "name": "Agent",
+      "members": [
+        {
+          "name": "ClaudeCode",
+          "value": "\"claude-code\""
+        },
+        {
+          "name": "Codex",
+          "value": "\"codex\""
+        },
+        {
+          "name": "OpenCode",
+          "value": "\"opencode\""
+        },
+        {
+          "name": "Cursor",
+          "value": "\"cursor\""
+        },
+        {
+          "name": "Custom",
+          "value": "\"custom\""
+        }
+      ]
+    },
+    {
+      "kind": "enum",
+      "name": "ClaudeCode",
+      "members": [
+        {
+          "name": "Fable_5",
+          "value": "\"anthropic/claude-fable-5\""
+        },
+        {
+          "name": "Opus_4_5",
+          "value": "\"anthropic/claude-opus-4-5\""
+        },
+        {
+          "name": "Opus_4_6",
+          "value": "\"anthropic/claude-opus-4-6\""
+        },
+        {
+          "name": "Opus_4_7",
+          "value": "\"anthropic/claude-opus-4-7\""
+        },
+        {
+          "name": "Opus_4_8",
+          "value": "\"anthropic/claude-opus-4-8\""
+        },
+        {
+          "name": "Opus_5",
+          "value": "\"anthropic/claude-opus-5\""
+        },
+        {
+          "name": "Sonnet_4",
+          "value": "\"anthropic/claude-sonnet-4\""
+        },
+        {
+          "name": "Sonnet_4_5",
+          "value": "\"anthropic/claude-sonnet-4-5\""
+        },
+        {
+          "name": "Sonnet_4_6",
+          "value": "\"anthropic/claude-sonnet-4-6\""
+        },
+        {
+          "name": "Sonnet_5",
+          "value": "\"anthropic/claude-sonnet-5\""
+        },
+        {
+          "name": "Haiku_4_5",
+          "value": "\"anthropic/claude-haiku-4-5\""
+        }
+      ]
+    },
+    {
+      "kind": "enum",
+      "name": "OpenAICodex",
+      "members": [
+        {
+          "name": "GPT_5_6",
+          "value": "\"openai/gpt-5.6\""
+        },
+        {
+          "name": "GPT_5_6_Sol",
+          "value": "\"openai/gpt-5.6-sol\""
+        },
+        {
+          "name": "GPT_5_6_Terra",
+          "value": "\"openai/gpt-5.6-terra\""
+        },
+        {
+          "name": "GPT_5_6_Luna",
+          "value": "\"openai/gpt-5.6-luna\""
+        },
+        {
+          "name": "GPT_5_5",
+          "value": "\"openai/gpt-5.5\""
+        },
+        {
+          "name": "GPT_5_4",
+          "value": "\"openai/gpt-5.4\""
+        },
+        {
+          "name": "GPT_5_4_Mini",
+          "value": "\"openai/gpt-5.4-mini\""
+        },
+        {
+          "name": "GPT_5_3_Codex",
+          "value": "\"openai/gpt-5.3-codex\""
+        },
+        {
+          "name": "GPT_5_3_Codex_Spark",
+          "value": "\"openai/gpt-5.3-codex-spark\""
+        },
+        {
+          "name": "GPT_5_2_Codex",
+          "value": "\"openai/gpt-5.2-codex\""
+        },
+        {
+          "name": "GPT_5_1_Codex_Max",
+          "value": "\"openai/gpt-5.1-codex-max\""
+        },
+        {
+          "name": "GPT_5_1_Codex_Mini",
+          "value": "\"openai/gpt-5.1-codex-mini\""
+        }
+      ]
+    },
+    {
+      "kind": "enum",
+      "name": "OpenRouterModel",
+      "members": [
+        {
+          "name": "Claude_Fable_5",
+          "value": "\"openrouter/anthropic/claude-fable-5\""
+        },
+        {
+          "name": "Claude_Opus_5",
+          "value": "\"openrouter/anthropic/claude-opus-5\""
+        },
+        {
+          "name": "Claude_Sonnet_5",
+          "value": "\"openrouter/anthropic/claude-sonnet-5\""
+        },
+        {
+          "name": "Claude_Sonnet_4",
+          "value": "\"openrouter/anthropic/claude-sonnet-4\""
+        },
+        {
+          "name": "Claude_Opus_4_5",
+          "value": "\"openrouter/anthropic/claude-opus-4-5\""
+        },
+        {
+          "name": "Claude_Haiku_4_5",
+          "value": "\"openrouter/anthropic/claude-haiku-4-5\""
+        },
+        {
+          "name": "DeepSeek_R1",
+          "value": "\"openrouter/deepseek/deepseek-r1\""
+        },
+        {
+          "name": "Gemini_2_5_Pro",
+          "value": "\"openrouter/google/gemini-2.5-pro\""
+        },
+        {
+          "name": "Gemini_2_5_Flash",
+          "value": "\"openrouter/google/gemini-2.5-flash\""
+        },
+        {
+          "name": "GPT_5_6_Sol",
+          "value": "\"openrouter/openai/gpt-5.6-sol\""
+        },
+        {
+          "name": "GPT_5_6_Terra",
+          "value": "\"openrouter/openai/gpt-5.6-terra\""
+        },
+        {
+          "name": "GPT_5_6_Luna",
+          "value": "\"openrouter/openai/gpt-5.6-luna\""
+        },
+        {
+          "name": "GPT_4_1",
+          "value": "\"openrouter/openai/gpt-4.1\""
+        },
+        {
+          "name": "O3",
+          "value": "\"openrouter/openai/o3\""
+        },
+        {
+          "name": "O4_Mini",
+          "value": "\"openrouter/openai/o4-mini\""
+        }
+      ]
+    },
+    {
+      "kind": "enum",
+      "name": "VercelModel",
+      "members": [
+        {
+          "name": "Claude_Fable_5",
+          "value": "\"vercel/anthropic/claude-fable-5\""
+        },
+        {
+          "name": "Claude_Opus_5",
+          "value": "\"vercel/anthropic/claude-opus-5\""
+        },
+        {
+          "name": "Claude_Sonnet_5",
+          "value": "\"vercel/anthropic/claude-sonnet-5\""
+        },
+        {
+          "name": "Claude_Opus_4_7",
+          "value": "\"vercel/anthropic/claude-opus-4.7\""
+        },
+        {
+          "name": "Claude_Sonnet_4_6",
+          "value": "\"vercel/anthropic/claude-sonnet-4.6\""
+        },
+        {
+          "name": "Claude_Opus_4_6",
+          "value": "\"vercel/anthropic/claude-opus-4.6\""
+        },
+        {
+          "name": "Claude_Haiku_4_5",
+          "value": "\"vercel/anthropic/claude-haiku-4.5\""
+        },
+        {
+          "name": "GPT_5_6_Sol",
+          "value": "\"vercel/openai/gpt-5.6-sol\""
+        },
+        {
+          "name": "GPT_5_6_Terra",
+          "value": "\"vercel/openai/gpt-5.6-terra\""
+        },
+        {
+          "name": "GPT_5_6_Luna",
+          "value": "\"vercel/openai/gpt-5.6-luna\""
+        },
+        {
+          "name": "GPT_5_5",
+          "value": "\"vercel/openai/gpt-5.5\""
+        },
+        {
+          "name": "GPT_5_5_Pro",
+          "value": "\"vercel/openai/gpt-5.5-pro\""
+        },
+        {
+          "name": "GPT_5_4",
+          "value": "\"vercel/openai/gpt-5.4\""
+        },
+        {
+          "name": "GPT_5_4_Mini",
+          "value": "\"vercel/openai/gpt-5.4-mini\""
+        },
+        {
+          "name": "Gemini_3_5_Flash",
+          "value": "\"vercel/google/gemini-3.5-flash\""
+        },
+        {
+          "name": "Gemini_3_1_Flash_Lite",
+          "value": "\"vercel/google/gemini-3.1-flash-lite\""
+        },
+        {
+          "name": "Gemini_3_1_Pro_Preview",
+          "value": "\"vercel/google/gemini-3.1-pro-preview\""
+        },
+        {
+          "name": "Grok_Build_0_1",
+          "value": "\"vercel/xai/grok-build-0.1\""
+        },
+        {
+          "name": "Grok_4_3",
+          "value": "\"vercel/xai/grok-4.3\""
+        },
+        {
+          "name": "Grok_4_20_Reasoning",
+          "value": "\"vercel/xai/grok-4.20-reasoning\""
+        }
+      ]
+    },
+    {
+      "kind": "enum",
+      "name": "OpenCodeModel",
+      "members": [
+        {
+          "name": "Claude_Fable_5",
+          "value": "\"opencode/claude-fable-5\""
+        },
+        {
+          "name": "Claude_Opus_5",
+          "value": "\"opencode/claude-opus-5\""
+        },
+        {
+          "name": "Claude_Opus_4_5",
+          "value": "\"opencode/claude-opus-4-5\""
+        },
+        {
+          "name": "Claude_Opus_4_6",
+          "value": "\"opencode/claude-opus-4-6\""
+        },
+        {
+          "name": "Claude_Opus_4_7",
+          "value": "\"opencode/claude-opus-4-7\""
+        },
+        {
+          "name": "Claude_Opus_4_8",
+          "value": "\"opencode/claude-opus-4-8\""
+        },
+        {
+          "name": "Claude_Sonnet_4",
+          "value": "\"opencode/claude-sonnet-4\""
+        },
+        {
+          "name": "Claude_Sonnet_4_5",
+          "value": "\"opencode/claude-sonnet-4-5\""
+        },
+        {
+          "name": "Claude_Sonnet_4_6",
+          "value": "\"opencode/claude-sonnet-4-6\""
+        },
+        {
+          "name": "Claude_Sonnet_5",
+          "value": "\"opencode/claude-sonnet-5\""
+        },
+        {
+          "name": "Claude_Haiku_4_5",
+          "value": "\"opencode/claude-haiku-4-5\""
+        },
+        {
+          "name": "GPT_5_5",
+          "value": "\"opencode/gpt-5.5\""
+        },
+        {
+          "name": "GPT_5_4",
+          "value": "\"opencode/gpt-5.4\""
+        },
+        {
+          "name": "GPT_5_4_Pro",
+          "value": "\"opencode/gpt-5.4-pro\""
+        },
+        {
+          "name": "GPT_5_4_Mini",
+          "value": "\"opencode/gpt-5.4-mini\""
+        },
+        {
+          "name": "GPT_5_4_Nano",
+          "value": "\"opencode/gpt-5.4-nano\""
+        },
+        {
+          "name": "GPT_5_3_Codex",
+          "value": "\"opencode/gpt-5.3-codex\""
+        },
+        {
+          "name": "GPT_5_3_Codex_Spark",
+          "value": "\"opencode/gpt-5.3-codex-spark\""
+        },
+        {
+          "name": "GPT_5_2_Codex",
+          "value": "\"opencode/gpt-5.2-codex\""
+        },
+        {
+          "name": "GPT_5_1_Codex_Max",
+          "value": "\"opencode/gpt-5.1-codex-max\""
+        },
+        {
+          "name": "GPT_5_1_Codex_Mini",
+          "value": "\"opencode/gpt-5.1-codex-mini\""
+        },
+        {
+          "name": "GPT_4_1",
+          "value": "\"opencode/gpt-4.1\""
+        },
+        {
+          "name": "O3",
+          "value": "\"opencode/o3\""
+        },
+        {
+          "name": "O4_Mini",
+          "value": "\"opencode/o4-mini\""
+        },
+        {
+          "name": "Zen_GPT_5_Nano",
+          "value": "\"opencode/gpt-5-nano\""
+        },
+        {
+          "name": "Zen_Big_Pickle",
+          "value": "\"opencode/big-pickle\""
+        },
+        {
+          "name": "Zen_MiniMax_M2_7",
+          "value": "\"opencode/minimax-m2.7\""
+        },
+        {
+          "name": "Zen_Claude_Fable_5",
+          "value": "\"opencode/claude-fable-5\""
+        },
+        {
+          "name": "Zen_Claude_Opus_5",
+          "value": "\"opencode/claude-opus-5\""
+        },
+        {
+          "name": "Zen_Claude_Sonnet_4_6",
+          "value": "\"opencode/claude-sonnet-4-6\""
+        },
+        {
+          "name": "Zen_Claude_Sonnet_4_5",
+          "value": "\"opencode/claude-sonnet-4-5\""
+        },
+        {
+          "name": "Zen_Claude_Sonnet_4",
+          "value": "\"opencode/claude-sonnet-4\""
+        },
+        {
+          "name": "Zen_Claude_Sonnet_5",
+          "value": "\"opencode/claude-sonnet-5\""
+        },
+        {
+          "name": "Zen_Claude_Haiku_4_5",
+          "value": "\"opencode/claude-haiku-4-5\""
+        },
+        {
+          "name": "Zen_Claude_Opus_4_8",
+          "value": "\"opencode/claude-opus-4-8\""
+        },
+        {
+          "name": "Zen_Claude_Opus_4_7",
+          "value": "\"opencode/claude-opus-4-7\""
+        },
+        {
+          "name": "Zen_Claude_Opus_4_6",
+          "value": "\"opencode/claude-opus-4-6\""
+        },
+        {
+          "name": "Zen_Claude_Opus_4_5",
+          "value": "\"opencode/claude-opus-4-5\""
+        },
+        {
+          "name": "Zen_Claude_Opus_4_1",
+          "value": "\"opencode/claude-opus-4-1\""
+        },
+        {
+          "name": "Zen_Gemini_3_1_Pro",
+          "value": "\"opencode/gemini-3.1-pro\""
+        },
+        {
+          "name": "Zen_Gemini_3_Pro",
+          "value": "\"opencode/gemini-3-pro\""
+        },
+        {
+          "name": "Zen_Gemini_3_Flash",
+          "value": "\"opencode/gemini-3-flash\""
+        }
+      ]
+    },
+    {
+      "kind": "enum",
+      "name": "CursorModel",
+      "members": [
+        {
+          "name": "Default",
+          "value": "\"cursor/default\""
+        },
+        {
+          "name": "Composer_2_5",
+          "value": "\"cursor/composer-2.5\""
+        },
+        {
+          "name": "GPT_5_5",
+          "value": "\"cursor/gpt-5.5\""
+        },
+        {
+          "name": "GPT_5_4",
+          "value": "\"cursor/gpt-5.4\""
+        },
+        {
+          "name": "GPT_5_4_Mini",
+          "value": "\"cursor/gpt-5.4-mini\""
+        },
+        {
+          "name": "GPT_5_4_Nano",
+          "value": "\"cursor/gpt-5.4-nano\""
+        },
+        {
+          "name": "GPT_5_3_Codex",
+          "value": "\"cursor/gpt-5.3-codex\""
+        },
+        {
+          "name": "GPT_5_3_Codex_Spark",
+          "value": "\"cursor/gpt-5.3-codex-spark\""
+        },
+        {
+          "name": "GPT_5_2",
+          "value": "\"cursor/gpt-5.2\""
+        },
+        {
+          "name": "GPT_5_2_Codex",
+          "value": "\"cursor/gpt-5.2-codex\""
+        },
+        {
+          "name": "GPT_5_1",
+          "value": "\"cursor/gpt-5.1\""
+        },
+        {
+          "name": "GPT_5_1_Codex_Max",
+          "value": "\"cursor/gpt-5.1-codex-max\""
+        },
+        {
+          "name": "GPT_5_1_Codex_Mini",
+          "value": "\"cursor/gpt-5.1-codex-mini\""
+        },
+        {
+          "name": "GPT_5_Mini",
+          "value": "\"cursor/gpt-5-mini\""
+        },
+        {
+          "name": "Claude_Fable_5",
+          "value": "\"cursor/claude-fable-5\""
+        },
+        {
+          "name": "Claude_Opus_5",
+          "value": "\"cursor/claude-opus-5\""
+        },
+        {
+          "name": "Claude_Opus_4_8",
+          "value": "\"cursor/claude-opus-4-8\""
+        },
+        {
+          "name": "Claude_Opus_4_7",
+          "value": "\"cursor/claude-opus-4-7\""
+        },
+        {
+          "name": "Claude_Opus_4_6",
+          "value": "\"cursor/claude-opus-4-6\""
+        },
+        {
+          "name": "Claude_Opus_4_5",
+          "value": "\"cursor/claude-opus-4-5\""
+        },
+        {
+          "name": "Claude_Sonnet_4_6",
+          "value": "\"cursor/claude-sonnet-4-6\""
+        },
+        {
+          "name": "Claude_Sonnet_4_5",
+          "value": "\"cursor/claude-sonnet-4-5\""
+        },
+        {
+          "name": "Claude_Sonnet_4",
+          "value": "\"cursor/claude-sonnet-4\""
+        },
+        {
+          "name": "Claude_Sonnet_5",
+          "value": "\"cursor/claude-sonnet-5\""
+        },
+        {
+          "name": "Claude_Haiku_4_5",
+          "value": "\"cursor/claude-haiku-4-5\""
+        },
+        {
+          "name": "Gemini_3_1_Pro",
+          "value": "\"cursor/gemini-3.1-pro\""
+        },
+        {
+          "name": "Gemini_3_Flash",
+          "value": "\"cursor/gemini-3-flash\""
+        },
+        {
+          "name": "Gemini_2_5_Flash",
+          "value": "\"cursor/gemini-2.5-flash\""
+        },
+        {
+          "name": "Grok_4_20",
+          "value": "\"cursor/grok-4-20\""
+        },
+        {
+          "name": "Kimi_K2_5",
+          "value": "\"cursor/kimi-k2.5\""
+        }
+      ]
+    },
+    {
+      "kind": "enum",
+      "name": "BoxApiKey",
+      "members": [
+        {
+          "name": "UpstashKey",
+          "value": "\"UPSTASH_KEY\""
+        },
+        {
+          "name": "StoredKey",
+          "value": "\"STORED_KEY\""
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "CustomHarnessConfig",
+      "fields": [
+        {
+          "name": "command",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "args",
+          "optional": true,
+          "type": "string[]"
+        },
+        {
+          "name": "protocol",
+          "optional": true,
+          "type": "\"box-sse-v1\""
+        }
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "AgentConfig",
+      "type": "CustomAgentConfig | (ManagedAgentApiKeyConfig & HarnessConfig)",
+      "fields": []
+    },
+    {
+      "kind": "interface",
+      "name": "ClaudeCodeAgentOptions",
+      "fields": [
+        {
+          "name": "maxTurns",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "maxBudgetUsd",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "effort",
+          "optional": true,
+          "type": "\"low\" | \"medium\" | \"high\" | \"max\""
+        },
+        {
+          "name": "thinking",
+          "optional": true,
+          "type": "| { type: \"adaptive\" }\n    | { type: \"enabled\"; budgetTokens: number }\n    | { type: \"disabled\" }"
+        },
+        {
+          "name": "disallowedTools",
+          "optional": true,
+          "type": "string[]"
+        },
+        {
+          "name": "agents",
+          "optional": true,
+          "type": "Record<string, unknown>"
+        },
+        {
+          "name": "promptSuggestions",
+          "optional": true,
+          "type": "boolean"
+        },
+        {
+          "name": "fallbackModel",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "systemPrompt",
+          "optional": true,
+          "type": "string | Record<string, unknown>"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "CodexAgentOptions",
+      "fields": [
+        {
+          "name": "modelReasoningEffort",
+          "optional": true,
+          "type": "\"none\" | \"minimal\" | \"low\" | \"medium\" | \"high\" | \"xhigh\""
+        },
+        {
+          "name": "modelReasoningSummary",
+          "optional": true,
+          "type": "\"auto\" | \"concise\" | \"detailed\" | \"none\""
+        },
+        {
+          "name": "personality",
+          "optional": true,
+          "type": "\"friendly\" | \"pragmatic\" | \"none\""
+        },
+        {
+          "name": "webSearch",
+          "optional": true,
+          "type": "\"live\" | boolean"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "OpenCodeAgentOptions",
+      "fields": [
+        {
+          "name": "reasoningEffort",
+          "optional": true,
+          "type": "\"low\" | \"medium\" | \"high\""
+        },
+        {
+          "name": "textVerbosity",
+          "optional": true,
+          "type": "\"low\" | \"medium\" | \"high\""
+        },
+        {
+          "name": "reasoningSummary",
+          "optional": true,
+          "type": "\"auto\" | \"concise\" | \"detailed\" | \"none\""
+        },
+        {
+          "name": "thinking",
+          "optional": true,
+          "type": "{ type: \"enabled\"; budgetTokens: number }"
+        }
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CursorAgentOptions",
+      "type": "Record<string, unknown>",
+      "fields": []
+    },
+    {
+      "kind": "type",
+      "name": "AgentOptions",
+      "type": "TProvider extends Agent.ClaudeCode\n  ? ClaudeCodeAgentOptions\n  : TProvider extends Agent.Codex\n    ? CodexAgentOptions\n    : TProvider extends Agent.OpenCode\n      ? OpenCodeAgentOptions\n      : TProvider extends Agent.Cursor\n        ? CursorAgentOptions\n        : Record<string, unknown>",
+      "fields": []
+    },
+    {
+      "kind": "type",
+      "name": "NetworkPolicy",
+      "type": "| { mode: \"allow-all\" | \"deny-all\" }\n  | {\n      mode: \"custom\";\n      allowedDomains?: string[];\n      allowedCidrs?: string[];\n      deniedCidrs?: string[];\n    }",
+      "fields": []
+    },
+    {
+      "kind": "interface",
+      "name": "BoxConfig",
+      "fields": [
+        {
+          "name": "name",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "labels",
+          "optional": true,
+          "type": "string[]"
+        },
+        {
+          "name": "runtime",
+          "optional": true,
+          "type": "Runtime"
+        },
+        {
+          "name": "size",
+          "optional": true,
+          "type": "BoxSize"
+        },
+        {
+          "name": "browser",
+          "optional": true,
+          "type": "boolean"
+        },
+        {
+          "name": "keepAlive",
+          "optional": true,
+          "type": "boolean"
+        },
+        {
+          "name": "initCommand",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "agent",
+          "optional": true,
+          "type": "AgentConfig"
+        },
+        {
+          "name": "git",
+          "optional": true,
+          "type": "{\n    token?: string;\n    userName?: string;\n    userEmail?: string;\n  }"
+        },
+        {
+          "name": "env",
+          "optional": true,
+          "type": "Record<string, string>"
+        },
+        {
+          "name": "attachHeaders",
+          "optional": true,
+          "type": "Record<string, Record<string, string>>"
+        },
+        {
+          "name": "networkPolicy",
+          "optional": true,
+          "type": "NetworkPolicy"
+        },
+        {
+          "name": "skills",
+          "optional": true,
+          "type": "string[]"
+        },
+        {
+          "name": "mcpServers",
+          "optional": true,
+          "type": "McpServerConfig[]"
+        },
+        {
+          "name": "timeout",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "debug",
+          "optional": true,
+          "type": "boolean"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "EphemeralBoxConfig",
+      "fields": [
+        {
+          "name": "name",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "labels",
+          "optional": true,
+          "type": "string[]"
+        },
+        {
+          "name": "runtime",
+          "optional": true,
+          "type": "Runtime"
+        },
+        {
+          "name": "size",
+          "optional": true,
+          "type": "BoxSize"
+        },
+        {
+          "name": "ttl",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "env",
+          "optional": true,
+          "type": "Record<string, string>"
+        },
+        {
+          "name": "attachHeaders",
+          "optional": true,
+          "type": "Record<string, Record<string, string>>"
+        },
+        {
+          "name": "networkPolicy",
+          "optional": true,
+          "type": "NetworkPolicy"
+        },
+        {
+          "name": "timeout",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "debug",
+          "optional": true,
+          "type": "boolean"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "EphemeralBoxData",
+      "fields": [
+        {
+          "name": "ephemeral",
+          "optional": false,
+          "type": "boolean"
+        },
+        {
+          "name": "expires_at",
+          "optional": false,
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "McpServerConfig",
+      "type": "{\n  /** Display name used to identify this server */\n  name: string;\n} & (\n  | {\n      /** npm package specifier to run locally (e.g. \"@org/mcp-server\") */\n      package: string;\n      args?: string[];\n      url?: never;\n      headers?: never;\n    }\n  | {\n      /** Remote MCP server endpoint */\n      url: string;\n      /** Custom headers sent with requests to the remote server */\n      headers?: Record<string, string>;\n      package?: never;\n      args?: never;\n    }\n)",
+      "fields": []
+    },
+    {
+      "kind": "interface",
+      "name": "WebhookConfig",
+      "fields": [
+        {
+          "name": "url",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "headers",
+          "optional": true,
+          "type": "Record<string, string>"
+        }
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "Chunk",
+      "type": "| { type: \"start\"; runId: string }\n  | { type: \"text-delta\"; text: string }\n  | { type: \"reasoning\"; text: string }\n  | { type: \"tool-call\"; toolCallId?: string; toolName: string; input: Record<string, unknown> }\n  | { type: \"tool-result\"; toolCallId?: string; output: unknown }\n  | {\n      type: \"finish\";\n      output: string;\n      usage: {\n        inputTokens: number;\n        outputTokens: number;\n        cachedInputTokens: number;\n      };\n      sessionId: string;\n    }\n  | { type: \"stats\"; cpuNs: number; memoryPeakBytes: number }\n  | { type: \"unknown\"; event: string; data: unknown }",
+      "fields": []
+    },
+    {
+      "kind": "type",
+      "name": "PromptFiles",
+      "type": "string[] | { data: string; mediaType: string; filename?: string }[]",
+      "fields": []
+    },
+    {
+      "kind": "interface",
+      "name": "StreamOptions",
+      "fields": [
+        {
+          "name": "prompt",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "files",
+          "optional": true,
+          "type": "PromptFiles"
+        },
+        {
+          "name": "options",
+          "optional": true,
+          "type": "AgentOptions<TProvider>"
+        },
+        {
+          "name": "timeout",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "onToolUse",
+          "optional": true,
+          "type": "(tool: { toolCallId?: string; name: string; input: Record<string, unknown> }) => void"
+        },
+        {
+          "name": "onToolResult",
+          "optional": true,
+          "type": "(result: { toolCallId?: string; output: unknown }) => void"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "RunOptions",
+      "fields": [
+        {
+          "name": "prompt",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "responseSchema",
+          "optional": true,
+          "type": "ZodType<T>"
+        },
+        {
+          "name": "files",
+          "optional": true,
+          "type": "PromptFiles"
+        },
+        {
+          "name": "options",
+          "optional": true,
+          "type": "AgentOptions<TProvider>"
+        },
+        {
+          "name": "timeout",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "maxRetries",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "onToolUse",
+          "optional": true,
+          "type": "(tool: { toolCallId?: string; name: string; input: Record<string, unknown> }) => void"
+        },
+        {
+          "name": "onToolResult",
+          "optional": true,
+          "type": "(result: { toolCallId?: string; output: unknown }) => void"
+        },
+        {
+          "name": "webhook",
+          "optional": true,
+          "type": "WebhookConfig"
+        }
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "BoxStatus",
+      "type": "\"creating\" | \"idle\" | \"running\" | \"paused\" | \"error\" | \"deleted\"",
+      "fields": []
+    },
+    {
+      "kind": "type",
+      "name": "RunStatus",
+      "type": "\"running\" | \"completed\" | \"failed\" | \"cancelled\" | \"detached\"",
+      "fields": []
+    },
+    {
+      "kind": "interface",
+      "name": "RunCost",
+      "fields": [
+        {
+          "name": "inputTokens",
+          "optional": false,
+          "type": "number"
+        },
+        {
+          "name": "outputTokens",
+          "optional": false,
+          "type": "number"
+        },
+        {
+          "name": "cachedInputTokens",
+          "optional": false,
+          "type": "number"
+        },
+        {
+          "name": "computeMs",
+          "optional": false,
+          "type": "number"
+        },
+        {
+          "name": "totalUsd",
+          "optional": false,
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "RunLog",
+      "fields": [
+        {
+          "name": "timestamp",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "level",
+          "optional": false,
+          "type": "\"info\" | \"warn\" | \"error\""
+        },
+        {
+          "name": "message",
+          "optional": false,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "WebhookPayload",
+      "fields": [
+        {
+          "name": "box_id",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "status",
+          "optional": false,
+          "type": "\"completed\" | \"failed\""
+        },
+        {
+          "name": "run_id",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "output",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "metadata",
+          "optional": true,
+          "type": "Record<string, unknown>"
+        },
+        {
+          "name": "error",
+          "optional": true,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "PullRequest",
+      "fields": [
+        {
+          "name": "url",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "number",
+          "optional": false,
+          "type": "number"
+        },
+        {
+          "name": "title",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "base",
+          "optional": false,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "UploadFileEntry",
+      "fields": [
+        {
+          "name": "path",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "destination",
+          "optional": false,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "Snapshot",
+      "fields": [
+        {
+          "name": "id",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "box_id",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "size_bytes",
+          "optional": false,
+          "type": "number"
+        },
+        {
+          "name": "status",
+          "optional": false,
+          "type": "\"creating\" | \"ready\" | \"error\" | \"deleted\""
+        },
+        {
+          "name": "created_at",
+          "optional": false,
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "BoxConnectionOptions",
+      "fields": [
+        {
+          "name": "apiKey",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "baseUrl",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "enableTelemetry",
+          "optional": true,
+          "type": "boolean"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "ListOptions",
+      "fields": [
+        {
+          "name": "label",
+          "optional": true,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "BoxGetOptions",
+      "fields": [
+        {
+          "name": "gitToken",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "timeout",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "debug",
+          "optional": true,
+          "type": "boolean"
+        }
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CodeLanguage",
+      "type": "\"js\" | \"ts\" | \"python\"",
+      "fields": []
+    },
+    {
+      "kind": "interface",
+      "name": "CodeExecutionOptions",
+      "fields": [
+        {
+          "name": "code",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "lang",
+          "optional": false,
+          "type": "CodeLanguage"
+        },
+        {
+          "name": "timeout",
+          "optional": true,
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "CodeExecutionResult",
+      "fields": [
+        {
+          "name": "output",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "exit_code",
+          "optional": false,
+          "type": "number"
+        },
+        {
+          "name": "error",
+          "optional": true,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "ExecStreamChunk",
+      "type": "| { type: \"output\"; data: string }\n  | { type: \"exit\"; exitCode: number; cpuNs: number }",
+      "fields": []
+    },
+    {
+      "kind": "type",
+      "name": "BoxData",
+      "type": "{\n  id: string;\n  customer_id?: string;\n  name?: string;\n  /** Labels the box is tagged with. */\n  labels?: string[];\n  size?: BoxSize;\n  keep_alive?: boolean;\n  model?: string;\n  agent?: Agent | string;\n  enabled_skills?: string[];\n  runtime?: string;\n  /** Whether the box was provisioned with a headless browser (see `CreateBoxOptions.browser`). */\n  browser?: boolean;\n  status: BoxStatus;\n  /**\n   * Network access policy for this box. If omitted, defaults to allow-all\n   */\n  network_policy?: {\n    mode: \"allow-all\" | \"deny-all\" | \"custom\";\n    allowed_domains?: string[];\n    allowed_cidrs?: string[];\n    denied_cidrs?: string[];\n  };\n  clone_repo?: string;\n  total_input_tokens?: number;\n  total_output_tokens?: number;\n  total_prompts?: number;\n  session_id?: string;\n  agent_id?: string;\n  total_cpu_ns?: number;\n  total_compute_cost_usd?: number;\n  total_token_cost_usd?: number;\n  use_managed_key?: boolean;\n  last_activity_at?: number;\n  created_at: number;\n  updated_at: number;\n}",
+      "fields": [
+        {
+          "name": "id",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "customer_id",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "labels",
+          "optional": true,
+          "type": "string[]"
+        },
+        {
+          "name": "size",
+          "optional": true,
+          "type": "BoxSize"
+        },
+        {
+          "name": "keep_alive",
+          "optional": true,
+          "type": "boolean"
+        },
+        {
+          "name": "model",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "agent",
+          "optional": true,
+          "type": "Agent | string"
+        },
+        {
+          "name": "enabled_skills",
+          "optional": true,
+          "type": "string[]"
+        },
+        {
+          "name": "runtime",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "browser",
+          "optional": true,
+          "type": "boolean"
+        },
+        {
+          "name": "status",
+          "optional": false,
+          "type": "BoxStatus"
+        },
+        {
+          "name": "network_policy",
+          "optional": true,
+          "type": "{\n    mode: \"allow-all\" | \"deny-all\" | \"custom\";\n    allowed_domains?: string[];\n    allowed_cidrs?: string[];\n    denied_cidrs?: string[];\n  }"
+        },
+        {
+          "name": "clone_repo",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "total_input_tokens",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "total_output_tokens",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "total_prompts",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "session_id",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "agent_id",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "total_cpu_ns",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "total_compute_cost_usd",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "total_token_cost_usd",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "use_managed_key",
+          "optional": true,
+          "type": "boolean"
+        },
+        {
+          "name": "last_activity_at",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "created_at",
+          "optional": false,
+          "type": "number"
+        },
+        {
+          "name": "updated_at",
+          "optional": false,
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "RunResult",
+      "fields": [
+        {
+          "name": "output",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "metadata",
+          "optional": true,
+          "type": "RunMetadata"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "RunMetadata",
+      "fields": [
+        {
+          "name": "input_tokens",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "output_tokens",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "cached_input_tokens",
+          "optional": true,
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "ExecResult",
+      "fields": [
+        {
+          "name": "exit_code",
+          "optional": false,
+          "type": "number"
+        },
+        {
+          "name": "output",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "error",
+          "optional": true,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "FileEntry",
+      "fields": [
+        {
+          "name": "name",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "path",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "size",
+          "optional": false,
+          "type": "number"
+        },
+        {
+          "name": "is_dir",
+          "optional": false,
+          "type": "boolean"
+        },
+        {
+          "name": "mod_time",
+          "optional": false,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "GitCloneOptions",
+      "fields": [
+        {
+          "name": "repo",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "branch",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "depth",
+          "optional": true,
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "GitExecOptions",
+      "fields": [
+        {
+          "name": "args",
+          "optional": false,
+          "type": "string[]"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "GitExecResult",
+      "fields": [
+        {
+          "name": "output",
+          "optional": false,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "GitCheckoutOptions",
+      "fields": [
+        {
+          "name": "branch",
+          "optional": false,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "GitPROptions",
+      "fields": [
+        {
+          "name": "title",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "body",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "base",
+          "optional": true,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "GitCommitOptions",
+      "fields": [
+        {
+          "name": "message",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "authorName",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "authorEmail",
+          "optional": true,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "GitConfigUpdateOptions",
+      "fields": [
+        {
+          "name": "userName",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "userEmail",
+          "optional": true,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "GitConfig",
+      "fields": [
+        {
+          "name": "git_user_name",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "git_user_email",
+          "optional": false,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "GitCommitResult",
+      "fields": [
+        {
+          "name": "sha",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "message",
+          "optional": false,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "LogEntry",
+      "fields": [
+        {
+          "name": "timestamp",
+          "optional": false,
+          "type": "number"
+        },
+        {
+          "name": "level",
+          "optional": false,
+          "type": "\"info\" | \"warn\" | \"error\""
+        },
+        {
+          "name": "source",
+          "optional": false,
+          "type": "\"system\" | \"agent\" | \"user\""
+        },
+        {
+          "name": "message",
+          "optional": false,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "ErrorResponse",
+      "fields": [
+        {
+          "name": "error",
+          "optional": false,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "BoxRunData",
+      "type": "{\n  id: string;\n  box_id: string;\n  customer_id: string;\n  type: \"agent\" | \"shell\";\n  prompt?: string;\n  model?: string;\n  output?: string;\n  input_tokens: number;\n  output_tokens: number;\n  cached_input_tokens?: number;\n  cost_usd: number;\n  duration_ms: number;\n  cpu_ns?: number;\n  compute_cost_usd?: number;\n  memory_peak_bytes?: number;\n  error_message?: string;\n  session_id?: string;\n  created_at: number;\n  completed_at?: number;\n} & (\n  | { schedule_id?: never; status: \"running\" | \"completed\" | \"failed\" | \"cancelled\" }\n  | { schedule_id: string; status: \"completed\" | \"failed\" | \"skipped\" }\n)",
+      "fields": []
+    },
+    {
+      "kind": "type",
+      "name": "ScheduleStatus",
+      "type": "\"active\" | \"paused\" | \"deleted\"",
+      "fields": []
+    },
+    {
+      "kind": "interface",
+      "name": "ExecScheduleOptions",
+      "fields": [
+        {
+          "name": "cron",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "command",
+          "optional": false,
+          "type": "string[]"
+        },
+        {
+          "name": "folder",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "webhookUrl",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "webhookHeaders",
+          "optional": true,
+          "type": "Record<string, string>"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "AgentScheduleOptions",
+      "fields": [
+        {
+          "name": "cron",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "prompt",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "folder",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "model",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "options",
+          "optional": true,
+          "type": "AgentOptions<TProvider>"
+        },
+        {
+          "name": "timeout",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "webhookUrl",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "webhookHeaders",
+          "optional": true,
+          "type": "Record<string, string>"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "UpdateScheduleOptions",
+      "fields": [
+        {
+          "name": "cron",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "command",
+          "optional": true,
+          "type": "string[]"
+        },
+        {
+          "name": "prompt",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "folder",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "model",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "options",
+          "optional": true,
+          "type": "AgentOptions<TProvider> | null"
+        },
+        {
+          "name": "timeout",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "webhookUrl",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "webhookHeaders",
+          "optional": true,
+          "type": "Record<string, string>"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "Schedule",
+      "fields": [
+        {
+          "name": "id",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "box_id",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "customer_id",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "type",
+          "optional": false,
+          "type": "\"exec\" | \"prompt\""
+        },
+        {
+          "name": "cron",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "command",
+          "optional": true,
+          "type": "string[]"
+        },
+        {
+          "name": "prompt",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "folder",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "model",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "agent_options",
+          "optional": true,
+          "type": "Record<string, unknown>"
+        },
+        {
+          "name": "timeout",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "status",
+          "optional": false,
+          "type": "ScheduleStatus"
+        },
+        {
+          "name": "qstash_schedule_id",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "webhook_url",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "webhook_headers",
+          "optional": true,
+          "type": "Record<string, string>"
+        },
+        {
+          "name": "last_run_at",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "last_run_status",
+          "optional": true,
+          "type": "\"completed\" | \"failed\" | \"skipped\""
+        },
+        {
+          "name": "last_run_id",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "total_runs",
+          "optional": false,
+          "type": "number"
+        },
+        {
+          "name": "total_failures",
+          "optional": false,
+          "type": "number"
+        },
+        {
+          "name": "created_at",
+          "optional": false,
+          "type": "number"
+        },
+        {
+          "name": "updated_at",
+          "optional": false,
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "PublicURL",
+      "fields": [
+        {
+          "name": "url",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "port",
+          "optional": false,
+          "type": "number"
+        },
+        {
+          "name": "token",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "username",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "password",
+          "optional": true,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "Preview",
+      "type": "PublicURL",
+      "fields": []
+    },
+    {
+      "kind": "interface",
+      "name": "BrowserExtractOptions",
+      "fields": [
+        {
+          "name": "model",
+          "optional": true,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "BrowserLink",
+      "fields": [
+        {
+          "name": "text",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "href",
+          "optional": false,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "BrowserContent",
+      "fields": [
+        {
+          "name": "title",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "url",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "text",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "links",
+          "optional": true,
+          "type": "BrowserLink[]"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "BrowserScreenshotOptions",
+      "fields": [
+        {
+          "name": "type",
+          "optional": true,
+          "type": "\"png\" | \"base64\""
+        },
+        {
+          "name": "fullPage",
+          "optional": true,
+          "type": "boolean"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "BrowserTabCreateOptions",
+      "fields": [
+        {
+          "name": "waitUntil",
+          "optional": true,
+          "type": "\"load\" | \"domcontentloaded\" | \"networkidle\""
+        },
+        {
+          "name": "timeout",
+          "optional": true,
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "BrowserObserveElement",
+      "fields": [
+        {
+          "name": "description",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "selector",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "url",
+          "optional": true,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "BrowserObserveResult",
+      "fields": [
+        {
+          "name": "elements",
+          "optional": false,
+          "type": "BrowserObserveElement[]"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "BrowserActAction",
+      "fields": [
+        {
+          "name": "selector",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "description",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "method",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "arguments",
+          "optional": true,
+          "type": "string[]"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "BrowserActResult",
+      "fields": [
+        {
+          "name": "success",
+          "optional": false,
+          "type": "boolean"
+        },
+        {
+          "name": "message",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "actionDescription",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "actions",
+          "optional": false,
+          "type": "BrowserActAction[]"
+        },
+        {
+          "name": "cacheStatus",
+          "optional": true,
+          "type": "\"HIT\" | \"MISS\""
+        },
+        {
+          "name": "inputTokens",
+          "optional": false,
+          "type": "number"
+        },
+        {
+          "name": "outputTokens",
+          "optional": false,
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "BrowserRunOptions",
+      "fields": [
+        {
+          "name": "schema",
+          "optional": true,
+          "type": "{ parse(data: unknown): T }"
+        },
+        {
+          "name": "prompt",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "maxSteps",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "model",
+          "optional": true,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "BrowserRunStep",
+      "fields": [
+        {
+          "name": "step",
+          "optional": false,
+          "type": "number"
+        },
+        {
+          "name": "action",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "reasoning",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "url",
+          "optional": true,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "BrowserRunResult",
+      "fields": [
+        {
+          "name": "data",
+          "optional": false,
+          "type": "T"
+        },
+        {
+          "name": "result",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "completed",
+          "optional": false,
+          "type": "boolean"
+        },
+        {
+          "name": "steps",
+          "optional": false,
+          "type": "BrowserRunStep[]"
+        },
+        {
+          "name": "stepCount",
+          "optional": false,
+          "type": "number"
+        },
+        {
+          "name": "inputTokens",
+          "optional": false,
+          "type": "number"
+        },
+        {
+          "name": "outputTokens",
+          "optional": false,
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "BrowserRecordingMarker",
+      "fields": [
+        {
+          "name": "type",
+          "optional": false,
+          "type": "\"tab_switch\" | \"run\""
+        },
+        {
+          "name": "atMs",
+          "optional": false,
+          "type": "number"
+        },
+        {
+          "name": "endMs",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "label",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "tabId",
+          "optional": true,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "BrowserRecording",
+      "fields": [
+        {
+          "name": "id",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "boxId",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "status",
+          "optional": false,
+          "type": "\"recording\" | \"completed\" | \"failed\" | \"deleted\""
+        },
+        {
+          "name": "startedAt",
+          "optional": false,
+          "type": "number"
+        },
+        {
+          "name": "expiresAt",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "endedAt",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "durationMs",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "sizeBytes",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "segmentCount",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "mp4SizeBytes",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "stoppedReason",
+          "optional": true,
+          "type": "string"
+        },
+        {
+          "name": "maxDurationSeconds",
+          "optional": true,
+          "type": "number"
+        },
+        {
+          "name": "markers",
+          "optional": false,
+          "type": "BrowserRecordingMarker[]"
+        },
+        {
+          "name": "playlistUrl",
+          "optional": false,
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "BrowserRecordingOptions",
+      "fields": [
+        {
+          "name": "maxDurationSeconds",
+          "optional": true,
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "kind": "interface",
+      "name": "BrowserRecordingHandle",
+      "fields": [
+        {
+          "name": "id",
+          "optional": false,
+          "type": "string"
+        },
+        {
+          "name": "stop",
+          "optional": false,
+          "type": "() => Promise<BrowserRecording>"
+        }
+      ]
+    }
+  ]
+}

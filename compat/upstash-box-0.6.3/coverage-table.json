@@ -1,0 +1,970 @@
+{
+  "kind": "Phase 0 public SDK capture evidence",
+  "public_cases": 82,
+  "public_case_ids": [
+    "GET /v2/box",
+    "DELETE /v2/box",
+    "DELETE /v2/box/snapshots",
+    "POST /v2/box/from-snapshot",
+    "POST /v2/box/from-snapshot#ephemeral",
+    "POST /v2/box#ephemeral",
+    "GET /v2/box/{box_id}",
+    "DELETE /v2/box/{box_id}",
+    "GET /v2/box/{box_id}/status",
+    "POST /v2/box/{box_id}/pause",
+    "POST /v2/box/{box_id}/resume",
+    "GET /v2/box/{box_id}/startup",
+    "PUT /v2/box/{box_id}/startup",
+    "DELETE /v2/box/{box_id}/startup",
+    "PUT /v2/box/{box_id}/config/model",
+    "PUT /v2/box/{box_id}/config/custom-runner",
+    "PUT /v2/box/{box_id}/config/network-policy",
+    "GET /v2/box/settings/env",
+    "PUT /v2/box/settings/env",
+    "PUT /v2/box/settings/env/{key}",
+    "DELETE /v2/box/settings/env/{key}",
+    "POST /v2/box/{box_id}/run",
+    "POST /v2/box/{box_id}/run/stream",
+    "POST /v2/box/{box_id}/runs/{run_id}/cancel",
+    "GET /v2/box/{box_id}/runs",
+    "GET /v2/box/{box_id}/logs",
+    "POST /v2/box/{box_id}/exec",
+    "POST /v2/box/{box_id}/exec-stream",
+    "POST /v2/box/{box_id}/code",
+    "POST /v2/box/{box_id}/code-stream",
+    "POST /v2/box/{box_id}/exec#cd",
+    "GET /v2/box/{box_id}/files/read",
+    "POST /v2/box/{box_id}/files/write",
+    "GET /v2/box/{box_id}/files/list",
+    "POST /v2/box/{box_id}/files/upload",
+    "GET /v2/box/{box_id}/files/download",
+    "POST /v2/box/{box_id}/snapshots",
+    "GET /v2/box/{box_id}/snapshots",
+    "DELETE /v2/box/{box_id}/snapshots/{snapshot_id}",
+    "POST /v2/box/{box_id}/git/clone",
+    "GET /v2/box/{box_id}/git/diff",
+    "GET /v2/box/{box_id}/git/status",
+    "POST /v2/box/{box_id}/git/commit",
+    "PUT /v2/box/{box_id}/git-config",
+    "POST /v2/box/{box_id}/git/push",
+    "POST /v2/box/{box_id}/git/create-pr",
+    "POST /v2/box/{box_id}/git/exec",
+    "POST /v2/box/{box_id}/git/checkout",
+    "POST /v2/box/{box_id}/config/skills",
+    "DELETE /v2/box/{box_id}/config/skills/{skill_id+}",
+    "GET /v2/box/{box_id}#skills",
+    "POST /v2/box/{box_id}/config/labels",
+    "DELETE /v2/box/{box_id}/config/labels/{label}",
+    "GET /v2/box/{box_id}#labels",
+    "POST /v2/box/{box_id}/schedules#exec",
+    "POST /v2/box/{box_id}/schedules#agent",
+    "GET /v2/box/{box_id}/schedules",
+    "GET /v2/box/{box_id}/schedules/{id}",
+    "PATCH /v2/box/{box_id}/schedules/{id}",
+    "POST /v2/box/{box_id}/schedules/{id}/pause",
+    "POST /v2/box/{box_id}/schedules/{id}/resume",
+    "DELETE /v2/box/{box_id}/schedules/{id}",
+    "POST /v2/box/{box_id}/preview",
+    "GET /v2/box/{box_id}/preview",
+    "DELETE /v2/box/{box_id}/preview/{port}",
+    "POST /v2/box/{box_id}/browser/tabs",
+    "GET /v2/box/{box_id}/browser/tabs",
+    "POST /v2/box/{box_id}/browser/goto",
+    "POST /v2/box/{box_id}/browser/extract",
+    "POST /v2/box/{box_id}/browser/observe",
+    "POST /v2/box/{box_id}/browser/act",
+    "POST /v2/box/{box_id}/browser/run",
+    "GET /v2/box/{box_id}/browser/content",
+    "GET /v2/box/{box_id}/browser/screenshot",
+    "POST /v2/box/{box_id}/browser/screencast",
+    "POST /v2/box/{box_id}/browser/connect",
+    "POST /v2/box/{box_id}/browser/recordings",
+    "POST /v2/box/{box_id}/browser/recordings/stop",
+    "GET /v2/box/{box_id}/browser/recordings",
+    "GET /v2/box/{box_id}/browser/recordings/{id}",
+    "GET /v2/box/{box_id}/browser/recordings/{id}/download",
+    "DELETE /v2/box/{box_id}/browser/tabs/{tab_id}"
+  ],
+  "case_evidence": [
+    {
+      "case_id": "GET /v2/box",
+      "captured_contracts": [
+        "GET /v2/box"
+      ]
+    },
+    {
+      "case_id": "DELETE /v2/box",
+      "captured_contracts": [
+        "DELETE /v2/box"
+      ]
+    },
+    {
+      "case_id": "DELETE /v2/box/snapshots",
+      "captured_contracts": [
+        "DELETE /v2/box/snapshots"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/from-snapshot",
+      "captured_contracts": [
+        "POST /v2/box/from-snapshot"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/from-snapshot#ephemeral",
+      "captured_contracts": [
+        "POST /v2/box/from-snapshot"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box#ephemeral",
+      "captured_contracts": [
+        "POST /v2/box"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}",
+      "captured_contracts": [
+        "POST /v2/box",
+        "GET /v2/box/{box_id}"
+      ]
+    },
+    {
+      "case_id": "DELETE /v2/box/{box_id}",
+      "captured_contracts": [
+        "POST /v2/box",
+        "DELETE /v2/box/{box_id}"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/status",
+      "captured_contracts": [
+        "POST /v2/box",
+        "GET /v2/box/{box_id}/status"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/pause",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/pause"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/resume",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/resume"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/startup",
+      "captured_contracts": [
+        "POST /v2/box",
+        "GET /v2/box/{box_id}/startup"
+      ]
+    },
+    {
+      "case_id": "PUT /v2/box/{box_id}/startup",
+      "captured_contracts": [
+        "POST /v2/box",
+        "PUT /v2/box/{box_id}/startup"
+      ]
+    },
+    {
+      "case_id": "DELETE /v2/box/{box_id}/startup",
+      "captured_contracts": [
+        "POST /v2/box",
+        "DELETE /v2/box/{box_id}/startup"
+      ]
+    },
+    {
+      "case_id": "PUT /v2/box/{box_id}/config/model",
+      "captured_contracts": [
+        "POST /v2/box",
+        "PUT /v2/box/{box_id}/config/model"
+      ]
+    },
+    {
+      "case_id": "PUT /v2/box/{box_id}/config/custom-runner",
+      "captured_contracts": [
+        "POST /v2/box",
+        "PUT /v2/box/{box_id}/config/custom-runner"
+      ]
+    },
+    {
+      "case_id": "PUT /v2/box/{box_id}/config/network-policy",
+      "captured_contracts": [
+        "POST /v2/box",
+        "PUT /v2/box/{box_id}/config/network-policy"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/settings/env",
+      "captured_contracts": [
+        "GET /v2/box/settings/env"
+      ]
+    },
+    {
+      "case_id": "PUT /v2/box/settings/env",
+      "captured_contracts": [
+        "PUT /v2/box/settings/env"
+      ]
+    },
+    {
+      "case_id": "PUT /v2/box/settings/env/{key}",
+      "captured_contracts": [
+        "PUT /v2/box/settings/env/{key}"
+      ]
+    },
+    {
+      "case_id": "DELETE /v2/box/settings/env/{key}",
+      "captured_contracts": [
+        "DELETE /v2/box/settings/env/{key}"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/run",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/run"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/run/stream",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/run/stream"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/runs/{run_id}/cancel",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/run",
+        "POST /v2/box/{box_id}/runs/{run_id}/cancel"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/runs",
+      "captured_contracts": [
+        "POST /v2/box",
+        "GET /v2/box/{box_id}/runs"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/logs",
+      "captured_contracts": [
+        "POST /v2/box",
+        "GET /v2/box/{box_id}/logs"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/exec",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/exec"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/exec-stream",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/exec-stream"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/code",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/code"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/code-stream",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/code-stream"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/exec#cd",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/exec"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/files/read",
+      "captured_contracts": [
+        "POST /v2/box",
+        "GET /v2/box/{box_id}/files/read"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/files/write",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/files/write"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/files/list",
+      "captured_contracts": [
+        "POST /v2/box",
+        "GET /v2/box/{box_id}/files/list"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/files/upload",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/files/upload"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/files/download",
+      "captured_contracts": [
+        "POST /v2/box",
+        "GET /v2/box/{box_id}/files/list",
+        "GET /v2/box/{box_id}/files/download"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/snapshots",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/snapshots"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/snapshots",
+      "captured_contracts": [
+        "POST /v2/box",
+        "GET /v2/box/{box_id}/snapshots"
+      ]
+    },
+    {
+      "case_id": "DELETE /v2/box/{box_id}/snapshots/{snapshot_id}",
+      "captured_contracts": [
+        "POST /v2/box",
+        "DELETE /v2/box/{box_id}/snapshots/{snapshot_id}"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/git/clone",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/git/clone"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/git/diff",
+      "captured_contracts": [
+        "POST /v2/box",
+        "GET /v2/box/{box_id}/git/diff"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/git/status",
+      "captured_contracts": [
+        "POST /v2/box",
+        "GET /v2/box/{box_id}/git/status"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/git/commit",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/git/commit"
+      ]
+    },
+    {
+      "case_id": "PUT /v2/box/{box_id}/git-config",
+      "captured_contracts": [
+        "POST /v2/box",
+        "PUT /v2/box/{box_id}/git-config"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/git/push",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/git/push"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/git/create-pr",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/git/create-pr"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/git/exec",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/git/exec"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/git/checkout",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/git/checkout"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/config/skills",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/config/skills"
+      ]
+    },
+    {
+      "case_id": "DELETE /v2/box/{box_id}/config/skills/{skill_id+}",
+      "captured_contracts": [
+        "POST /v2/box",
+        "DELETE /v2/box/{box_id}/config/skills/{skill_id+}"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}#skills",
+      "captured_contracts": [
+        "POST /v2/box",
+        "GET /v2/box/{box_id}"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/config/labels",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/config/labels"
+      ]
+    },
+    {
+      "case_id": "DELETE /v2/box/{box_id}/config/labels/{label}",
+      "captured_contracts": [
+        "POST /v2/box",
+        "DELETE /v2/box/{box_id}/config/labels/{label}"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}#labels",
+      "captured_contracts": [
+        "POST /v2/box",
+        "GET /v2/box/{box_id}"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/schedules#exec",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/schedules"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/schedules#agent",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/schedules"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/schedules",
+      "captured_contracts": [
+        "POST /v2/box",
+        "GET /v2/box/{box_id}/schedules"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/schedules/{id}",
+      "captured_contracts": [
+        "POST /v2/box",
+        "GET /v2/box/{box_id}/schedules/{id}"
+      ]
+    },
+    {
+      "case_id": "PATCH /v2/box/{box_id}/schedules/{id}",
+      "captured_contracts": [
+        "POST /v2/box",
+        "PATCH /v2/box/{box_id}/schedules/{id}"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/schedules/{id}/pause",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/schedules/{id}/pause"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/schedules/{id}/resume",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/schedules/{id}/resume"
+      ]
+    },
+    {
+      "case_id": "DELETE /v2/box/{box_id}/schedules/{id}",
+      "captured_contracts": [
+        "POST /v2/box",
+        "DELETE /v2/box/{box_id}/schedules/{id}"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/preview",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/preview"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/preview",
+      "captured_contracts": [
+        "POST /v2/box",
+        "GET /v2/box/{box_id}/preview"
+      ]
+    },
+    {
+      "case_id": "DELETE /v2/box/{box_id}/preview/{port}",
+      "captured_contracts": [
+        "POST /v2/box",
+        "DELETE /v2/box/{box_id}/preview/{port}"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/browser/tabs",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/browser/tabs"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/browser/tabs",
+      "captured_contracts": [
+        "POST /v2/box",
+        "GET /v2/box/{box_id}/browser/tabs"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/browser/goto",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/browser/goto"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/browser/extract",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/browser/extract"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/browser/observe",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/browser/observe"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/browser/act",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/browser/act"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/browser/run",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/browser/run"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/browser/content",
+      "captured_contracts": [
+        "POST /v2/box",
+        "GET /v2/box/{box_id}/browser/content"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/browser/screenshot",
+      "captured_contracts": [
+        "POST /v2/box",
+        "GET /v2/box/{box_id}/browser/screenshot"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/browser/screencast",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/browser/screencast"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/browser/connect",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/browser/connect"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/browser/recordings",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/browser/recordings"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/browser/recordings/stop",
+      "captured_contracts": [
+        "POST /v2/box",
+        "POST /v2/box/{box_id}/browser/recordings/stop"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/browser/recordings",
+      "captured_contracts": [
+        "POST /v2/box",
+        "GET /v2/box/{box_id}/browser/recordings"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/browser/recordings/{id}",
+      "captured_contracts": [
+        "POST /v2/box",
+        "GET /v2/box/{box_id}/browser/recordings/{id}"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/browser/recordings/{id}/download",
+      "captured_contracts": [
+        "POST /v2/box",
+        "GET /v2/box/{box_id}/browser/recordings/{id}/download"
+      ]
+    },
+    {
+      "case_id": "DELETE /v2/box/{box_id}/browser/tabs/{tab_id}",
+      "captured_contracts": [
+        "POST /v2/box",
+        "DELETE /v2/box/{box_id}/browser/tabs/{tab_id}"
+      ]
+    }
+  ],
+  "captured_dispatches": 159,
+  "covered_direct_contracts": 77,
+  "response_linked": 1,
+  "total": 78,
+  "entries": [
+    {
+      "id": "DELETE /v2/box",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "DELETE /v2/box/settings/env/{key}",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "DELETE /v2/box/snapshots",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "DELETE /v2/box/{box_id}",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "DELETE /v2/box/{box_id}/browser/tabs/{tab_id}",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "DELETE /v2/box/{box_id}/config/labels/{label}",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "DELETE /v2/box/{box_id}/config/skills/{skill_id+}",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "DELETE /v2/box/{box_id}/preview/{port}",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "DELETE /v2/box/{box_id}/schedules/{id}",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "DELETE /v2/box/{box_id}/snapshots/{snapshot_id}",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "DELETE /v2/box/{box_id}/startup",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "GET /v2/box",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "GET /v2/box/settings/env",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "GET /v2/box/{box_id}",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "GET /v2/box/{box_id}/browser/content",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "GET /v2/box/{box_id}/browser/recordings",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "GET /v2/box/{box_id}/browser/recordings/{id}",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "GET /v2/box/{box_id}/browser/recordings/{id}/download",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "GET /v2/box/{box_id}/browser/screenshot",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "GET /v2/box/{box_id}/browser/tabs",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "GET /v2/box/{box_id}/files/download",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "GET /v2/box/{box_id}/files/list",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "GET /v2/box/{box_id}/files/read",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "GET /v2/box/{box_id}/git/diff",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "GET /v2/box/{box_id}/git/status",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "GET /v2/box/{box_id}/logs",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "GET /v2/box/{box_id}/preview",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "GET /v2/box/{box_id}/runs",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "GET /v2/box/{box_id}/schedules",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "GET /v2/box/{box_id}/schedules/{id}",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "GET /v2/box/{box_id}/snapshots",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "GET /v2/box/{box_id}/startup",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "GET /v2/box/{box_id}/status",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "PATCH /v2/box/{box_id}/schedules/{id}",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/from-snapshot",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/browser/act",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/browser/connect",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/browser/extract",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/browser/goto",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/browser/observe",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/browser/recordings",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/browser/recordings/stop",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/browser/run",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/browser/screencast",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/browser/tabs",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/code",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/code-stream",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/config/labels",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/config/skills",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/exec",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/exec-stream",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/files/upload",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/files/write",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/git/checkout",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/git/clone",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/git/commit",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/git/create-pr",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/git/exec",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/git/push",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/pause",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/preview",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/resume",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/run",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/run/stream",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/runs/{run_id}/cancel",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/schedules",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/schedules/{id}/pause",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/schedules/{id}/resume",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "POST /v2/box/{box_id}/snapshots",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "PUT /v2/box/settings/env",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "PUT /v2/box/settings/env/{key}",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "PUT /v2/box/{box_id}/config/custom-runner",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "PUT /v2/box/{box_id}/config/model",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "PUT /v2/box/{box_id}/config/network-policy",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "PUT /v2/box/{box_id}/git-config",
+      "runner": "public-sdk-capture"
+    },
+    {
+      "id": "PUT /v2/box/{box_id}/startup",
+      "runner": "public-sdk-capture"
+    }
+  ]
+}

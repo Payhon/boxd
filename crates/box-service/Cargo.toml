@@ -1,0 +1,40 @@
+[package]
+name = "box-service"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+async-trait.workspace = true
+base64 = "0.22"
+box-api = { path = "../box-api" }
+box-agent-proto = { path = "../box-agent-proto" }
+box-browser = { path = "../box-browser" }
+box-core = { path = "../box-core" }
+box-db = { path = "../box-db" }
+box-observability = { path = "../box-observability" }
+opentelemetry.workspace = true
+box-preview = { path = "../box-preview" }
+box-secrets = { path = "../box-secrets" }
+box-scheduler = { path = "../box-scheduler" }
+serde.workspace = true
+serde_json.workspace = true
+tokio = { workspace = true, features = ["net", "sync", "time"] }
+tokio-stream = "0.1"
+tokio-tungstenite = "0.30"
+tonic = { version = "0.12", features = ["transport"] }
+tower = "0.5"
+tracing.workspace = true
+tracing-opentelemetry.workspace = true
+hyper-util = { version = "0.1", features = ["tokio"] }
+uuid.workspace = true
+futures-util = "0.3"
+getrandom = "0.3"
+url.workspace = true
+zeroize = "1.8"
+
+[dev-dependencies]
+box-migration = { path = "../box-migration" }
+opentelemetry_sdk.workspace = true
+tokio = { workspace = true, features = ["sync", "time", "test-util"] }

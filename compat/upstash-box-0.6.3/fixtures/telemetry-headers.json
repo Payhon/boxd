@@ -1,0 +1,13 @@
+{
+  "case": "public-sdk Box.create with mock fetch",
+  "enableTelemetry_true": {
+    "X-Box-Api-Key": "fixture-api-key",
+    "Upstash-Telemetry-Sdk": "@upstash/box@0.6.3",
+    "Upstash-Telemetry-Runtime": "node@${process.version}",
+    "Upstash-Telemetry-Platform": "ci"
+  },
+  "enableTelemetry_false": {
+    "X-Box-Api-Key": "fixture-api-key",
+    "telemetry_headers": "absent"
+  }
+}

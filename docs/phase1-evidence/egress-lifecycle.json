@@ -1,0 +1,16 @@
+{
+  "schema": "boxd-phase1-egress-smoke-v1",
+  "source_commit": "677ca0827a6f54bc328b4b3e97d32a7cc5ac1934",
+  "restricted_default_sdk_mode": "allow-all",
+  "restricted": {
+    "dns_public": true,
+    "http_80": true,
+    "https_443": true,
+    "metadata_blocked": true,
+    "loopback_blocked": true,
+    "private_blocked": true,
+    "non_web_port_blocked": true
+  },
+  "deny_all": { "public_https_blocked": true },
+  "status": "idle"
+}

@@ -1,0 +1,23 @@
+{
+  "schema": "boxd-phase1-final-artifact-evidence-v1",
+  "artifact_sha256": "b1957bb7a26b5d12c77423e440c3577d48626be13fff1d43311702a4da835303",
+  "artifact_size_bytes": 53917206,
+  "rootfs_sha256": "9f4bf99b7b69ea5565a1c73f90c7680e40aa5375dec5fe7639da0f4e949bacc2",
+  "rootfs_size_bytes": 21474836480,
+  "deny_all_boxd_sha256": "416cc5868bdb0023670a53954f12c5efe963087bf079bdea1122b970a5f72580",
+  "restricted_egress_boxd_sha256": "67e7ea0a58c740fcae76fdf368f75c9aa40441f21f618d0e405a85c6baacba2c",
+  "libkrun_sha256": "768d6eb49dffe9457ca86d8aceeda3b3fbd87bc2c3c81c57955a3a9db6e26164",
+  "libkrunfw_sha256": "3e52be139692c517c2fbb0aaf1e5dad45bf60238dfbd14375915581a8282c4cb",
+  "box_agent_source_sha256": "656165f8c602d8d30a4d46d25b136fa2c7f21cb0b8dc6762a0c8d5f8079b198f",
+  "box_agent_binary_sha256": "784ff7f5b5ecf5aad86ce4fb5fd179cb79d20dfbe13d41141e3c43037a95d07c",
+  "box_agent_binary_size_bytes": 3708432,
+  "sdk_commit": "677ca0827a6f54bc328b4b3e97d32a7cc5ac1934",
+  "node_image": "node:22.16.0-bookworm-slim@sha256:6b84a3d695387c70b7d5f45224899d5bf5bf96c4345bed678f07822927c850a0",
+  "rust_image": "arm64v8/rust:1.94.0-bullseye@sha256:7fbe0a2b512eb22093007c61965f455510846a6f0b0a352f11b0c2c83c6a1b56",
+  "production_import": "pass",
+  "doctor_minimum_free_gib_10": "pass",
+  "doctor_smoke_minimum_free_gib_1": "pass",
+  "macos_hvf_deny_all_smoke": "pass",
+  "macos_hvf_restricted_default_smoke": "pass",
+  "macos_hvf_restricted_default_restart": "pass"
+}
