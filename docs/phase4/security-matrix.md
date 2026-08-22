@@ -35,9 +35,9 @@ case payload。
 ```sh
 python3 scripts/phase4-security-matrix.py --cases tests/security/cases.json
 python3 -m unittest discover -s tests/security -p 'test_*.py'
-(cd fuzz && cargo fuzz build)
+cargo fuzz build
 for target in network_policy dns api_json http_sse path_archive; do
-  (cd fuzz && cargo fuzz run "$target" -- -runs=64 -max_len=65536)
+  cargo fuzz run "$target" -- -runs=64 -max_len=65536
 done
 ```
 
