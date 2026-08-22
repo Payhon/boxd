@@ -12,6 +12,16 @@ Prepare one target-specific directory containing exactly the paths declared by
 `libkrunfw`, `runtime_bundle`, `sbom`, and `licenses`. Artifact paths must be
 normalized relative paths and no component may be a symlink.
 
+The release root is a closed tree. Its only permitted files are: the six input
+artifact paths; the local provenance path; files referenced by the license
+index; and the generated `SHA256SUMS` and `release-manifest.json`. Directories
+are allowed only as ancestors of those files. Service definitions are validated
+separately and are rejected from this release root until a later manifest
+version binds their hashes explicitly. Empty directories, nested tool output,
+temporary files, symlinks, hardlinks, and any other file type fail closed. This
+check runs before generation and during verification, so an interrupted build
+cannot be resumed from a contaminated staging tree.
+
 The provenance object must include a local relative `path` in addition to its
 URI and SHA-256. The gate hashes that file from the release directory; a URI
 and claimed digest alone is rejected. The SPDX 2.3 document must describe
@@ -38,6 +48,9 @@ manifest itself is not listed in `SHA256SUMS`, avoiding a circular hash; the
 manifest binds the local provenance file path and digest separately. Generated
 outputs, payloads, provenance, service definitions, `SHA256SUMS`, and the
 manifest must all be unique regular files: symlinks and hardlinks are rejected.
+This is an integrity/closure check only; it does not claim code signing,
+Developer ID identity, notarization, stapling, Linux signing, or provenance
+attestation.
 
 ## Service definitions
 

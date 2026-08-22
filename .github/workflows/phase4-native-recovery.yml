@@ -1,0 +1,150 @@
+name: phase4-native-recovery
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "Protected native runner platform label"
+        required: true
+        default: linux
+        type: choice
+        options:
+          - linux
+          - macos
+      architecture:
+        description: "Protected native runner architecture label"
+        required: true
+        default: x64
+        type: choice
+        options:
+          - x64
+          - ARM64
+      confirm_run:
+        description: "I confirm this protected native recovery run and its dedicated test assets"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase4-native-recovery-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  native-recovery:
+    environment:
+      name: phase4-native-recovery
+    runs-on: [self-hosted, "${{ inputs.platform }}", boxd-recovery, "${{ inputs.architecture }}"]
+    timeout-minutes: 180
+    env:
+      BOXD_RECOVERY_CONFIG: ${{ vars.BOXD_RECOVERY_CONFIG }}
+      BOXD_RECOVERY_RUNTIME_BUNDLE: ${{ vars.BOXD_RECOVERY_RUNTIME_BUNDLE }}
+      BOXD_RECOVERY_RELEASE_ARTIFACT: ${{ vars.BOXD_RECOVERY_RELEASE_ARTIFACT }}
+      BOXD_EMBEDDED_LIBKRUN_PATH: ${{ vars.BOXD_RECOVERY_LIBKRUN_PATH }}
+      BOXD_EMBEDDED_LIBKRUN_SHA256: ${{ vars.BOXD_RECOVERY_LIBKRUN_SHA256 }}
+      BOXD_EMBEDDED_LIBKRUN_LICENSE_PATH: ${{ vars.BOXD_RECOVERY_LIBKRUN_LICENSE_PATH }}
+      BOXD_EMBEDDED_LIBKRUNFW_PATH: ${{ vars.BOXD_RECOVERY_LIBKRUNFW_PATH }}
+      BOXD_EMBEDDED_LIBKRUNFW_SHA256: ${{ vars.BOXD_RECOVERY_LIBKRUNFW_SHA256 }}
+      BOXD_EMBEDDED_LIBKRUNFW_LICENSE_PATH: ${{ vars.BOXD_RECOVERY_LIBKRUNFW_LICENSE_PATH }}
+      BOXD_MASTER_KEY: ${{ secrets.BOXD_RECOVERY_MASTER_KEY }}
+      BOXD_ADMIN_PASSWORD: ${{ secrets.BOXD_RECOVERY_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@1.94.0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Install pinned SDK build dependencies
+        working-directory: compat/upstash-box-0.6.3
+        run: npm ci
+      - name: Allocate runner-owned recovery paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          work_dir="$RUNNER_TEMP/boxd-phase4-recovery-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          evidence_dir="$work_dir/evidence"
+          mkdir -p "$work_dir" "$evidence_dir"
+          chmod 700 "$work_dir" "$evidence_dir"
+          printf 'BOXD_RECOVERY_WORK_DIR=%s\n' "$work_dir" >> "$GITHUB_ENV"
+          printf 'BOXD_RECOVERY_EVIDENCE_DIR=%s\n' "$evidence_dir" >> "$GITHUB_ENV"
+      - name: Verify protected native runner and recovery inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "${{ inputs.confirm_run }}" == "true" ]]
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          [[ "${{ inputs.platform }}" == linux || "${{ inputs.platform }}" == macos ]]
+          [[ "${{ inputs.architecture }}" == x64 || "${{ inputs.architecture }}" == ARM64 ]]
+          if [[ "${{ inputs.platform }}" == linux ]]; then
+            test "$(uname -s)" = Linux
+            test -c /dev/kvm
+            test -r /dev/kvm
+            test -w /dev/kvm
+            test -f /sys/fs/cgroup/cgroup.controllers
+            grep -qw cpu /sys/fs/cgroup/cgroup.controllers
+            grep -qw memory /sys/fs/cgroup/cgroup.controllers
+            grep -qw pids /sys/fs/cgroup/cgroup.controllers
+          else
+            test "$(uname -s)" = Darwin
+            test "$(uname -m)" = arm64
+            test "$(sysctl -n kern.hv_support)" = 1
+          fi
+          regular_file() {
+            local path=$1
+            [[ -n "$path" && -f "$path" && ! -L "$path" ]]
+            [[ "$(stat -f '%l' "$path" 2>/dev/null || stat -c '%h' "$path")" == 1 ]]
+          }
+          for path in "$BOXD_RECOVERY_CONFIG" "$BOXD_RECOVERY_RUNTIME_BUNDLE" "$BOXD_RECOVERY_RELEASE_ARTIFACT" "$BOXD_EMBEDDED_LIBKRUN_PATH" "$BOXD_EMBEDDED_LIBKRUN_LICENSE_PATH" "$BOXD_EMBEDDED_LIBKRUNFW_PATH" "$BOXD_EMBEDDED_LIBKRUNFW_LICENSE_PATH"; do
+            regular_file "$path"
+          done
+          python3 - "$BOXD_EMBEDDED_LIBKRUN_PATH" "$BOXD_EMBEDDED_LIBKRUN_SHA256" "$BOXD_EMBEDDED_LIBKRUNFW_PATH" "$BOXD_EMBEDDED_LIBKRUNFW_SHA256" <<'PY'
+          import hashlib
+          import re
+          import stat
+          import sys
+          for path_text, expected in zip(sys.argv[1::2], sys.argv[2::2]):
+              path = __import__('pathlib').Path(path_text)
+              info = path.lstat()
+              if not stat.S_ISREG(info.st_mode) or stat.S_ISLNK(info.st_mode) or info.st_nlink != 1:
+                  raise SystemExit(f'asset is not a single-link regular file: {path}')
+              if not re.fullmatch(r'[0-9a-f]{64}', expected):
+                  raise SystemExit(f'asset SHA-256 variable is invalid: {path}')
+              digest = hashlib.sha256(path.read_bytes()).hexdigest()
+              if digest != expected:
+                  raise SystemExit(f'asset SHA-256 mismatch: {path}')
+          PY
+          for name in BOXD_MASTER_KEY BOXD_ADMIN_PASSWORD; do
+            [[ -n "${!name}" ]]
+          done
+      - name: Run native recovery and emit structured evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/phase4-native-recovery.py \
+            --work-dir "$BOXD_RECOVERY_WORK_DIR" \
+            --config "$BOXD_RECOVERY_CONFIG" \
+            --runtime-bundle "$BOXD_RECOVERY_RUNTIME_BUNDLE" \
+            --artifact "$BOXD_RECOVERY_RELEASE_ARTIFACT" \
+            --commit "$GITHUB_SHA"
+      - name: Validate structured recovery evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s "$BOXD_RECOVERY_EVIDENCE_DIR/recovery-evidence.json"
+          python3 scripts/phase4-evidence.py "$BOXD_RECOVERY_EVIDENCE_DIR/recovery-evidence.json"
+          status=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["summary"]["status"])' "$BOXD_RECOVERY_EVIDENCE_DIR/recovery-evidence.json")
+          case "$status" in
+            pass) ;;
+            blocked) echo 'native recovery is explicitly blocked; no pass is claimed' >&2; exit 77 ;;
+            *) echo "native recovery evidence status is $status" >&2; exit 1 ;;
+          esac
+      - name: Upload redacted native recovery evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4-native-recovery-${{ inputs.platform }}-${{ inputs.architecture }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.BOXD_RECOVERY_EVIDENCE_DIR }}
+          if-no-files-found: error
+          retention-days: 30

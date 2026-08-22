@@ -12,12 +12,12 @@ class RecoveryHarnessTests(unittest.TestCase):
         def write(relative, content):
             path = root / relative; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(content)
             return hashlib.sha256(content).hexdigest()
-        input_paths = {name: f"inputs/{name}.bin" for name in ("boxd", "runtime", "db", "artifact")}
+        input_paths = {name: f"inputs/{name}.bin" for name in ("boxd", "runtime", "config", "sdk", "db", "artifact")}
         input_hashes = {name: write(path, f"{name}-evidence".encode()) for name, path in input_paths.items()}
         commit = "b" * 40; platform = {"os": "linux", "arch": "x86_64", "virtualization": "kvm"}
         cases = []
         for scenario in m.SCENARIOS:
-            artifact = {"schema": m.ARTIFACT_SCHEMA, "scenario": scenario, "commit": commit, "platform": platform, "input_hashes": {k: input_hashes[k] for k in ("boxd", "runtime", "db")}, "producer": m.ARTIFACT_PRODUCER, "steps": [{"operation": "verify", "expected": "complete", "observed": "complete", "status": "pass"}], "started_at_unix_ms": 1, "finished_at_unix_ms": 2, "status": "pass"}
+            artifact = {"schema": m.ARTIFACT_SCHEMA, "scenario": scenario, "commit": commit, "platform": platform, "input_hashes": input_hashes, "producer": m.ARTIFACT_PRODUCER, "steps": [{"operation": "verify", "expected": "complete", "observed": "complete", "status": "pass"}], "started_at_unix_ms": 1, "finished_at_unix_ms": 2, "status": "pass"}
             content = json.dumps(artifact, separators=(",", ":")).encode(); path = root / f"cases/{scenario}.json"; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(content)
             cases.append({"scenario": scenario, "expected": "recovery", "observed": "artifact observed", "status": "pass", "artifact_path": f"cases/{scenario}.json", "artifact_sha256": hashlib.sha256(content).hexdigest()})
         return {"schema": "boxd-phase4-recovery-v1", "mode": "live", "commit": commit,
@@ -71,3 +71,25 @@ class RecoveryHarnessTests(unittest.TestCase):
             path = root / d["cases"][0]["artifact_path"]; artifact = json.loads(path.read_text()); artifact["steps"][0]["status"] = "blocked"
             content = json.dumps(artifact, separators=(",", ":")).encode(); path.write_bytes(content); d["cases"][0]["artifact_sha256"] = hashlib.sha256(content).hexdigest()
             with self.assertRaises(m.HarnessError): m.live_evidence(d, root)
+
+    def test_live_blocked_case_is_aggregated_as_blocked(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory); m = load(); d = self.live_doc(root)
+            path = root / d["cases"][0]["artifact_path"]
+            artifact = json.loads(path.read_text())
+            artifact["status"] = "blocked"
+            artifact["steps"] = [{"operation": "fault-injection", "expected": "safe trigger", "observed": "runner does not provide a safe trigger", "status": "blocked"}]
+            content = json.dumps(artifact, separators=(",", ":")).encode()
+            path.write_bytes(content)
+            d["cases"][0]["status"] = "blocked"
+            d["cases"][0]["artifact_sha256"] = hashlib.sha256(content).hexdigest()
+            evidence = m.live_evidence(d, root)
+            self.assertEqual(evidence["summary"]["status"], "blocked")
+            self.assertEqual(evidence["summary"]["blocked"], 1)
+            evidence_path = pathlib.Path(directory) / "blocked-evidence.json"
+            evidence_path.write_text(json.dumps(evidence))
+            gate = subprocess.run(
+                [sys.executable, str(ROOT / "scripts/phase4-evidence.py"), str(evidence_path)],
+                capture_output=True, text=True,
+            )
+            self.assertEqual(gate.returncode, 0, gate.stderr)

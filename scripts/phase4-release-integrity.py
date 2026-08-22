@@ -22,6 +22,7 @@ from typing import Any
 ROLES = ("boxd", "libkrun", "libkrunfw", "runtime_bundle", "sbom", "licenses")
 ALL_ROLES = (*ROLES, "checksums")
 TARGETS = ("darwin-arm64", "linux-x86_64", "linux-aarch64")
+GENERATED_OUTPUTS = frozenset(("SHA256SUMS", "release-manifest.json"))
 COMPONENT_FOR_ROLE = {
     "boxd": "boxd",
     "libkrun": "libkrun",
@@ -128,7 +129,7 @@ def atomic_write(path: Path, payload: bytes) -> None:
             raise
 
 
-def validate_license_index(root: Path, relative: str) -> None:
+def validate_license_index(root: Path, relative: str) -> set[str]:
     index = closed_object(read_json(secure_file(root, relative), "license index"), "license index", {"schema", "entries"})
     if index["schema"] != "boxd-license-index-v1":
         raise IntegrityError("unsupported license index schema")
@@ -138,6 +139,7 @@ def validate_license_index(root: Path, relative: str) -> None:
     required = {"boxd", "boxd-console", "libkrun", "libkrunfw", "runtime-bundle"}
     components: set[str] = set()
     paths: set[str] = set()
+    evidence_paths: set[str] = set()
     for offset, raw in enumerate(entries):
         entry = closed_object(raw, f"license entries[{offset}]", {"component", "path", "sha256"})
         component = text(entry["component"], f"license entries[{offset}].component", 128)
@@ -148,12 +150,14 @@ def validate_license_index(root: Path, relative: str) -> None:
             raise IntegrityError("license index component and path must be unique")
         components.add(component)
         paths.add(license_path)
+        evidence_paths.add(license_path)
         actual = file_sha256(secure_file(root, license_path))
         if sha(entry["sha256"], f"license entries[{offset}].sha256") != actual:
             raise IntegrityError(f"license evidence hash mismatch: {license_path}")
     missing = required - components
     if missing:
         raise IntegrityError(f"license index missing components: {', '.join(sorted(missing))}")
+    return evidence_paths
 
 
 def package_checksum(package: dict[str, Any], where: str) -> str:
@@ -277,6 +281,53 @@ def validate_provenance(root: Path, provenance: dict[str, Any]) -> None:
         raise IntegrityError("provenance file hash mismatch")
 
 
+def validate_release_tree(root: Path, expected_files: set[str]) -> None:
+    """Reject every release-tree entry not explicitly bound by the manifest.
+
+    Directory ancestors of an expected file are structural and therefore
+    allowed, but empty or otherwise unbound directories are not.  This check
+    runs before generation and after verification so stale temporary files,
+    symlinks, hard-links, and accidental tool output cannot be carried into a
+    release artifact.
+    """
+    expected = set(expected_files)
+    expected.update(GENERATED_OUTPUTS)
+    allowed_directories = {"."}
+    for relative in expected:
+        parts = PurePosixPath(relative).parts
+        for offset in range(1, len(parts)):
+            allowed_directories.add("/".join(parts[:offset]))
+
+    try:
+        entries = sorted(root.rglob("*"), key=lambda path: path.relative_to(root).as_posix())
+    except OSError as error:
+        raise IntegrityError(f"cannot enumerate release tree: {error}") from error
+    for path in entries:
+        relative = path.relative_to(root).as_posix()
+        try:
+            metadata = path.lstat()
+        except OSError as error:
+            raise IntegrityError(f"cannot inspect release tree entry {relative}: {error}") from error
+        mode = metadata.st_mode
+        if stat.S_ISLNK(mode):
+            raise IntegrityError(f"release tree must not contain symlink: {relative}")
+        if stat.S_ISDIR(mode):
+            has_declared_descendant = any(
+                candidate.startswith(f"{relative}/") for candidate in expected
+            )
+            if relative not in allowed_directories or not has_declared_descendant:
+                raise IntegrityError(f"release tree directory is not declared: {relative}")
+            continue
+        if not stat.S_ISREG(mode):
+            raise IntegrityError(f"release tree entry must be a regular file or directory: {relative}")
+        if metadata.st_nlink != 1:
+            raise IntegrityError(
+                f"release tree file must be one of the unique regular files and must not be hard-linked: {relative}"
+            )
+        if relative not in expected:
+            raise IntegrityError(f"release tree file is not declared: {relative}")
+
+
 def checksum_bytes(records: list[dict[str, Any]]) -> bytes:
     return "".join(f"{item['sha256']}  {item['path']}\n" for item in sorted(records, key=lambda item: item["path"])).encode()
 
@@ -286,8 +337,14 @@ def generate(root: Path, input_path: Path) -> None:
     paths = {role: metadata["artifacts"][role] for role in ROLES}
     records, hashes = artifact_records(root, paths)
     validate_provenance(root, metadata["provenance"])
-    validate_license_index(root, paths["licenses"])
+    license_paths = validate_license_index(root, paths["licenses"])
     validate_sbom(root, paths["sbom"], hashes)
+    validate_release_tree(
+        root,
+        set(paths.values())
+        | {metadata["provenance"]["path"]}
+        | license_paths,
+    )
     checksums = checksum_bytes(records)
     checksum_path = root / "SHA256SUMS"
     manifest_path = root / "release-manifest.json"
@@ -354,8 +411,14 @@ def verify(root: Path, manifest_path: Path) -> None:
         expected = by_role[record["role"]]
         if record["sha256"] != expected["sha256"] or record["size"] != expected["size"]:
             raise IntegrityError(f"release artifact drift: {record['role']}")
-    validate_license_index(root, paths["licenses"])
+    license_paths = validate_license_index(root, paths["licenses"])
     validate_sbom(root, paths["sbom"], hashes)
+    validate_release_tree(
+        root,
+        set(paths.values())
+        | {manifest["provenance"]["path"]}
+        | license_paths,
+    )
     checksum_file = secure_file(root, by_role["checksums"]["path"])
     actual_checksums = checksum_file.read_bytes()
     if actual_checksums != checksum_bytes(records):

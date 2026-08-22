@@ -1,0 +1,160 @@
+name: phase4-authenticated-differential
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_run:
+        description: "I confirm disposable accounts, fixtures, budget, and external mutations"
+        required: true
+        default: false
+        type: boolean
+      architecture:
+        description: "Native differential runner architecture label"
+        required: true
+        default: x64
+        type: choice
+        options:
+          - x64
+          - ARM64
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase4-authenticated-differential-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  authenticated-differential:
+    environment:
+      name: phase4-authenticated-differential
+    runs-on: [self-hosted, linux, boxd-differential, "${{ inputs.architecture }}"]
+    timeout-minutes: 180
+    env:
+      BOXD_DIFF_OFFICIAL_BASE_URL: ${{ vars.BOXD_DIFF_OFFICIAL_BASE_URL }}
+      BOXD_DIFF_LOCAL_CONFIG: ${{ vars.BOXD_DIFF_LOCAL_CONFIG }}
+      BOXD_DIFF_RUNTIME_BUNDLE: ${{ vars.BOXD_DIFF_RUNTIME_BUNDLE }}
+      BOXD_DIFF_RUNTIME_BUNDLE_SHA256: ${{ vars.BOXD_DIFF_RUNTIME_BUNDLE_SHA256 }}
+      BOXD_DIFF_LOCAL_CONFIG_SHA256: ${{ vars.BOXD_DIFF_LOCAL_CONFIG_SHA256 }}
+      BOXD_DIFF_LIBKRUN_PATH: ${{ vars.BOXD_DIFF_LIBKRUN_PATH }}
+      BOXD_DIFF_LIBKRUN_SHA256: ${{ vars.BOXD_DIFF_LIBKRUN_SHA256 }}
+      BOXD_DIFF_LIBKRUN_LICENSE_PATH: ${{ vars.BOXD_DIFF_LIBKRUN_LICENSE_PATH }}
+      BOXD_DIFF_LIBKRUNFW_PATH: ${{ vars.BOXD_DIFF_LIBKRUNFW_PATH }}
+      BOXD_DIFF_LIBKRUNFW_SHA256: ${{ vars.BOXD_DIFF_LIBKRUNFW_SHA256 }}
+      BOXD_DIFF_LIBKRUNFW_LICENSE_PATH: ${{ vars.BOXD_DIFF_LIBKRUNFW_LICENSE_PATH }}
+      BOXD_MASTER_KEY: ${{ secrets.BOXD_DIFF_MASTER_KEY }}
+      BOXD_ADMIN_PASSWORD: ${{ secrets.BOXD_DIFF_ADMIN_PASSWORD }}
+      BOXD_DIFF_OFFICIAL_PREFIX: ${{ vars.BOXD_DIFF_OFFICIAL_PREFIX }}
+      BOXD_DIFF_LOCAL_PREFIX: ${{ vars.BOXD_DIFF_LOCAL_PREFIX }}
+      BOXD_DIFF_RUNTIME: ${{ vars.BOXD_DIFF_RUNTIME }}
+      BOXD_DIFF_BUDGET_USD: ${{ vars.BOXD_DIFF_BUDGET_USD }}
+      BOXD_DIFF_REQUEST_TIMEOUT_MS: ${{ vars.BOXD_DIFF_REQUEST_TIMEOUT_MS }}
+      BOXD_DIFF_GLOBAL_TIMEOUT_MS: ${{ vars.BOXD_DIFF_GLOBAL_TIMEOUT_MS }}
+      BOXD_DIFF_CONCURRENCY: ${{ vars.BOXD_DIFF_CONCURRENCY }}
+      BOXD_DIFF_OFFICIAL_GIT_REPO: ${{ vars.BOXD_DIFF_OFFICIAL_GIT_REPO }}
+      BOXD_DIFF_OFFICIAL_GIT_BRANCH: ${{ vars.BOXD_DIFF_OFFICIAL_GIT_BRANCH }}
+      BOXD_DIFF_OFFICIAL_GIT_BASE_BRANCH: ${{ vars.BOXD_DIFF_OFFICIAL_GIT_BASE_BRANCH }}
+      BOXD_DIFF_LOCAL_GIT_REPO: ${{ vars.BOXD_DIFF_LOCAL_GIT_REPO }}
+      BOXD_DIFF_LOCAL_GIT_BRANCH: ${{ vars.BOXD_DIFF_LOCAL_GIT_BRANCH }}
+      BOXD_DIFF_LOCAL_GIT_BASE_BRANCH: ${{ vars.BOXD_DIFF_LOCAL_GIT_BASE_BRANCH }}
+      BOXD_DIFF_OFFICIAL_API_KEY: ${{ secrets.BOXD_DIFF_OFFICIAL_API_KEY }}
+      BOXD_DIFF_PROVIDER_API_KEY: ${{ secrets.BOXD_DIFF_PROVIDER_API_KEY }}
+      BOXD_DIFF_OFFICIAL_GIT_TOKEN: ${{ secrets.BOXD_DIFF_OFFICIAL_GIT_TOKEN }}
+      BOXD_DIFF_LOCAL_GIT_TOKEN: ${{ secrets.BOXD_DIFF_LOCAL_GIT_TOKEN }}
+      BOXD_DIFF_EXTERNALLY_MUTATING_OPT_IN: "1"
+      BOXD_DIFF_COST_OPT_IN: "1"
+      BOXD_DIFF_DEDICATED_ACCOUNTS_OPT_IN: "1"
+      BOXD_DIFF_VIRTUALIZATION: kvm
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.94.0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: compat/upstash-box-0.6.3/package-lock.json
+      - name: Prepare evidence directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_dir="$RUNNER_TEMP/boxd-phase4-differential-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "$evidence_dir"
+          printf 'BOXD_DIFF_EVIDENCE_DIR=%s\n' "$evidence_dir" >> "$GITHUB_ENV"
+      - name: Install pinned SDK dependencies
+        working-directory: compat/upstash-box-0.6.3
+        run: npm ci
+      - name: Validate current pinned matrix before live requests
+        working-directory: compat/upstash-box-0.6.3
+        run: |
+          set -euo pipefail
+          npm test
+          npm run check:manifest
+          npm run check:coverage
+          npm run check:differential
+      - name: Run authenticated differential and emit strict evidence
+        id: differential
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ "${{ inputs.confirm_run }}" == "true" ]] || { echo 'explicit confirm_run=true is required' >&2; exit 1; }
+          [[ "$(uname -s)" == Linux && -c /dev/kvm && -r /dev/kvm && -w /dev/kvm ]] || { echo 'KVM runner is required' >&2; exit 77; }
+          test -f /sys/fs/cgroup/cgroup.controllers
+          for controller in cpu memory pids; do grep -qw "$controller" /sys/fs/cgroup/cgroup.controllers; done
+          for name in \
+            BOXD_DIFF_OFFICIAL_BASE_URL BOXD_DIFF_OFFICIAL_PREFIX BOXD_DIFF_LOCAL_PREFIX BOXD_DIFF_RUNTIME \
+            BOXD_DIFF_BUDGET_USD BOXD_DIFF_REQUEST_TIMEOUT_MS BOXD_DIFF_GLOBAL_TIMEOUT_MS BOXD_DIFF_CONCURRENCY \
+            BOXD_DIFF_OFFICIAL_GIT_REPO BOXD_DIFF_OFFICIAL_GIT_BRANCH BOXD_DIFF_OFFICIAL_GIT_BASE_BRANCH \
+            BOXD_DIFF_LOCAL_GIT_REPO BOXD_DIFF_LOCAL_GIT_BRANCH BOXD_DIFF_LOCAL_GIT_BASE_BRANCH \
+            BOXD_DIFF_OFFICIAL_API_KEY BOXD_DIFF_PROVIDER_API_KEY \
+            BOXD_DIFF_OFFICIAL_GIT_TOKEN BOXD_DIFF_LOCAL_GIT_TOKEN; do test -n "${!name}"; done
+          test "$BOXD_DIFF_OFFICIAL_PREFIX" != "$BOXD_DIFF_LOCAL_PREFIX"
+          test "$BOXD_DIFF_OFFICIAL_GIT_BRANCH" != "$BOXD_DIFF_LOCAL_GIT_BRANCH"
+          test "$(python3 -c 'import sys; print(float(sys.argv[1]) >= 3.85)' "$BOXD_DIFF_BUDGET_USD")" = True
+          source scripts/phase4-differential-native.sh
+          phase4_native_start
+          run_manifest="$RUNNER_TEMP/boxd-phase4-differential-run-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
+          evidence="$BOXD_DIFF_EVIDENCE_DIR/differential-evidence.json"
+          set +e
+          node compat/upstash-box-0.6.3/scripts/differential-runner.mjs > "$run_manifest"
+          runner_status=$?
+          node compat/upstash-box-0.6.3/scripts/differential-evidence.mjs \
+            --run "$run_manifest" \
+            --matrix compat/upstash-box-0.6.3/differential/case-matrix.json \
+            --output "$evidence" \
+            --commit "$GITHUB_SHA" \
+            --local-binary "$BOXD_DIFF_LOCAL_BINARY" \
+            --runtime-bundle "$BOXD_DIFF_RUNTIME_BUNDLE" \
+            --local-config "$BOXD_DIFF_LOCAL_CONFIG"
+          evidence_status=$?
+          if [[ -s "$evidence" ]]; then
+            python3 scripts/phase4-evidence.py "$evidence"
+            validation_status=$?
+          else
+            validation_status=1
+          fi
+          if [[ -s "$evidence" && "$validation_status" -eq 0 ]]; then
+            cp "$run_manifest" "$BOXD_DIFF_EVIDENCE_DIR/differential-run.json"
+            cp compat/upstash-box-0.6.3/differential/case-matrix.json "$BOXD_DIFF_EVIDENCE_DIR/differential-matrix.json"
+          else
+            rm -f "$run_manifest"
+          fi
+          if [[ "$validation_status" -ne 0 ]]; then
+            evidence_status=1
+          elif [[ "$runner_status" -ne 0 && "$runner_status" -ne 1 && "$runner_status" -ne 2 ]]; then
+            evidence_status=1
+          elif [[ "$runner_status" -eq 1 ]]; then
+            evidence_status=1
+          elif [[ "$runner_status" -eq 2 && "$evidence_status" -eq 0 ]]; then
+            evidence_status=2
+          fi
+          exit "$evidence_status"
+      - name: Upload redacted differential evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4-authenticated-differential-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.BOXD_DIFF_EVIDENCE_DIR }}
+          if-no-files-found: error
+          retention-days: 30

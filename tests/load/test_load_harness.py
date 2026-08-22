@@ -7,15 +7,25 @@ class LoadHarnessTests(unittest.TestCase):
     def live_doc(self, root):
         d = json.loads((ROOT / "tests/load/fixture.json").read_text())
         artifacts = {}
-        for name, relative in (("binary", "release/boxd"), ("runtime_bundle", "release/runtime.bundle")):
-            content = f"{name}-payload".encode(); path = root / relative
+        payloads = {
+            "binary": ("release/boxd", b"binary-payload"),
+            "runtime_bundle": ("release/runtime.bundle", b"runtime_bundle-payload"),
+            "config": ("release/load-profile.toml", b"[resources]\nmax_running_boxes = 64\nmax_total_memory_mib = 262144\nmax_total_vcpus = 128\ndefault_disk_gib = 20\n[quotas]\ntenant_max_boxes = 64\ntenant_max_disk_gib = 1280\ntenant_max_concurrent_runs = 64\n"),
+        }
+        for name, (relative, content) in payloads.items():
+            path = root / relative
             path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(content)
             artifacts[name] = {"path": relative, "sha256": hashlib.sha256(content).hexdigest()}
         for run in d["runs"]:
+            run["metrics"] = {name: run["metrics"][name] for name in ("p50_ms", "p95_ms", "p99_ms", "error_rate")}
+            run["resource_sampling"] = {"interval_ms": 250, "sample_count": 2, "ceiling": {"cpu_percent": 10, "rss_bytes": 20, "fd_count": 30, "disk_bytes": 40}}
+            preview_bytes = [1] * run["boxes"] if run["scenario"] == "preview" else []
             run["proof"] = {"created_count": run["boxes"], "create_failure_count": 0, "operation_attempted_count": run["boxes"], "operation_succeeded_count": run["boxes"], "operation_failure_count": 0, "deleted_count": run["boxes"], "cleanup_failure_count": 0, "failure_count": 0, "started_at_unix_ms": 1, "finished_at_unix_ms": 2, "created_ids_sha256": "0" * 64}
+            run["proof"].update(preview_fetch_count=len(preview_bytes), preview_bytes_consumed=sum(preview_bytes), preview_response_bytes=preview_bytes, resource_sample_count=2, resource_sampling_error_count=0)
+        profile_requirements = {"max_running_boxes": 64, "max_total_memory_mib": 262144, "max_total_vcpus": 128, "default_disk_gib": 20, "tenant_max_boxes": 64, "tenant_max_disk_gib": 1280, "tenant_max_concurrent_runs": 64}
         d.update({"mode": "live", "commit": "a" * 40, "platform": {"os": "linux", "arch": "x86_64", "virtualization": "kvm"},
-                  "pinned_sdk_commit": "677ca0827a6f54bc328b4b3e97d32a7cc5ac1934", "artifacts": artifacts,
-                  "daemon": {"cpu_percent": 1, "rss_bytes": 2, "fd_count": 3, "disk_bytes": 4}})
+                  "pinned_sdk_commit": "677ca0827a6f54bc328b4b3e97d32a7cc5ac1934", "profile": {"name": "phase4-64", "max_boxes": 64, "runtime": "node", "requirements": profile_requirements, "configured": profile_requirements, "runtime_asserted": True}, "artifacts": artifacts,
+                  "daemon": {"cpu_percent": 10, "rss_bytes": 20, "fd_count": 30, "disk_bytes": 40}, "daemon_sampling": {"interval_ms": 250, "sample_count": 33}})
         return d
 
     def test_matrix_is_complete_but_blocked(self):
@@ -46,6 +56,9 @@ class LoadHarnessTests(unittest.TestCase):
             with self.assertRaises(m.HarnessError): m.live_evidence(d, None)
             (root / d["artifacts"]["binary"]["path"]).write_bytes(b"tampered")
             with self.assertRaises(m.HarnessError): m.live_evidence(d, root)
+            d = self.live_doc(root)
+            (root / d["artifacts"]["config"]["path"]).write_bytes(b"tampered-config")
+            with self.assertRaises(m.HarnessError): m.live_evidence(d, root)
 
     def test_live_proof_is_closed_and_counts_cannot_be_faked(self):
         m = load()
@@ -55,10 +68,30 @@ class LoadHarnessTests(unittest.TestCase):
             with self.assertRaises(m.HarnessError): m.live_evidence(d, root)
             d = self.live_doc(root); d["runs"][0]["proof"]["unexpected"] = 1
             with self.assertRaises(m.HarnessError): m.live_evidence(d, root)
+            d = self.live_doc(root); d["runs"][0]["resource_sampling"].pop("sample_count")
+            with self.assertRaises(m.HarnessError): m.live_evidence(d, root)
             d = self.live_doc(root); target = root / d["artifacts"]["binary"]["path"]
             link = target.with_name("boxd-link"); link.symlink_to(target)
             d["artifacts"]["binary"]["path"] = "release/boxd-link"
             with self.assertRaises(m.HarnessError): m.live_evidence(d, root)
+
+    def test_live_profile_must_bind_full_resource_matrix(self):
+        m = load()
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory); d = self.live_doc(root)
+            d["profile"]["configured"]["tenant_max_disk_gib"] = 20
+            with self.assertRaises(m.HarnessError): m.live_evidence(d, root)
+            d = self.live_doc(root)
+            d["profile"]["configured"]["tenant_max_concurrent_runs"] = 4
+            with self.assertRaises(m.HarnessError): m.live_evidence(d, root)
+
+    def test_live_secret_scan_runs_before_profile_validation(self):
+        m = load()
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory); d = self.live_doc(root)
+            d["profile"]["configured"]["leaked"] = "Bearer " + "x" * 20
+            with self.assertRaisesRegex(m.HarnessError, "secret-like"):
+                m.live_evidence(d, root)
 
     def test_failure_transcripts_are_valid_but_summary_fails(self):
         m = load()

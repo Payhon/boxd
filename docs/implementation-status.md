@@ -223,10 +223,19 @@ custom policy 与 `attach_headers` 已有 Rust 单元/集成边界证据，但�
 平台验收完成。Differential executor 已有 82/82 pinned-SDK adapters，但当前环境没有
 official/local 测试账户、runtime/provider、disposable Git fixture 和成本预算，因此尚无
 authenticated full-pass evidence；缺少这些输入时会在请求前 blocked，不会伪造通过。
+受保护的 `phase4-authenticated-differential.yml` 已把当前 checkout 构建、fresh SQLite
+bootstrap、动态 loopback endpoint、runtime/config/binary hash 与 82 个唯一 case 的闭合
+evidence 绑定；本地 compatibility key 只从本次 `boxd init` 取得，不依赖 runner 预置 key。
 Hermetic fuzz/security/load/recovery 与 release integrity 工具已经可执行，live 输入会绑定
 实际 artifact path/hash 并拒绝 symlink、hardlink、root escape 或 `virtualization=none`；
 fixture 只能输出 `blocked`。当前机器没有可用于验收的 Linux KVM 双架构 runner、当前
 release runtime bundle、Developer ID/notary profile，因此上述真实平台复选项保持未完成。
+`phase4-load-recovery.yml` 和 `phase4-native-recovery.yml` 已提供受保护的 Linux
+x86_64/aarch64 KVM 与 macOS arm64 HVF 入口；前者执行 1/4/16/64 Box、guest preview 与
+连续资源采样，后者执行 lifecycle、daemon restart、SIGTERM、SQLite integrity，并把尚无
+安全 fault fixture 的 worker SIGKILL、disk-full、runtime pull interruption、backup/restore
+和 migration-journal 场景明确记为 blocked。仓库当前没有对应 GitHub environments、
+self-hosted runners、variables 或 secrets，所以这些入口尚未产生真实 native pass evidence。
 GitHub-hosted KVM probe run
 [`32574199144`](https://github.com/Payhon/boxd/actions/runs/32574199144) 已进一步确认：
 x86_64 runner 的 `/dev/kvm` 无 `O_RDWR` 权限，aarch64 runner 无 `/dev/kvm`；这属于平台

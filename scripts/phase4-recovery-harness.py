@@ -45,8 +45,9 @@ def validate_live(doc):
     if p["virtualization"] == "none" or (p["os"], p["arch"], p["virtualization"]) not in (("linux", "x86_64", "kvm"), ("linux", "aarch64", "kvm"), ("macos", "aarch64", "hvf")):
         raise HarnessError("live recovery requires native KVM or macOS aarch64 HVF")
     inputs = doc["inputs"]
-    if not isinstance(inputs, list) or len(inputs) != 4 or {x.get("name") for x in inputs if isinstance(x, dict)} != {"boxd", "runtime", "db", "artifact"}:
-        raise HarnessError("live inputs must bind boxd, runtime, db and artifact")
+    required_inputs = {"boxd", "runtime", "config", "sdk", "db", "artifact"}
+    if not isinstance(inputs, list) or len(inputs) != len(required_inputs) or {x.get("name") for x in inputs if isinstance(x, dict)} != required_inputs:
+        raise HarnessError("live inputs must bind boxd, runtime, config, sdk, db and artifact")
     input_paths = set()
     for item in inputs:
         if not isinstance(item, dict) or set(item) != {"name", "path", "sha256"} or not SHA256.fullmatch(item["sha256"]):
@@ -63,8 +64,8 @@ def validate_live(doc):
         if not isinstance(case, dict) or set(case) != {"scenario", "expected", "observed", "status", "artifact_path", "artifact_sha256"}:
             raise HarnessError("live case shape is closed")
         scenario = case["scenario"]
-        if scenario not in SCENARIOS or scenario in seen or case["status"] not in ("pass", "fail"):
-            raise HarnessError("live cases must be unique pass/fail scenarios")
+        if scenario not in SCENARIOS or scenario in seen or case["status"] not in ("pass", "fail", "blocked"):
+            raise HarnessError("live cases must be unique pass/fail/blocked scenarios")
         seen.add(scenario)
         if any(not isinstance(case[key], str) or not case[key] for key in ("expected", "observed")) or not SHA256.fullmatch(case["artifact_sha256"]):
             raise HarnessError("live case requires observed text and artifact SHA-256")
@@ -133,7 +134,7 @@ def validate_recovery_artifact(artifact, doc, case):
     if not isinstance(artifact, dict) or set(artifact) != required: raise HarnessError("recovery artifact schema is not closed")
     if artifact["schema"] != ARTIFACT_SCHEMA or artifact["producer"] != ARTIFACT_PRODUCER: raise HarnessError("invalid recovery artifact identity")
     if artifact["scenario"] != case["scenario"] or artifact["status"] != case["status"] or artifact["commit"] != doc["commit"] or artifact["platform"] != doc["platform"]: raise HarnessError("recovery artifact cross-binding mismatch")
-    expected_inputs = {item["name"]: item["sha256"] for item in doc["inputs"] if item["name"] in ("boxd", "runtime", "db")}
+    expected_inputs = {item["name"]: item["sha256"] for item in doc["inputs"]}
     if artifact["input_hashes"] != expected_inputs: raise HarnessError("recovery artifact input hashes do not match live inputs")
     for value in expected_inputs.values():
         if not SHA256.fullmatch(value): raise HarnessError("invalid recovery input hash")
@@ -146,8 +147,10 @@ def validate_recovery_artifact(artifact, doc, case):
     for step in steps:
         if not isinstance(step, dict) or set(step) != {"operation", "expected", "observed", "status"}: raise HarnessError("recovery step schema is not closed")
         if any(not isinstance(step[k], str) or not step[k] for k in ("operation", "expected", "observed")) or step["status"] not in ("pass", "fail", "blocked"): raise HarnessError("recovery step is invalid")
-    if artifact["status"] not in ("pass", "fail"): raise HarnessError("recovery artifact status is invalid")
+    if artifact["status"] not in ("pass", "fail", "blocked"): raise HarnessError("recovery artifact status is invalid")
     if artifact["status"] == "pass" and any(step["status"] != "pass" for step in steps): raise HarnessError("non-pass step cannot produce a pass case")
+    if artifact["status"] == "fail" and not any(step["status"] == "fail" for step in steps): raise HarnessError("failed case must contain a failed step")
+    if artifact["status"] == "blocked" and not any(step["status"] == "blocked" for step in steps): raise HarnessError("blocked case must contain a blocked step")
     scan(artifact)
     if FORBIDDEN_LIVE.search(json.dumps(artifact, sort_keys=True)): raise HarnessError("fixture/mock/model-like artifact is forbidden")
 
@@ -160,9 +163,17 @@ def live_evidence(doc, artifact_root):
     verify_live_artifacts(doc, artifact_root)
     artifacts = [{"path": case["artifact_path"], "sha256": case["artifact_sha256"]} for case in doc["cases"]]
     cases = [{"id": c["scenario"], "expected": c["expected"], "observed": c["observed"], "status": c["status"], "artifact_sha256": c["artifact_sha256"]} for c in doc["cases"]]
-    passed = sum(c["status"] == "pass" for c in doc["cases"]); failed = len(cases) - passed
+    passed = sum(c["status"] == "pass" for c in doc["cases"])
+    failed = sum(c["status"] == "fail" for c in doc["cases"])
+    blocked = sum(c["status"] == "blocked" for c in doc["cases"])
     evidence_inputs = [{"name": item["name"], "sha256": item["sha256"]} for item in doc["inputs"]]
-    return {"schema":"boxd-phase4-evidence-v1","suite":"recovery","commit":doc["commit"],"platform":doc["platform"],"toolchain":{"python":"stdlib","harness":"phase4-recovery-harness","boxd":next(x["sha256"] for x in doc["inputs"] if x["name"] == "boxd"),"runtime":next(x["sha256"] for x in doc["inputs"] if x["name"] == "runtime"),"db":next(x["sha256"] for x in doc["inputs"] if x["name"] == "db")},"inputs":evidence_inputs,"cases":cases,"artifacts":artifacts,"external_requirements":[{"id":"boxd-runtime","status":"satisfied","detail":"live daemon and worker evidence supplied"},{"id":"native-platform","status":"satisfied","detail":"native KVM/HVF platform evidence supplied"}],"secret_scan":{"status":"pass","scanner":"stdlib recursive scan","findings":0},"summary":{"status":"fail" if failed else "pass","passed":passed,"failed":failed,"blocked":0,"total":len(cases)}}
+    requirements = [
+        {"id":"boxd-runtime", "status":"satisfied", "detail":"live daemon and worker evidence supplied"},
+        {"id":"native-platform", "status":"satisfied", "detail":"native KVM/HVF platform evidence supplied"},
+    ]
+    if blocked:
+        requirements.append({"id":"unsupported-recovery-scenarios", "status":"blocked", "detail":"one or more recovery scenarios require a separate safe fault-injection harness"})
+    return {"schema":"boxd-phase4-evidence-v1","suite":"recovery","commit":doc["commit"],"platform":doc["platform"],"toolchain":{"python":"stdlib","harness":"phase4-recovery-harness","boxd":next(x["sha256"] for x in doc["inputs"] if x["name"] == "boxd"),"runtime":next(x["sha256"] for x in doc["inputs"] if x["name"] == "runtime"),"config":next(x["sha256"] for x in doc["inputs"] if x["name"] == "config"),"sdk":next(x["sha256"] for x in doc["inputs"] if x["name"] == "sdk"),"db":next(x["sha256"] for x in doc["inputs"] if x["name"] == "db"),"artifact":next(x["sha256"] for x in doc["inputs"] if x["name"] == "artifact")},"inputs":evidence_inputs,"cases":cases,"artifacts":artifacts,"external_requirements":requirements,"secret_scan":{"status":"pass","scanner":"stdlib recursive scan","findings":0},"summary":{"status":"fail" if failed else ("blocked" if blocked else "pass"),"passed":passed,"failed":failed,"blocked":blocked,"total":len(cases)}}
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__); source=p.add_mutually_exclusive_group(required=True); source.add_argument("--fixture",type=Path); source.add_argument("--live",type=Path); p.add_argument("--artifact-root",type=Path); p.add_argument("--emit-evidence",type=Path); p.add_argument("--commit"); a=p.parse_args(argv)
     try:

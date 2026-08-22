@@ -1,9 +1,32 @@
 name: phase4-load-recovery
 on:
+  workflow_dispatch:
+    inputs:
+      run_native_live:
+        description: Run the protected native HVF/KVM live-load matrix
+        required: true
+        default: false
+        type: boolean
   push:
-    paths: ["scripts/phase4-load-*.py", "scripts/phase4-load-runner.mjs", "scripts/phase4-recovery-*.py", "tests/load/**", "tests/recovery/**"]
+    paths:
+      - ".github/workflows/phase4-load-recovery.yml"
+      - "scripts/phase4-load-*.py"
+      - "scripts/phase4-load-runner.mjs"
+      - "scripts/phase4-bootstrap-api-key.mjs"
+      - "scripts/phase4-recovery-*.py"
+      - "scripts/phase4-native-recovery.py"
+      - "tests/load/**"
+      - "tests/recovery/**"
   pull_request:
-    paths: ["scripts/phase4-load-*.py", "scripts/phase4-load-runner.mjs", "scripts/phase4-recovery-*.py", "tests/load/**", "tests/recovery/**"]
+    paths:
+      - ".github/workflows/phase4-load-recovery.yml"
+      - "scripts/phase4-load-*.py"
+      - "scripts/phase4-load-runner.mjs"
+      - "scripts/phase4-bootstrap-api-key.mjs"
+      - "scripts/phase4-recovery-*.py"
+      - "scripts/phase4-native-recovery.py"
+      - "tests/load/**"
+      - "tests/recovery/**"
 jobs:
   hermetic:
     runs-on: ubuntu-24.04
@@ -15,8 +38,285 @@ jobs:
         with: {python-version: "3.12"}
       - run: python3 -m unittest discover -s tests/load -p 'test_*.py' -v
       - run: node --check scripts/phase4-load-runner.mjs
+      - run: node --check scripts/phase4-bootstrap-api-key.mjs
+      - run: node --test tests/load/test_load_runner.mjs tests/load/test_phase4_bootstrap_api_key.mjs
       - run: python3 -m unittest discover -s tests/recovery -p 'test_*.py' -v
       - run: python3 scripts/phase4-load-harness.py --fixture tests/load/fixture.json
       - run: python3 scripts/phase4-recovery-harness.py --fixture tests/recovery/fixture.json
       - run: git diff --check
       - run: echo "Hosted CI validates harness only; real boxd/runtime/HVF/KVM is blocked."
+
+  native-live-load:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_native_live == true
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x86_64-kvm
+            runner_os: linux
+            runner_arch: x64
+            virtualization_label: boxd-kvm
+            environment: boxd-phase4-native-linux-x86_64
+          - platform: linux-aarch64-kvm
+            runner_os: linux
+            runner_arch: ARM64
+            virtualization_label: boxd-kvm
+            environment: boxd-phase4-native-linux-aarch64
+          - platform: macos-aarch64-hvf
+            runner_os: macos
+            runner_arch: ARM64
+            virtualization_label: boxd-hvf
+            environment: boxd-phase4-native-macos-aarch64
+    runs-on: [self-hosted, "${{ matrix.runner_os }}", "${{ matrix.virtualization_label }}", "${{ matrix.runner_arch }}"]
+    environment: ${{ matrix.environment }}
+    timeout-minutes: 180
+    permissions:
+      contents: read
+    env:
+      BOXD_PHASE4_CONFIG_SOURCE: ${{ vars.BOXD_PHASE4_CONFIG }}
+      BOXD_PHASE4_RUNTIME_SOURCE: ${{ vars.BOXD_PHASE4_RUNTIME_BUNDLE }}
+      BOXD_EMBEDDED_LIBKRUN_PATH: ${{ vars.BOXD_PHASE4_LIBKRUN_PATH }}
+      BOXD_EMBEDDED_LIBKRUN_SHA256: ${{ vars.BOXD_PHASE4_LIBKRUN_SHA256 }}
+      BOXD_EMBEDDED_LIBKRUN_LICENSE_PATH: ${{ vars.BOXD_PHASE4_LIBKRUN_LICENSE_PATH }}
+      BOXD_EMBEDDED_LIBKRUNFW_PATH: ${{ vars.BOXD_PHASE4_LIBKRUNFW_PATH }}
+      BOXD_EMBEDDED_LIBKRUNFW_SHA256: ${{ vars.BOXD_PHASE4_LIBKRUNFW_SHA256 }}
+      BOXD_EMBEDDED_LIBKRUNFW_LICENSE_PATH: ${{ vars.BOXD_PHASE4_LIBKRUNFW_LICENSE_PATH }}
+      BOXD_MASTER_KEY: ${{ secrets.BOXD_PHASE4_MASTER_KEY }}
+      BOXD_ADMIN_PASSWORD: ${{ secrets.BOXD_PHASE4_ADMIN_PASSWORD }}
+      BOXD_ADMIN_USER: admin
+      BOXD_BASE_URL: http://127.0.0.1:7331
+      BOXD_LOAD_MODE: live
+      BOXD_RUNTIME: node
+      BOXD_LOAD_PROFILE: phase4-64
+      BOXD_LOAD_SAMPLE_INTERVAL_MS: 250
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@1.94.0
+        with:
+          components: clippy,rustfmt
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: compat/upstash-box-0.6.3/package-lock.json
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Allocate runner-owned native load paths
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          work="$RUNNER_TEMP/boxd-phase4-native-load-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          if [[ -e "$work" ]]; then
+            echo "refusing to reuse native load work directory: $work" >&2
+            exit 73
+          fi
+          install -d -m 700 "$work/artifacts/release" "$work/logs" "$work/evidence"
+          printf 'BOXD_PHASE4_WORK=%s\n' "$work" >> "$GITHUB_ENV"
+          printf 'BOXD_LOAD_ARTIFACT_ROOT=%s\n' "$work/artifacts" >> "$GITHUB_ENV"
+          printf 'BOXD_LOAD_CONFIG=%s\n' "$work/artifacts/release/load-profile-boxd.toml" >> "$GITHUB_ENV"
+          printf 'BOXD_RUNTIME_BUNDLE=%s\n' "$work/artifacts/release/runtime.bundle" >> "$GITHUB_ENV"
+          printf 'BOXD_DATA_DIR=%s\n' "$work/data" >> "$GITHUB_ENV"
+          printf 'BOXD_LOAD_RESULT=%s\n' "$work/evidence/load-result.json" >> "$GITHUB_ENV"
+          printf 'BOXD_LOAD_EVIDENCE=%s\n' "$work/evidence/load-evidence.json" >> "$GITHUB_ENV"
+          printf 'CARGO_TARGET_DIR=%s/target\n' "$work" >> "$GITHUB_ENV"
+          port="$(python3 - <<'PY'
+          import socket
+          with socket.socket() as sock:
+              sock.bind(("127.0.0.1", 0))
+              print(sock.getsockname()[1])
+          PY
+          )"
+          printf 'BOXD_PHASE4_PORT=%s\n' "$port" >> "$GITHUB_ENV"
+          printf 'BOXD_BASE_URL=http://127.0.0.1:%s\n' "$port" >> "$GITHUB_ENV"
+          if curl --fail --silent --show-error --max-time 2 "http://127.0.0.1:$port/health/ready" >/dev/null 2>&1; then
+            echo "refusing to reuse occupied native load endpoint" >&2
+            exit 73
+          fi
+      - name: Verify native HVF/KVM and protected inputs
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          case "${{ matrix.platform }}" in
+            linux-*)
+              test "$(uname -s)" = Linux
+              test "$(uname -m)" = "${{ matrix.runner_arch == 'x64' && 'x86_64' || 'aarch64' }}"
+              test -c /dev/kvm && test -r /dev/kvm && test -w /dev/kvm
+              test -f /sys/fs/cgroup/cgroup.controllers
+              grep -Eq '(^| )cpu( |$)' /sys/fs/cgroup/cgroup.controllers
+              grep -Eq '(^| )memory( |$)' /sys/fs/cgroup/cgroup.controllers
+              grep -Eq '(^| )pids( |$)' /sys/fs/cgroup/cgroup.controllers
+              ;;
+            macos-*)
+              test "$(uname -s)" = Darwin
+              test "$(uname -m)" = arm64
+              test "$(sysctl -n kern.hv_support)" = 1
+              ;;
+            *) exit 64 ;;
+          esac
+          for path in "$BOXD_PHASE4_CONFIG_SOURCE" "$BOXD_PHASE4_RUNTIME_SOURCE" \
+            "$BOXD_EMBEDDED_LIBKRUN_PATH" "$BOXD_EMBEDDED_LIBKRUN_LICENSE_PATH" \
+            "$BOXD_EMBEDDED_LIBKRUNFW_PATH" "$BOXD_EMBEDDED_LIBKRUNFW_LICENSE_PATH"; do
+            test -n "$path" && test "${path#/}" != "$path" && test -f "$path" && test ! -L "$path"
+          done
+          test -n "$BOXD_EMBEDDED_LIBKRUN_SHA256" && test -n "$BOXD_EMBEDDED_LIBKRUNFW_SHA256"
+          test -n "$BOXD_MASTER_KEY" && test -n "$BOXD_ADMIN_PASSWORD" && test -n "$BOXD_ADMIN_USER"
+          python3 - "$BOXD_PHASE4_CONFIG_SOURCE" "$BOXD_LOAD_CONFIG" "$BOXD_DATA_DIR" "$BOXD_PHASE4_PORT" <<'PY'
+          import json, os, pathlib, re, sys, tomllib
+          with open(sys.argv[1], "rb") as stream:
+              config = tomllib.load(stream)
+          resources, quotas = config.get("resources", {}), config.get("quotas", {})
+          expected = {
+              "max_running_boxes": 64,
+              "max_total_memory_mib": 262144,
+              "max_total_vcpus": 128,
+              "default_disk_gib": 20,
+          }
+          for key, value in expected.items():
+              if not isinstance(resources.get(key), int) or resources[key] < value:
+                  raise SystemExit(f"resources.{key} does not prove phase4-64")
+          if quotas.get("tenant_max_boxes", 0) < 64 or quotas.get("tenant_max_disk_gib", 0) < 1280 or quotas.get("tenant_max_concurrent_runs", 0) < 64:
+              raise SystemExit("tenant quotas do not prove phase4-64")
+          if quotas.get("api_key_requests_per_minute", 0) < 4096 or quotas.get("api_key_request_burst", 0) < 512:
+              raise SystemExit("dedicated native config API-key rate/burst is too low for phase4-64")
+          auth = config.get("auth", {})
+          if auth.get("bootstrap_admin_user") != os.environ.get("BOXD_ADMIN_USER") or auth.get("bootstrap_admin_password_env") != "BOXD_ADMIN_PASSWORD":
+              raise SystemExit("native config bootstrap admin identity is not bound to the workflow credentials")
+          target = pathlib.Path(sys.argv[2])
+          data = pathlib.Path(sys.argv[3]).resolve()
+          port = int(sys.argv[4])
+          replacements = {
+              ("server", "listen"): json.dumps(f"127.0.0.1:{port}"),
+              ("server", "public_url"): json.dumps(f"http://127.0.0.1:{port}"),
+              ("database", "url"): json.dumps(f"sqlite://{data / 'boxd.sqlite3'}?mode=rwc"),
+              ("storage", "data_dir"): json.dumps(str(data)),
+              ("storage", "images_dir"): json.dumps(str(data / 'images')),
+              ("storage", "boxes_dir"): json.dumps(str(data / 'boxes')),
+              ("storage", "snapshots_dir"): json.dumps(str(data / 'snapshots')),
+              ("storage", "recordings_dir"): json.dumps(str(data / 'recordings')),
+              ("preview", "base_url"): json.dumps(f"http://127.0.0.1:{port}"),
+          }
+          section, seen, output = None, set(), []
+          for line in pathlib.Path(sys.argv[1]).read_text(encoding="utf-8").splitlines(keepends=True):
+              header = re.fullmatch(r"\s*\[([^]]+)\]\s*\r?\n?", line)
+              if header:
+                  section = header.group(1)
+              match = re.match(r"^(\s*)([A-Za-z0-9_]+)(\s*=)(.*?)(\r?\n)?$", line)
+              key = (section, match.group(2)) if match else None
+              if key in replacements:
+                  if key in seen:
+                      raise SystemExit(f"duplicate config key: {key}")
+                  seen.add(key)
+                  newline = match.group(5) or "\n"
+                  line = f"{match.group(1)}{match.group(2)}{match.group(3)} {replacements[key]}{newline}"
+              output.append(line)
+          if seen != set(replacements):
+              raise SystemExit(f"config template missing dedicated keys: {sorted(set(replacements) - seen)}")
+          target.parent.mkdir(parents=True, exist_ok=True)
+          with target.open("x", encoding="utf-8") as stream:
+              stream.write("".join(output))
+          os.chmod(target, 0o600)
+          PY
+      - name: Build current commit and bind native load artifacts
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm --prefix compat/upstash-box-0.6.3 ci
+          cargo build --release --locked -p boxd
+          test -f "$CARGO_TARGET_DIR/release/boxd"
+          cp "$CARGO_TARGET_DIR/release/boxd" "$BOXD_LOAD_ARTIFACT_ROOT/release/boxd"
+          cp "$BOXD_PHASE4_RUNTIME_SOURCE" "$BOXD_RUNTIME_BUNDLE"
+          test ! -L "$BOXD_LOAD_ARTIFACT_ROOT/release/boxd" && test ! -L "$BOXD_RUNTIME_BUNDLE" && test ! -L "$BOXD_LOAD_CONFIG"
+      - name: Initialize fresh native admin database
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          bootstrap_config="$BOXD_PHASE4_WORK/bootstrap.toml"
+          bootstrap_stdout="$BOXD_PHASE4_WORK/bootstrap.stdout"
+          test ! -e "$bootstrap_config" && test ! -e "$bootstrap_stdout"
+          BOXD_MASTER_KEY="$BOXD_MASTER_KEY" BOXD_ADMIN_PASSWORD="$BOXD_ADMIN_PASSWORD" \
+            "$BOXD_LOAD_ARTIFACT_ROOT/release/boxd" init --config "$bootstrap_config" \
+            > "$bootstrap_stdout" 2> "$BOXD_PHASE4_WORK/logs/init.stderr"
+          python3 - "$bootstrap_stdout" <<'PY'
+          import pathlib, stat, sys
+          path = pathlib.Path(sys.argv[1])
+          if stat.S_IMODE(path.stat().st_mode) != 0o600:
+              raise SystemExit("bootstrap stdout must be mode 0600")
+          lines = [line for line in path.read_text(encoding="utf-8").splitlines() if line.startswith("compat_api_key=")]
+          if len(lines) != 1 or not lines[0].split("=", 1)[1]:
+              raise SystemExit("boxd init must emit exactly one non-empty compat_api_key line")
+          PY
+          bootstrap_key="$(awk -F= '$1 == "compat_api_key" {print substr($0, index($0, "=") + 1)}' "$bootstrap_stdout")"
+          printf '::add-mask::%s\n' "$bootstrap_key"
+          unset bootstrap_key
+          rm -f -- "$bootstrap_stdout"
+          test ! -e "$bootstrap_stdout"
+          test -d "$BOXD_DATA_DIR"
+      - name: Run protected native live-load matrix and validate evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          daemon_pid=""
+          api_key_file="$BOXD_PHASE4_WORK/api-key.json"
+          cleanup() {
+            status=$?
+            if [[ -f "$api_key_file" ]]; then
+              node scripts/phase4-bootstrap-api-key.mjs revoke "$api_key_file" >/dev/null 2>&1 || true
+            fi
+            unset BOXD_API_KEY
+            if [[ -n "$daemon_pid" ]] && kill -0 "$daemon_pid" 2>/dev/null; then
+              kill -TERM "$daemon_pid" 2>/dev/null || true
+              for _ in $(seq 1 30); do kill -0 "$daemon_pid" 2>/dev/null || break; sleep 1; done
+              kill -KILL "$daemon_pid" 2>/dev/null || true
+              wait "$daemon_pid" 2>/dev/null || true
+            fi
+            exit "$status"
+          }
+          trap cleanup EXIT
+          "$BOXD_LOAD_ARTIFACT_ROOT/release/boxd" config validate --config "$BOXD_LOAD_CONFIG"
+          "$BOXD_LOAD_ARTIFACT_ROOT/release/boxd" runtime import --config "$BOXD_LOAD_CONFIG" "$BOXD_RUNTIME_BUNDLE"
+          "$BOXD_LOAD_ARTIFACT_ROOT/release/boxd" doctor --config "$BOXD_LOAD_CONFIG" --json > "$BOXD_PHASE4_WORK/evidence/doctor.json"
+          python3 - "$BOXD_PHASE4_WORK/evidence/doctor.json" <<'PY'
+          import json, sys
+          doctor = json.load(open(sys.argv[1], encoding="utf-8"))
+          if doctor.get("overall") is not True:
+              raise SystemExit("native doctor did not pass")
+          PY
+          "$BOXD_LOAD_ARTIFACT_ROOT/release/boxd" serve --config "$BOXD_LOAD_CONFIG" > "$BOXD_PHASE4_WORK/logs/boxd.stdout" 2> "$BOXD_PHASE4_WORK/logs/boxd.stderr" &
+          daemon_pid=$!
+          for _ in $(seq 1 120); do
+            kill -0 "$daemon_pid" 2>/dev/null || { cat "$BOXD_PHASE4_WORK/logs/boxd.stderr" >&2; exit 1; }
+            curl --fail --silent --show-error --max-time 3 "$BOXD_BASE_URL/health/ready" >/dev/null && break
+            sleep 1
+          done
+          curl --fail --silent --show-error --max-time 3 "$BOXD_BASE_URL/health/ready" >/dev/null
+          RUNNER_TEMP="$RUNNER_TEMP" BOXD_API_KEY_FILE="$api_key_file" \
+            node scripts/phase4-bootstrap-api-key.mjs create "$api_key_file"
+          api_key="$(node -e 'const fs=require("fs"); process.stdout.write(JSON.parse(fs.readFileSync(process.argv[1], "utf8")).api_key)' "$api_key_file")"
+          test -n "$api_key"
+          printf '::add-mask::%s\n' "$api_key"
+          export BOXD_API_KEY="$api_key"
+          unset api_key
+          BOXD_BINARY="$BOXD_LOAD_ARTIFACT_ROOT/release/boxd" BOXD_DAEMON_PID="$daemon_pid" \
+            node scripts/phase4-load-runner.mjs
+          python3 scripts/phase4-load-harness.py --result "$BOXD_LOAD_RESULT" \
+            --artifact-root "$BOXD_LOAD_ARTIFACT_ROOT" --emit-evidence "$BOXD_LOAD_EVIDENCE"
+          python3 scripts/phase4-evidence.py "$BOXD_LOAD_EVIDENCE"
+      - name: Upload native live-load evidence (required)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4-native-live-load-${{ matrix.platform }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.BOXD_PHASE4_WORK }}/evidence
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload native load-bound artifacts (required)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4-native-load-artifacts-${{ matrix.platform }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.BOXD_LOAD_ARTIFACT_ROOT }}/release
+          if-no-files-found: error
+          retention-days: 14

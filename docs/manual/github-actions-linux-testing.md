@@ -192,3 +192,19 @@ Linux x86_64 和 aarch64 都产生真实 KVM evidence 后，才可更新
 `docs/linux-validation-todo.md`、Phase acceptance 和 implementation status。十 runtime
 矩阵仍须另外运行 `scripts/phase1-runtime-matrix-smoke.sh`，Node 单 runtime 通过不代表
 矩阵完成。
+
+## 6. Phase 4 的受保护 Linux 流水线
+
+Phase 1 KVM smoke 通过后，Phase 4 还需要三类相互独立的 Linux 原生门禁：
+
+- `phase4-authenticated-differential.yml`：当前提交构建出的本地 boxd 与官方服务执行
+  78 contracts / 82 public cases 的 authenticated differential；
+- `phase4-load-recovery.yml`：在专用 KVM runner 上执行 1/4/16/64 Box 负载矩阵；
+- `phase4-native-recovery.yml`：执行 lifecycle、daemon restart、SIGTERM 与 SQLite
+  integrity，并对尚无安全 fault fixture 的场景明确输出 blocked。
+
+这些 workflow 都使用受保护 environment、一次一用的 runner-owned 路径和 hash-bound
+输入，不能只靠 repository secrets 与 hosted Ubuntu 直接运行。完整配置、secret/variable
+清单和触发命令见 [authenticated differential 手册](github-actions-phase4-differential.md)
+与 [native recovery 手册](github-actions-phase4-recovery.md)。仓库没有匹配 runner 或外部
+资产时，保持 queued/blocked 是正确结果，不等于 Phase 4 通过。

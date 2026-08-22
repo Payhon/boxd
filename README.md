@@ -25,6 +25,14 @@ repository/migration suite on SQLite, PostgreSQL, and MySQL have executable evid
 See [Phase 3 acceptance](docs/phase3-acceptance.md) for the exact current-source
 macOS HVF and database-matrix boundary.
 
+Phase 4 is in progress. Custom network policy and HTTPS `attach_headers` are
+implemented, and the repository now contains fail-closed gates for the full
+authenticated differential, native load/recovery, release integrity, fuzzing,
+and security checks. Those gates do not make Phase 4 complete by themselves:
+the protected self-hosted KVM/HVF runs, official-service credentials, signed
+release artifacts, notarization, and real upgrade/rollback evidence are still
+required.
+
 Linux KVM and the ten-runtime target-architecture execution matrix are explicit
 follow-up TODOs; they do not invalidate the completed macOS acceptance, but the
 project must not be described as a cross-platform release or a fully compatible
@@ -45,6 +53,9 @@ requires exactly ten signed bundles for the current HVF/KVM architecture.
 - [Phase 3 acceptance](docs/phase3-acceptance.md)
 - [Local build, run, and sandbox testing manual](docs/manual/boxd-local-sandbox-testing.md)
 - [GitHub Actions Linux testing manual](docs/manual/github-actions-linux-testing.md)
+- [Phase 4 authenticated differential manual](docs/manual/github-actions-phase4-differential.md)
+- [Phase 4 native recovery manual](docs/manual/github-actions-phase4-recovery.md)
+- [Phase 4 implementation plan](docs/phase4-implementation-plan.md)
 - [Linux validation TODO](docs/linux-validation-todo.md)
 - [Architecture decisions](docs/adr/)
 
@@ -71,6 +82,12 @@ artifact scripts, and SDK example syntax on GitHub-hosted Ubuntu runners.
 [`phase1-linux-kvm.yml`](.github/workflows/phase1-linux-kvm.yml) is a manual,
 native KVM gate routed only to a self-hosted Linux runner labeled `boxd-kvm`.
 Hosted source tests are not presented as real KVM evidence.
+The Phase 4 manual workflows similarly require protected self-hosted native
+runners: `phase4-authenticated-differential.yml` owns a fresh local daemon and
+executes all 82 pinned SDK cases; `phase4-load-recovery.yml` runs the 64-Box
+load matrix; and `phase4-native-recovery.yml` emits hash-bound recovery
+evidence. Until their required environments, assets, and runners are present,
+they remain executable gates rather than completed acceptance evidence.
 
 ## Checks
 

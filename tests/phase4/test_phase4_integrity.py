@@ -91,6 +91,19 @@ class ReleaseTests(unittest.TestCase):
                 "boxd", "libkrun", "libkrunfw", "runtime_bundle", "sbom", "licenses", "checksums",
             })
 
+    def test_unbound_service_definitions_are_rejected_from_release_root(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            destination = self.staged_release(Path(temporary))
+            services = destination / "services"
+            services.mkdir()
+            shutil.copy(ROOT / "release/services/boxd.service", services / "boxd.service")
+            shutil.copy(ROOT / "release/services/com.payhon.boxd.plist", services / "com.payhon.boxd.plist")
+            result = run(
+                RELEASE, "generate", "--release-dir", destination,
+                "--input", FIXTURES / "release" / "release-input.json", expect=1,
+            )
+            self.assertIn("not declared", result.stderr)
+
     def test_payload_tamper_fails(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             destination = self.staged_release(Path(temporary))
@@ -113,6 +126,58 @@ class ReleaseTests(unittest.TestCase):
                 "--input", FIXTURES / "release" / "release-input.json", expect=1,
             )
             self.assertIn("symlink", result.stderr)
+
+    def test_extra_regular_file_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            destination = self.staged_release(Path(temporary))
+            (destination / "unexpected.txt").write_text("tool output", encoding="utf-8")
+            result = run(
+                RELEASE, "generate", "--release-dir", destination,
+                "--input", FIXTURES / "release" / "release-input.json", expect=1,
+            )
+            self.assertIn("not declared", result.stderr)
+
+    def test_nested_extra_regular_file_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            destination = self.staged_release(Path(temporary))
+            (destination / "licenses" / "unexpected-license.txt").write_text("extra", encoding="utf-8")
+            result = run(
+                RELEASE, "generate", "--release-dir", destination,
+                "--input", FIXTURES / "release" / "release-input.json", expect=1,
+            )
+            self.assertIn("not declared", result.stderr)
+
+    def test_extra_directory_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            destination = self.staged_release(Path(temporary))
+            (destination / "tool-tmp").mkdir()
+            result = run(
+                RELEASE, "generate", "--release-dir", destination,
+                "--input", FIXTURES / "release" / "release-input.json", expect=1,
+            )
+            self.assertIn("directory is not declared", result.stderr)
+
+    def test_extra_symlink_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            destination = self.staged_release(root)
+            (destination / "unexpected-link").symlink_to(destination / "boxd-linux-x86_64")
+            result = run(
+                RELEASE, "generate", "--release-dir", destination,
+                "--input", FIXTURES / "release" / "release-input.json", expect=1,
+            )
+            self.assertIn("symlink", result.stderr)
+
+    def test_extra_hardlink_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            destination = self.staged_release(root)
+            (destination / "unexpected-hardlink").hardlink_to(destination / "boxd-linux-x86_64")
+            result = run(
+                RELEASE, "generate", "--release-dir", destination,
+                "--input", FIXTURES / "release" / "release-input.json", expect=1,
+            )
+            self.assertIn("hard-linked", result.stderr)
 
     def test_provenance_must_be_a_local_hashed_file(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
