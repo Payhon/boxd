@@ -17,7 +17,9 @@ jobs:
       PHASE4_PLATFORM_GATE: blocked
     steps:
       - uses: actions/checkout@v5
-      - uses: dtolnay/rust-toolchain@1.94.0
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2026-08-15
       - name: Validate security matrix
         run: |
           python3 scripts/phase4-security-matrix.py --cases tests/security/cases.json > security-matrix.json
@@ -37,7 +39,7 @@ jobs:
           printf '%s\n' '{"platform_gate":"blocked","reason":"real HVF/KVM requires protected native runners"}' > platform-gate.json
       - name: Upload redacted hermetic evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: phase4-fuzz-security-${{ github.run_id }}-${{ github.run_attempt }}
           path: |

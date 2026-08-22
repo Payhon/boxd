@@ -9,6 +9,9 @@ hosted CI 的 parser/fuzz smoke 冒充通过。
 `fuzz/Cargo.toml` 是独立 cargo-fuzz workspace，避免改变根 `Cargo.toml`。五个 target
 均把输入截断到固定上限，并且不输出输入内容：
 
+生产 workspace 继续固定 Rust 1.94.0；cargo-fuzz/ASan 单独使用
+`nightly-2026-08-15`，不得把 fuzz nightly 用作发布编译器。
+
 | Target | 覆盖 | 边界 |
 |---|---|---|
 | `network_policy` | `DomainPattern`、`IpCidr`、`CustomNetworkPolicy`、DNS/TCP policy evaluation | 64 rules、253-byte domain、8 KiB input |
