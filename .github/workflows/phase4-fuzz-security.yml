@@ -27,11 +27,11 @@ jobs:
       - name: Install cargo-fuzz
         run: cargo install cargo-fuzz --version 0.12.0 --locked
       - name: Build fuzz targets
-        run: cargo fuzz build
+        run: cargo +nightly-2026-08-15 fuzz build
       - name: Hermetic bounded fuzz smoke
         run: |
           for target in network_policy dns api_json http_sse path_archive; do
-            cargo fuzz run "$target" -- -runs=64 -max_len=65536
+            cargo +nightly-2026-08-15 fuzz run "$target" -- -runs=64 -max_len=65536
           done
       - name: Record platform boundary
         run: |
