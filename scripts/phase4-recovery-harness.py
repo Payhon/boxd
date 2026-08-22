@@ -10,6 +10,8 @@ SHA256=re.compile(r"^[0-9a-f]{64}$")
 COMMIT=re.compile(r"^[0-9a-f]{40}$")
 RELATIVE_PATH=re.compile(r"^[A-Za-z0-9._/+@=-]+$")
 FORBIDDEN_LIVE=re.compile(r"(?:fixture|mock|model|virtualization\s*[:=]\s*none)", re.I)
+ARTIFACT_SCHEMA="boxd-phase4-recovery-artifact-v1"
+ARTIFACT_PRODUCER="boxd-phase4-recovery-runner"
 class HarnessError(ValueError): pass
 def scan(v):
     if isinstance(v,str) and SECRET.search(v): raise HarnessError("secret-like value detected")
@@ -118,7 +120,36 @@ def verify_live_artifacts(doc, artifact_root):
         actual = artifact_sha(artifact_root, case["artifact_path"], f"case {case['scenario']} artifact")
         if actual != case["artifact_sha256"]:
             raise HarnessError(f"case {case['scenario']} artifact SHA-256 does not match artifact")
+        path = Path(artifact_root).resolve(strict=True) / Path(case["artifact_path"])
+        try:
+            artifact = json.loads(path.read_text())
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise HarnessError(f"case {case['scenario']} artifact is not JSON") from exc
+        validate_recovery_artifact(artifact, doc, case)
     return actual_inputs
+
+def validate_recovery_artifact(artifact, doc, case):
+    required = {"schema", "scenario", "commit", "platform", "input_hashes", "producer", "steps", "started_at_unix_ms", "finished_at_unix_ms", "status"}
+    if not isinstance(artifact, dict) or set(artifact) != required: raise HarnessError("recovery artifact schema is not closed")
+    if artifact["schema"] != ARTIFACT_SCHEMA or artifact["producer"] != ARTIFACT_PRODUCER: raise HarnessError("invalid recovery artifact identity")
+    if artifact["scenario"] != case["scenario"] or artifact["status"] != case["status"] or artifact["commit"] != doc["commit"] or artifact["platform"] != doc["platform"]: raise HarnessError("recovery artifact cross-binding mismatch")
+    expected_inputs = {item["name"]: item["sha256"] for item in doc["inputs"] if item["name"] in ("boxd", "runtime", "db")}
+    if artifact["input_hashes"] != expected_inputs: raise HarnessError("recovery artifact input hashes do not match live inputs")
+    for value in expected_inputs.values():
+        if not SHA256.fullmatch(value): raise HarnessError("invalid recovery input hash")
+    if not isinstance(artifact["platform"], dict) or set(artifact["platform"]) != {"os", "arch", "virtualization"}: raise HarnessError("artifact platform shape is closed")
+    for name in ("started_at_unix_ms", "finished_at_unix_ms"):
+        if isinstance(artifact[name], bool) or not isinstance(artifact[name], int) or artifact[name] < 0: raise HarnessError("artifact timestamps are invalid")
+    if artifact["finished_at_unix_ms"] < artifact["started_at_unix_ms"]: raise HarnessError("artifact timestamps are not monotonic")
+    steps = artifact["steps"]
+    if not isinstance(steps, list) or not steps: raise HarnessError("recovery artifact steps must be non-empty")
+    for step in steps:
+        if not isinstance(step, dict) or set(step) != {"operation", "expected", "observed", "status"}: raise HarnessError("recovery step schema is not closed")
+        if any(not isinstance(step[k], str) or not step[k] for k in ("operation", "expected", "observed")) or step["status"] not in ("pass", "fail", "blocked"): raise HarnessError("recovery step is invalid")
+    if artifact["status"] not in ("pass", "fail"): raise HarnessError("recovery artifact status is invalid")
+    if artifact["status"] == "pass" and any(step["status"] != "pass" for step in steps): raise HarnessError("non-pass step cannot produce a pass case")
+    scan(artifact)
+    if FORBIDDEN_LIVE.search(json.dumps(artifact, sort_keys=True)): raise HarnessError("fixture/mock/model-like artifact is forbidden")
 
 def evidence(doc,commit="0"*40):
     validate(doc); digest=hashlib.sha256(json.dumps(doc,sort_keys=True,separators=(",",":")).encode()).hexdigest(); n=len(SCENARIOS)

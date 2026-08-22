@@ -24,6 +24,8 @@ const requiredCommand = (file, args, label) => {
 };
 const percentile = (values, p) => { const sorted = [...values].sort((a, b) => a - b); return sorted[Math.min(sorted.length - 1, Math.ceil((p / 100) * sorted.length) - 1)] ?? 0; };
 const consume = async (stream) => { for await (const _chunk of stream) {} };
+const resourceId = (box) => box?.id ?? box?.boxId ?? box?.box?.id;
+const idsHash = (ids) => createHash("sha256").update(JSON.stringify([...ids].sort())).digest("hex");
 
 function virtualization() {
   if (process.platform === "darwin") return command("sysctl", ["-n", "kern.hv_support"]) === "1" ? "hvf" : "none";
@@ -95,27 +97,38 @@ async function main() {
     const matrix = [];
     let daemon = await daemonMetrics();
     for (const boxes of counts) for (const scenario of scenarios) {
-      const latencies = []; let failures = 0; const handles = [];
+      const started = Date.now(); const latencies = []; let failures = 0; const handles = [];
+      let operationSucceeded = 0; let operationFailures = 0; let cleanupFailures = 0; let deletedCount = 0; const createdIds = [];
       try {
         try {
-          for (let i = 0; i < boxes; i++) handles.push(await sdk.Box.create({ apiKey: process.env.BOXD_API_KEY, baseUrl: process.env.BOXD_BASE_URL, name: `boxd-phase4-load-${boxes}-${scenario}-${i}`, keepAlive: true, browser: scenario === "browser", runtime: process.env.BOXD_RUNTIME }));
-        } catch { failures = boxes - handles.length; }
+          for (let i = 0; i < boxes; i++) {
+            const box = await sdk.Box.create({ apiKey: process.env.BOXD_API_KEY, baseUrl: process.env.BOXD_BASE_URL, name: `boxd-phase4-load-${boxes}-${scenario}-${i}`, keepAlive: true, browser: scenario === "browser", runtime: process.env.BOXD_RUNTIME });
+            const id = resourceId(box); if (typeof id !== "string" || !id) throw new Error("created Box did not expose an id");
+            handles.push(box); createdIds.push(id);
+          }
+        } catch { /* remaining create attempts are recorded as create failures */ }
         await Promise.all(handles.map(async (box) => {
           const t = performance.now();
+          let succeeded = false;
           try {
             if (scenario === "exec") await box.exec.command("printf phase4-load");
             else if (scenario === "sse") await consume(await box.exec.stream("printf phase4-load"));
             else if (scenario === "browser") await box.browser.tab.create("data:text/html,<!doctype html><title>boxd-load</title>");
             else await box.getPublicURL(Number(process.env.BOXD_LOAD_PREVIEW_PORT || 3000));
-          } catch { failures++; } finally { latencies.push(performance.now() - t); }
+            succeeded = true;
+          } catch { operationFailures++; } finally { if (succeeded) operationSucceeded++; latencies.push(performance.now() - t); }
         }));
       } finally {
         const cleanup = await Promise.allSettled(handles.map((box) => box.delete()));
-        if (cleanup.some(({ status }) => status === "rejected")) throw new Error("one or more live load Boxes could not be deleted");
+        deletedCount = cleanup.filter(({ status }) => status === "fulfilled").length;
+        cleanupFailures = cleanup.filter(({ status }) => status === "rejected").length;
       }
+      const finished = Date.now();
       daemon = await daemonMetrics();
-      const metrics = { p50_ms: percentile(latencies, 50), p95_ms: percentile(latencies, 95), p99_ms: percentile(latencies, 99), error_rate: boxes ? failures / boxes : 1, ...daemon };
-      matrix.push({ boxes, scenario, metrics });
+      const created = handles.length; const createFailures = boxes - created; const attempted = created; const failed = createFailures + operationFailures;
+      const metrics = { p50_ms: percentile(latencies, 50), p95_ms: percentile(latencies, 95), p99_ms: percentile(latencies, 99), error_rate: boxes ? failed / boxes : 1, ...daemon };
+      matrix.push({ boxes, scenario, metrics, proof: { created_count: created, create_failure_count: createFailures, operation_attempted_count: attempted, operation_succeeded_count: operationSucceeded, operation_failure_count: operationFailures, deleted_count: deletedCount, cleanup_failure_count: cleanupFailures, failure_count: failed, started_at_unix_ms: started, finished_at_unix_ms: finished, created_ids_sha256: idsHash(createdIds) } });
+      if (cleanupFailures) process.exitCode = 1;
     }
     const commit = process.env.BOXD_COMMIT_SHA || command("git", ["rev-parse", "HEAD"]);
     if (!/^[0-9a-f]{40}$/.test(commit)) throw new Error("live load requires a full lowercase commit hash");

@@ -853,12 +853,11 @@ pub fn upstream_client_config_with_roots(roots: RootCertStore) -> Arc<ClientConf
 /// The caller owns target policy evaluation and TCP dialing, including the
 /// post-DNS CIDR decision. This bridge binds guest SNI and HTTP `Host` to
 /// `server_name`, validates upstream TLS with rustls WebPKI, injects the most
-/// specific rule, streams a `Content-Length` body, and closes the upstream
+/// specific rule, streams a `Content-Length` or chunked body, and closes the upstream
 /// connection after the response.
 ///
-/// Chunked request bodies, upgrades, and multiple requests per TLS connection
-/// are intentionally unsupported here. The data plane must not advertise full
-/// HTTPS `attach_headers` until those cases and guest CA lifecycle are wired.
+/// Upgrades and multiple requests per TLS connection are intentionally
+/// unsupported here.
 pub struct Http1TlsMitmProxy {
     server_config: Arc<ServerConfig>,
     upstream_config: Arc<ClientConfig>,
@@ -1028,16 +1027,20 @@ where
         .await
         .map_err(|error| io_error("write upstream request head", error))?;
 
-    if let Some(content_length) = metadata.content_length {
-        let mut body = (&mut *guest).take(content_length);
-        let copied = tokio::io::copy(&mut body, &mut *upstream)
-            .await
-            .map_err(|error| io_error("stream request body", error))?;
-        if copied != content_length {
-            return Err(AttachHeadersError::Io(
-                "guest closed before the declared request body completed".to_owned(),
-            ));
+    match metadata.body {
+        RequestBody::None => {}
+        RequestBody::ContentLength(content_length) => {
+            let mut body = (&mut *guest).take(content_length);
+            let copied = tokio::io::copy(&mut body, &mut *upstream)
+                .await
+                .map_err(|error| io_error("stream request body", error))?;
+            if copied != content_length {
+                return Err(AttachHeadersError::Io(
+                    "guest closed before the declared request body completed".to_owned(),
+                ));
+            }
         }
+        RequestBody::Chunked => stream_chunked_body(guest, upstream, limits).await?,
     }
     upstream
         .flush()
@@ -1057,7 +1060,14 @@ where
 #[derive(Debug)]
 struct RequestMetadata {
     host: String,
-    content_length: Option<u64>,
+    body: RequestBody,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RequestBody {
+    None,
+    ContentLength(u64),
+    Chunked,
 }
 
 fn request_metadata(head: &[u8]) -> Result<RequestMetadata, AttachHeadersError> {
@@ -1078,13 +1088,6 @@ fn request_metadata(head: &[u8]) -> Result<RequestMetadata, AttachHeadersError> 
         })
     {
         return Err(AttachHeadersError::UnsupportedUpgrade);
-    }
-    if request
-        .headers
-        .iter()
-        .any(|header| header.name.eq_ignore_ascii_case("transfer-encoding"))
-    {
-        return Err(AttachHeadersError::AmbiguousMessageFraming);
     }
     let host = request
         .headers
@@ -1107,10 +1110,178 @@ fn request_metadata(head: &[u8]) -> Result<RequestMetadata, AttachHeadersError> 
                 .map_err(|_| AttachHeadersError::AmbiguousMessageFraming)
         })
         .transpose()?;
-    Ok(RequestMetadata {
-        host,
-        content_length,
-    })
+    let transfer_encoding = request
+        .headers
+        .iter()
+        .find(|header| header.name.eq_ignore_ascii_case("transfer-encoding"));
+    let body = match (content_length, transfer_encoding) {
+        (Some(_), Some(_)) => return Err(AttachHeadersError::AmbiguousMessageFraming),
+        (Some(length), None) => RequestBody::ContentLength(length),
+        (None, Some(header)) => {
+            let value = std::str::from_utf8(header.value)
+                .map_err(|_| AttachHeadersError::AmbiguousMessageFraming)?;
+            if !value.trim().eq_ignore_ascii_case("chunked") {
+                return Err(AttachHeadersError::AmbiguousMessageFraming);
+            }
+            RequestBody::Chunked
+        }
+        (None, None) => RequestBody::None,
+    };
+    Ok(RequestMetadata { host, body })
+}
+
+const MAX_CHUNK_LINE_BYTES: usize = 8 * 1024;
+
+async fn stream_chunked_body<Guest, Upstream>(
+    guest: &mut Guest,
+    upstream: &mut Upstream,
+    limits: RequestHeadLimits,
+) -> Result<(), AttachHeadersError>
+where
+    Guest: AsyncRead + Unpin,
+    Upstream: AsyncWrite + Unpin,
+{
+    loop {
+        let line = read_crlf_line(guest, MAX_CHUNK_LINE_BYTES, "chunk size").await?;
+        let size = parse_chunk_size(&line)?;
+        upstream
+            .write_all(&line)
+            .await
+            .map_err(|error| io_error("write chunk size", error))?;
+        if size != 0 {
+            let mut remaining = size;
+            let mut buffer = [0u8; 16 * 1024];
+            while remaining > 0 {
+                let wanted = remaining.min(buffer.len() as u64) as usize;
+                guest
+                    .read_exact(&mut buffer[..wanted])
+                    .await
+                    .map_err(|error| io_error("read chunk data", error))?;
+                upstream
+                    .write_all(&buffer[..wanted])
+                    .await
+                    .map_err(|error| io_error("write chunk data", error))?;
+                remaining -= wanted as u64;
+            }
+            let mut crlf = [0u8; 2];
+            guest
+                .read_exact(&mut crlf)
+                .await
+                .map_err(|error| io_error("read chunk terminator", error))?;
+            if crlf != *b"\r\n" {
+                return Err(AttachHeadersError::MalformedRequest);
+            }
+            upstream
+                .write_all(&crlf)
+                .await
+                .map_err(|error| io_error("write chunk terminator", error))?;
+            continue;
+        }
+
+        let mut trailer_bytes = 0usize;
+        let mut trailer_count = 0usize;
+        loop {
+            let trailer = read_crlf_line(guest, MAX_CHUNK_LINE_BYTES, "chunk trailer").await?;
+            trailer_bytes = trailer_bytes.saturating_add(trailer.len());
+            if trailer_bytes > limits.max_bytes {
+                return Err(AttachHeadersError::RequestHeadTooLarge);
+            }
+            if trailer == b"\r\n" {
+                upstream
+                    .write_all(&trailer)
+                    .await
+                    .map_err(|error| io_error("write chunk trailer terminator", error))?;
+                return Ok(());
+            }
+            trailer_count = trailer_count.saturating_add(1);
+            if trailer_count > limits.max_headers {
+                return Err(AttachHeadersError::TooManyHeaders);
+            }
+            validate_chunk_trailer(&trailer)?;
+            upstream
+                .write_all(&trailer)
+                .await
+                .map_err(|error| io_error("write chunk trailer", error))?;
+        }
+    }
+}
+
+async fn read_crlf_line<R: AsyncRead + Unpin>(
+    reader: &mut R,
+    max_bytes: usize,
+    what: &str,
+) -> Result<Vec<u8>, AttachHeadersError> {
+    let mut line = Vec::new();
+    loop {
+        let mut byte = [0u8; 1];
+        let read = reader
+            .read(&mut byte)
+            .await
+            .map_err(|error| io_error(&format!("read {what}"), error))?;
+        if read == 0 {
+            return Err(AttachHeadersError::IncompleteRequestHead);
+        }
+        line.push(byte[0]);
+        if line.len() > max_bytes {
+            return Err(AttachHeadersError::RequestHeadTooLarge);
+        }
+        if line.ends_with(b"\r\n") {
+            return Ok(line);
+        }
+        if byte[0] == b'\n' {
+            return Err(AttachHeadersError::MalformedRequest);
+        }
+    }
+}
+
+fn parse_chunk_size(line: &[u8]) -> Result<u64, AttachHeadersError> {
+    let value = line
+        .strip_suffix(b"\r\n")
+        .ok_or(AttachHeadersError::MalformedRequest)?;
+    let size_text = value.split(|byte| *byte == b';').next().unwrap_or_default();
+    if size_text.is_empty() || !size_text.iter().all(u8::is_ascii_hexdigit) {
+        return Err(AttachHeadersError::MalformedRequest);
+    }
+    if value.iter().any(|byte| *byte < 0x20 || *byte > 0x7e) {
+        return Err(AttachHeadersError::MalformedRequest);
+    }
+    for extension in value.split(|byte| *byte == b';').skip(1) {
+        if extension.is_empty()
+            || extension
+                .iter()
+                .any(|byte| *byte == b' ' || *byte == b'\t' || *byte == b'\r' || *byte == b'\n')
+        {
+            return Err(AttachHeadersError::MalformedRequest);
+        }
+    }
+    u64::from_str_radix(std::str::from_utf8(size_text).unwrap(), 16)
+        .map_err(|_| AttachHeadersError::MalformedRequest)
+}
+
+fn validate_chunk_trailer(line: &[u8]) -> Result<(), AttachHeadersError> {
+    let value = line
+        .strip_suffix(b"\r\n")
+        .ok_or(AttachHeadersError::MalformedRequest)?;
+    let colon = value
+        .iter()
+        .position(|byte| *byte == b':')
+        .ok_or(AttachHeadersError::MalformedRequest)?;
+    let (name, value) = (&value[..colon], &value[colon + 1..]);
+    let name = HeaderName::from_bytes(name).map_err(|_| AttachHeadersError::MalformedRequest)?;
+    if name.as_str().eq_ignore_ascii_case("host")
+        || name.as_str().eq_ignore_ascii_case("content-length")
+        || name.as_str().eq_ignore_ascii_case("transfer-encoding")
+        || name.as_str().eq_ignore_ascii_case("authorization")
+        || name.as_str().eq_ignore_ascii_case("cookie")
+        || name.as_str().starts_with("content-")
+        || is_forbidden_injected_header(&name)
+        || value.iter().any(|byte| {
+            *byte == b'\r' || *byte == b'\n' || (*byte < 0x20 && *byte != b'\t') || *byte == 0x7f
+        })
+    {
+        return Err(AttachHeadersError::MalformedRequest);
+    }
+    Ok(())
 }
 
 fn force_connection_close(head: &[u8]) -> Result<Vec<u8>, AttachHeadersError> {
@@ -1402,8 +1573,9 @@ mod tests {
             request_metadata(
                 b"POST / HTTP/1.1\r\nHost: api.example.com\r\nTransfer-Encoding: chunked\r\n\r\n"
             )
-            .expect_err("chunked rejected"),
-            AttachHeadersError::AmbiguousMessageFraming
+            .expect("chunked accepted")
+            .body,
+            RequestBody::Chunked
         );
     }
 
@@ -1623,6 +1795,112 @@ mod tests {
                 .expect_err("shared-IP hostname rejected"),
             AttachHeadersError::HostNotAllowed
         );
+    }
+
+    #[tokio::test]
+    async fn plain_http_streams_chunked_body_and_validates_trailers() {
+        let proxy = Http1AttachHeadersProxy::new(Arc::new(rules()), RequestHeadLimits::default());
+        let (mut guest, guest_proxy) = tokio::io::duplex(16 * 1024);
+        let (upstream_proxy, mut upstream) = tokio::io::duplex(16 * 1024);
+        let allowed = AllowedHostnames::new(["api.example.com"]).expect("allowed");
+        let task = tokio::spawn(async move {
+            proxy
+                .proxy_single_http1_connection(guest_proxy, upstream_proxy, &allowed)
+                .await
+        });
+        let request = b"POST / HTTP/1.1\r\nHost: api.example.com\r\nAuthorization: attacker\r\nTransfer-Encoding: chunked\r\n\r\n4;note=yes\r\nWiki\r\n0\r\nX-Trail: yes\r\n\r\n";
+        guest.write_all(request).await.expect("request");
+        let mut head = vec![0u8; 128];
+        let read = upstream.read(&mut head).await.expect("upstream head");
+        let head_text = String::from_utf8_lossy(&head[..read]);
+        assert!(head_text.contains("authorization: Bearer exact-secret\r\n"));
+        assert!(!head_text.contains("attacker"));
+        let expected_body = b"4;note=yes\r\nWiki\r\n0\r\nX-Trail: yes\r\n\r\n";
+        let mut body = vec![0u8; expected_body.len()];
+        // The first read may include part of the body; collect the exact wire
+        // suffix already observed, then read the remainder.
+        let mut wire = head[..read].to_vec();
+        while !wire.ends_with(expected_body) {
+            let mut chunk = [0u8; 256];
+            let n = upstream.read(&mut chunk).await.expect("upstream body");
+            assert!(n > 0);
+            wire.extend_from_slice(&chunk[..n]);
+        }
+        let body_start = wire.len() - expected_body.len();
+        body.copy_from_slice(&wire[body_start..]);
+        assert_eq!(&body, expected_body);
+        upstream
+            .write_all(b"HTTP/1.1 204 No Content\r\nConnection: close\r\n\r\n")
+            .await
+            .expect("response");
+        upstream.shutdown().await.expect("close upstream");
+        let mut response = Vec::new();
+        guest
+            .read_to_end(&mut response)
+            .await
+            .expect("response read");
+        assert!(String::from_utf8_lossy(&response).starts_with("HTTP/1.1 204"));
+        task.await.expect("proxy task").expect("proxy success");
+    }
+
+    #[tokio::test]
+    async fn plain_http_rejects_malformed_chunk_size_and_missing_chunk_crlf() {
+        for body in [b"xz\r\n".as_slice(), b"1\r\na\n".as_slice()] {
+            let proxy =
+                Http1AttachHeadersProxy::new(Arc::new(rules()), RequestHeadLimits::default());
+            let (mut guest, guest_proxy) = tokio::io::duplex(4096);
+            let (upstream_proxy, _upstream) = tokio::io::duplex(4096);
+            let allowed = AllowedHostnames::new(["api.example.com"]).expect("allowed");
+            let task = tokio::spawn(async move {
+                proxy
+                    .proxy_single_http1_connection(guest_proxy, upstream_proxy, &allowed)
+                    .await
+            });
+            guest
+                .write_all(b"POST / HTTP/1.1\r\nHost: api.example.com\r\nTransfer-Encoding: chunked\r\n\r\n")
+                .await
+                .expect("head");
+            guest.write_all(body).await.expect("body");
+            guest.shutdown().await.expect("guest close");
+            assert!(task.await.expect("proxy task").is_err());
+        }
+    }
+
+    #[tokio::test]
+    async fn chunked_trailers_are_bounded() {
+        let (mut guest, mut guest_reader) = tokio::io::duplex(4096);
+        let (_upstream_reader, mut upstream) = tokio::io::duplex(4096);
+        guest
+            .write_all(b"0\r\nX-Long: value\r\n\r\n")
+            .await
+            .expect("chunked body");
+        let result = stream_chunked_body(
+            &mut guest_reader,
+            &mut upstream,
+            RequestHeadLimits {
+                max_bytes: 4,
+                max_headers: 4,
+            },
+        )
+        .await;
+        assert_eq!(
+            result.expect_err("oversized trailers"),
+            AttachHeadersError::RequestHeadTooLarge
+        );
+    }
+
+    #[tokio::test]
+    async fn chunked_trailers_cannot_override_authentication_or_content_metadata() {
+        for trailer in [
+            b"Authorization: attacker\r\n".as_slice(),
+            b"Cookie: attacker=true\r\n".as_slice(),
+            b"Content-Type: text/plain\r\n".as_slice(),
+        ] {
+            assert_eq!(
+                validate_chunk_trailer(trailer).expect_err("security-sensitive trailer rejected"),
+                AttachHeadersError::MalformedRequest
+            );
+        }
     }
 
     #[tokio::test]

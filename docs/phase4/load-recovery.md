@@ -43,9 +43,17 @@ The runner rejects symlinks/hardlinks and records normalized artifact-relative
 paths plus recomputed SHA-256 values. The harness independently reopens those
 files under the mandatory artifact root and recomputes the hashes before it can
 emit live evidence. `BOXD_LOAD_RESULT` must not already exist; the collector
-creates it mode `0600` and never follows an existing output path. The runner
-deletes every successfully created Box in `finally` and exercises
-all 16 cells (1/4/16/64 × exec/SSE/browser/preview). Live evidence is `pass`
-only with zero errors, complete commit/binary/runtime/SDK hashes, daemon
-CPU/RSS/FD/disk metrics, and native HVF/KVM identification. Hosted Actions
-checks only the harness and schema; it cannot claim native load evidence.
+creates it mode `0600` and never follows an existing output path. Every cell
+contains a closed proof transcript with actual create/operation/delete counts,
+failures, monotonic timestamps, and a SHA-256 of sorted created IDs (IDs are
+never emitted). Counts must close exactly and cleanup failure is fail-closed;
+fixture records retain the old schema and remain permanently `blocked`.
+
+Recovery artifacts are closed JSON `boxd-phase4-recovery-artifact-v1` records;
+their bytes are hashed before parsing and scenario/status/commit/platform plus
+`boxd`/`runtime`/`db` hashes are cross-checked against the live document.
+Arbitrary text, altered or cross-bound artifacts, secrets, and blocked/failing
+steps for a purported pass are rejected. This proves runner transcript
+integrity only: JSON cannot self-authenticate, so trusted native runner/build
+provenance, signatures, and the real HVF/KVM environment remain required.
+Hosted Actions cannot claim native load or recovery evidence.

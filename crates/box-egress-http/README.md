@@ -17,7 +17,8 @@ guest ClientHello 读取实际 SNI，并要求它属于同一 numeric address �
 `Http1AttachHeadersProxy::proxy_single_http1_connection`，从请求 `Host` 获取实际主机并
 执行相同的 allowlist 检查。该 crate 不解析或执行 DNS，也不决定 tenant/Box policy。
 
-当前 async bridge 有意只支持一个 HTTP/1.1 request/response exchange 和无 body 或
-`Content-Length` body。它拒绝 chunked request，不支持 keep-alive 多请求、Upgrade、
-HTTP/2，也不负责把 CA 安装到 guest trust store。因此，在数据面和 guest CA 生命周期
-闭环前，不得据此把 HTTPS `attach_headers` capability 标记为完成。
+当前 async bridge 支持一个 HTTP/1.1 request/response exchange、无 body、
+`Content-Length` body 和严格校验后增量转发的 `Transfer-Encoding: chunked` body（含有界
+trailers）。它不支持 keep-alive 多请求、Upgrade、HTTP/2，也不负责把 CA 安装到 guest
+trust store。因此，在数据面和 guest CA 生命周期闭环前，不得据此把 HTTPS
+`attach_headers` capability 标记为完成。

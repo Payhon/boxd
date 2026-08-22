@@ -210,7 +210,7 @@ lint/typecheck、Vitest 11/11、production build、Playwright 1/1 全绿。
 - [x] 五类 bounded fuzz target、hermetic 安全矩阵、load/recovery live collector 与 hash-bound evidence validator；
 - [ ] macOS HVF 与 Linux KVM 上的真实 fuzz/security/load/recovery evidence；
 - [ ] macOS Developer ID/notarization/stapling 与 Linux 双架构 KVM；
-- [x] release manifest/SBOM/provenance 完整性工具、systemd/launchd 静态门禁与 blocked-only 升级/回滚模型；
+- [x] release manifest/SBOM/provenance 完整性工具、systemd/launchd 静态门禁、SQLite 启动迁移备份/journal guard 与 blocked-only 跨版本升级/回滚模型；
 - [ ] 三平台已签名 release artifact、真实服务升级/回滚及 notarization evidence；
 - [ ] Blueprint §20.3 全部门禁与已知差异为 0。
 

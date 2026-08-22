@@ -40,7 +40,7 @@ def validate_fixture(doc):
     if not isinstance(runs, list) or not runs: raise HarnessError("runs must be non-empty")
     seen = set()
     for run in runs:
-        if not isinstance(run, dict) or set(run) != {"boxes", "scenario", "metrics"}: raise HarnessError("run shape is closed")
+        if not isinstance(run, dict) or set(run) != {"boxes", "scenario", "metrics"}: raise HarnessError("fixture run shape is closed")
         boxes, scenario = run["boxes"], run["scenario"]
         if boxes not in BOX_COUNTS or scenario not in SCENARIOS: raise HarnessError("unsupported load cell")
         key = (boxes, scenario)
@@ -54,6 +54,29 @@ def validate_fixture(doc):
     missing = {(b, s) for b in BOX_COUNTS for s in SCENARIOS} - seen
     if missing: raise HarnessError("incomplete matrix: " + ",".join(f"{b}/{s}" for b,s in sorted(missing)))
     return doc
+
+def validate_live_proof(run):
+    if not isinstance(run, dict) or set(run) != {"boxes", "scenario", "metrics", "proof"}:
+        raise HarnessError("live run must contain a closed proof transcript")
+    boxes, proof = run["boxes"], run["proof"]
+    required = {"created_count", "create_failure_count", "operation_attempted_count", "operation_succeeded_count", "operation_failure_count", "deleted_count", "cleanup_failure_count", "failure_count", "started_at_unix_ms", "finished_at_unix_ms", "created_ids_sha256"}
+    allowed = required
+    if not isinstance(proof, dict) or set(proof) - allowed or not required <= set(proof): raise HarnessError("proof fields are incomplete")
+    for name in ("created_count", "create_failure_count", "operation_attempted_count", "operation_succeeded_count", "operation_failure_count", "deleted_count", "cleanup_failure_count", "failure_count"):
+        value = proof[name]
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0: raise HarnessError(f"proof.{name} must be a non-negative integer")
+    for name in ("started_at_unix_ms", "finished_at_unix_ms"):
+        value = proof[name]
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0: raise HarnessError(f"proof.{name} must be a unix millisecond integer")
+    if proof["finished_at_unix_ms"] < proof["started_at_unix_ms"]: raise HarnessError("proof timestamps are not monotonic")
+    if not SHA256.fullmatch(proof["created_ids_sha256"]): raise HarnessError("proof created id hash is invalid")
+    cleanup_failures = proof["cleanup_failure_count"]
+    if proof["created_count"] + proof["create_failure_count"] != boxes: raise HarnessError("live proof create counts do not close")
+    if proof["operation_attempted_count"] != proof["created_count"]: raise HarnessError("live proof attempted count is not actual created count")
+    if proof["operation_succeeded_count"] + proof["operation_failure_count"] != proof["operation_attempted_count"]: raise HarnessError("live proof operation counts do not close")
+    if proof["deleted_count"] + cleanup_failures != proof["created_count"]: raise HarnessError("live proof cleanup counts do not close")
+    if proof["failure_count"] != proof["create_failure_count"] + proof["operation_failure_count"]: raise HarnessError("live proof failure counts do not close")
+    if proof["failure_count"] != run["metrics"]["error_rate"] * boxes: raise HarnessError("proof failure count disagrees with error_rate")
 
 def evidence(doc, *, commit="0" * 40, platform=None):
     validate_fixture(doc)
@@ -111,7 +134,6 @@ def verify_live_artifacts(doc, artifact_root):
             raise HarnessError(f"{name} artifact SHA-256 does not match")
 
 def live_evidence(doc, artifact_root=None):
-    validate_fixture(doc)
     if doc.get("mode") != "live": raise HarnessError("live evidence requires mode=live")
     if set(doc) != {"schema", "mode", "commit", "platform", "pinned_sdk_commit", "artifacts", "daemon", "runs"}:
         raise HarnessError("live input has unknown fields")
@@ -120,13 +142,18 @@ def live_evidence(doc, artifact_root=None):
     if plat not in ({"os": "linux", "arch": "x86_64", "virtualization": "kvm"}, {"os": "linux", "arch": "aarch64", "virtualization": "kvm"}, {"os": "macos", "arch": "aarch64", "virtualization": "hvf"}):
         raise HarnessError("live evidence requires Linux x86_64/aarch64 KVM or macOS aarch64 HVF")
     if doc.get("pinned_sdk_commit") != "677ca0827a6f54bc328b4b3e97d32a7cc5ac1934": raise HarnessError("unexpected pinned SDK commit")
+    if not isinstance(doc.get("runs"), list): raise HarnessError("live runs must be a list")
+    for run in doc["runs"]:
+        validate_live_proof(run)
+    # Reuse the metric and matrix checks after stripping only the transcript envelope.
+    validate_fixture({"schema": SCHEMA, "mode": "fixture", "runs":[{"boxes":r["boxes"],"scenario":r["scenario"],"metrics":r["metrics"]} for r in doc["runs"]]})
     if not isinstance(artifacts, dict) or set(artifacts) != {"binary", "runtime_bundle"}: raise HarnessError("live artifacts are not closed")
     for name, item in artifacts.items():
         if not isinstance(item, dict) or set(item) != {"path", "sha256"}: raise HarnessError(f"{name} artifact shape is closed")
         validate_path(item.get("path"), f"{name} artifact path")
         if not SHA256.fullmatch(str(item.get("sha256", ""))): raise HarnessError(f"live evidence requires {name} artifact SHA-256")
     verify_live_artifacts(doc, artifact_root)
-    failures = [run for run in doc["runs"] if run["metrics"]["error_rate"] != 0]
+    failures = [run for run in doc["runs"] if run["metrics"]["error_rate"] != 0 or run["proof"]["cleanup_failure_count"] != 0]
     daemon = doc.get("daemon")
     daemon_metrics = {"cpu_percent", "rss_bytes", "fd_count", "disk_bytes"}
     if not isinstance(daemon, dict) or set(daemon) != daemon_metrics:

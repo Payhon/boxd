@@ -106,7 +106,9 @@ host-owned egress 数据面，但双平台真实 VM evidence 尚未完成；配�
 HTTPS `attach_headers` 已接通 feature-gated 的 HTTP/1.1/TLS interception、SNI/Host
 绑定、WebPKI upstream 校验、加密 secret、per-Box CA 与 guest trust-store 安装；只有
 `features.attach_headers=true` 且 restricted egress 已 armed 时 capability 才为 true，
-否则仍返回 501。HTTP/2、CONNECT、Upgrade 与歧义 framing 会 fail closed。
+否则仍返回 501。HTTP/1.1 的 `Content-Length` 与严格校验的 chunked request body 会按
+wire bytes 增量转发；认证、Cookie、内容元数据或 hop-by-hop trailer 会 fail closed。
+HTTP/2、CONNECT、Upgrade 与歧义 framing 同样会 fail closed。
 见 [ADR-0003](adr/0003-mvp-network-policy.md) 与
 [ADR-0007](adr/0007-phase4-custom-network-policy.md)。
 

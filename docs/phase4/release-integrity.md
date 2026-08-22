@@ -73,3 +73,20 @@ Its summary remains `blocked` because a real service/database upgrade, notarized
 macOS HVF execution, and Linux x86_64/aarch64 KVM execution require external
 artifacts or hardware. Those gates must produce new evidence for the exact
 release commit; hosted CI cannot turn these requirements into `pass`.
+
+## Runtime SQLite migration guard
+
+When `database.auto_migrate` is enabled, startup calls the `box-db` migration
+guard while holding the existing single-instance lock. SQLite pending migration
+names are read without creating tables first. A non-empty database is copied
+with SQLite `VACUUM INTO` into `data_dir/migration-backups/`; the output is a
+private regular file and its SHA-256 is recorded in `migration-journal.json`.
+The journal is atomically replaced and records `prepared`, `failed`, or
+`applied`, together with the forward-only pending/applied migration names.
+An existing `prepared` or `failed` journal blocks every later startup with
+`migration_recovery_required`, including when the schema itself no longer has
+pending migrations; an operator must inspect or restore the bound backup rather
+than silently continuing from an ambiguous partial upgrade.
+Fresh empty databases explicitly record a null backup. Non-SQLite databases
+continue through the ordinary forward-only SeaORM migrator and do not claim a
+local backup.

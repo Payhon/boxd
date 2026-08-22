@@ -90,7 +90,7 @@ pub async fn serve(config: AppConfig) -> Result<(), String> {
         .await
         .map_err(|error| format!("database connection failed: {error}"))?;
     if config.database.auto_migrate {
-        box_db::migrate(&database)
+        box_db::guarded_migrate(&database, &config.storage.data_dir)
             .await
             .map_err(|error| format!("database migration failed: {error}"))?;
     }

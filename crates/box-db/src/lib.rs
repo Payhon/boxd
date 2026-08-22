@@ -30,6 +30,9 @@ use sea_orm::{
 use sea_orm_migration::MigratorTrait;
 use sha2::Sha256;
 
+mod migration_guard;
+pub use migration_guard::guarded_migrate;
+
 mod auth;
 pub use auth::*;
 mod secrets;
@@ -79,6 +82,7 @@ fn db_version(version: u64) -> box_core::Result<i64> {
 struct DatabaseHandleInner {
     connection: DatabaseConnection,
     sqlite_lock: Option<File>,
+    sqlite_path: Option<PathBuf>,
 }
 impl Drop for DatabaseHandleInner {
     fn drop(&mut self) {
@@ -176,6 +180,7 @@ fn acquire_sqlite_lock(url: &str) -> box_core::Result<Option<File>> {
 /// keys, and busy timeout to every newly-created pool connection.
 pub async fn connect(url: &str, max_connections: u32) -> box_core::Result<DatabaseHandle> {
     let sqlite_lock = acquire_sqlite_lock(url)?;
+    let sqlite_path = sqlite_path(url);
     let mut options = ConnectOptions::new(url);
     options.max_connections(max_connections).sqlx_logging(false);
     if url.starts_with("sqlite:") {
@@ -194,12 +199,17 @@ pub async fn connect(url: &str, max_connections: u32) -> box_core::Result<Databa
     Ok(DatabaseHandle(Arc::new(DatabaseHandleInner {
         connection: db,
         sqlite_lock,
+        sqlite_path,
     })))
 }
 pub async fn migrate(db: &DatabaseHandle) -> box_core::Result<()> {
     box_migration::Migrator::up(db.connection(), None)
         .await
         .map_err(internal)
+}
+
+pub(crate) fn sqlite_database_path(db: &DatabaseHandle) -> Option<&std::path::Path> {
+    db.0.sqlite_path.as_deref()
 }
 
 pub async fn migrations_current(db: &DatabaseHandle) -> box_core::Result<bool> {
