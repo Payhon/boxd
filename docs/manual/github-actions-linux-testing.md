@@ -69,6 +69,17 @@ gh run watch --repo Payhon/boxd <run-id>
 host KVM API 可访问；`blocked` 会以 exit 77 让对应 job 明确失败并记录原因。探针不加载
 libkrun、不导入 runtime、不启动 boxd，也不替代下一节的 self-hosted guest smoke。
 
+2026-08-22 对 commit `38788ce89f66d57f169c90f27627538ae81e504d` 的
+[托管 runner 实测](https://github.com/Payhon/boxd/actions/runs/32574199144)为：
+
+- `ubuntu-24.04` / `x86_64`：`/dev/kvm` 是字符设备，但 `O_RDWR` 返回
+  `Permission denied`；
+- `ubuntu-24.04-arm` / `aarch64`：`/dev/kvm` 不存在。
+
+因此当前 GitHub-hosted 矩阵只能执行源码、协议、数据库与探针测试；真实 KVM guest
+验收仍必须使用下一节的 `boxd-kvm` self-hosted runner。以后 runner 镜像能力可能变化，
+应重新手动运行探针，以新的 JSON artifact 为准。
+
 ## 2. 准备原生 KVM self-hosted runner
 
 文件：`.github/workflows/phase1-linux-kvm.yml`

@@ -227,6 +227,10 @@ Hermetic fuzz/security/load/recovery 与 release integrity 工具已经可执行
 实际 artifact path/hash 并拒绝 symlink、hardlink、root escape 或 `virtualization=none`；
 fixture 只能输出 `blocked`。当前机器没有可用于验收的 Linux KVM 双架构 runner、当前
 release runtime bundle、Developer ID/notary profile，因此上述真实平台复选项保持未完成。
+GitHub-hosted KVM probe run
+[`32574199144`](https://github.com/Payhon/boxd/actions/runs/32574199144) 已进一步确认：
+x86_64 runner 的 `/dev/kvm` 无 `O_RDWR` 权限，aarch64 runner 无 `/dev/kvm`；这属于平台
+blocked 证据，不是 boxd KVM smoke failure，也不能替代 self-hosted 验收。
 
 ## Required evidence before checking items
 
