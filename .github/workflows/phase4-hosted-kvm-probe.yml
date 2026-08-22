@@ -1,0 +1,68 @@
+name: phase4-hosted-kvm-probe
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/phase4-hosted-kvm-probe.yml"
+      - "scripts/phase4-kvm-probe.py"
+      - "tests/phase4/test_kvm_probe.py"
+      - "docs/phase4/load-recovery.md"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Test KVM probe
+        run: python3 -m unittest tests/phase4/test_kvm_probe.py -v
+      - name: Run hosted KVM API probe
+        id: kvm
+        continue-on-error: true
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/phase4-kvm-probe"
+          python3 scripts/phase4-kvm-probe.py \
+            --output "$RUNNER_TEMP/phase4-kvm-probe/result.json"
+      - name: Write probe summary
+        if: always()
+        shell: bash
+        run: |
+          result="$RUNNER_TEMP/phase4-kvm-probe/result.json"
+          if [[ -s "$result" ]]; then
+            status=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["status"])' "$result")
+            reason=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("blocked_reason", ""))' "$result")
+          else
+            status=blocked
+            reason="probe did not produce JSON (runner/tool failure)"
+          fi
+          {
+            echo "## Hosted KVM API probe (${{ matrix.runner }})"
+            echo "- status: **$status**"
+            if [[ -n "$reason" ]]; then echo "- blocked_reason: `$reason`"; fi
+            echo "- scope: host `/dev/kvm` character-device/open/ioctl only; no boxd smoke"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload probe result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4-hosted-kvm-probe-${{ matrix.runner }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/phase4-kvm-probe
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Fail explicitly when host KVM is blocked
+        if: always()
+        shell: bash
+        run: |
+          result="$RUNNER_TEMP/phase4-kvm-probe/result.json"
+          if [[ ! -s "$result" ]] || [[ "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["status"])' "$result")" != pass ]]; then
+            exit 77
+          fi

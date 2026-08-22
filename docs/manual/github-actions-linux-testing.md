@@ -51,6 +51,24 @@ gh workflow run linux-ci.yml --repo Payhon/boxd
 这些 job 会真实运行 Linux-only 的 Rust 分支和外部 PostgreSQL/MySQL 容器，但 GitHub
 hosted runner 是临时 VM，不能据此声称 boxd 已经完成 libkrun/KVM guest boot。
 
+### 1.1 探测 GitHub-hosted runner 是否暴露 KVM
+
+文件：`.github/workflows/phase4-hosted-kvm-probe.yml`
+
+该手动/路径触发流水线分别在 `ubuntu-24.04` 和 `ubuntu-24.04-arm` 上运行隔离单测，
+然后验证 `/dev/kvm` 是字符设备、能以 `O_RDWR` 打开，并且
+`KVM_GET_API_VERSION` 返回 Linux KVM ABI 版本 `12`：
+
+```sh
+gh workflow run phase4-hosted-kvm-probe.yml --repo Payhon/boxd
+gh run list --repo Payhon/boxd --workflow phase4-hosted-kvm-probe.yml
+gh run watch --repo Payhon/boxd <run-id>
+```
+
+每个矩阵 job 都会上传 `phase4-hosted-kvm-probe-*` JSON artifact。`pass` 只证明
+host KVM API 可访问；`blocked` 会以 exit 77 让对应 job 明确失败并记录原因。探针不加载
+libkrun、不导入 runtime、不启动 boxd，也不替代下一节的 self-hosted guest smoke。
+
 ## 2. 准备原生 KVM self-hosted runner
 
 文件：`.github/workflows/phase1-linux-kvm.yml`
