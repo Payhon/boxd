@@ -6,7 +6,12 @@ export function publicCases(sdk) {
   const { Box, EphemeralBox } = sdk;
   const connection = { apiKey: "fixture-api-key", baseUrl: process.env.BOXD_BASE_URL || "http://boxd.contract.invalid" };
   const make = () => Box.create({ ...connection, name: "fixture", keepAlive: true, browser: true, agent: { harness: "codex", model: "openai/gpt-5", apiKey: "agent-key" } });
-  const staticCase = (id, run) => ({ id, setup: "Box.create", destructive: id.startsWith("DELETE") || id.includes("/pause") || id.includes("/cancel"), run });
+  const staticCase = (id, run, setup = null) => ({
+    id,
+    setup,
+    destructive: !id.startsWith("GET "),
+    run,
+  });
   const cases = [
     staticCase("GET /v2/box", () => Box.list({ ...connection, label: "label fixture" })),
     staticCase("DELETE /v2/box", () => Box.delete({ ...connection, boxIds: ["box_fixture"] })),
@@ -15,10 +20,10 @@ export function publicCases(sdk) {
     staticCase("POST /v2/box/from-snapshot#ephemeral", () => EphemeralBox.fromSnapshot("snap_fixture", { ...connection, ttl: 60 })),
     staticCase("POST /v2/box#ephemeral", () => EphemeralBox.create({ ...connection, ttl: 60 })),
   ];
-  const b = (id, fn) => cases.push(staticCase(id, async () => fn(await make())));
+  const b = (id, fn) => cases.push(staticCase(id, async () => fn(await make()), "Box.create"));
   b("GET /v2/box/{box_id}", x => Box.get(x.id, connection)); b("DELETE /v2/box/{box_id}", x => x.delete()); b("GET /v2/box/{box_id}/status", x => x.getStatus());
-  cases.push(staticCase("POST /v2/box/{box_id}/pause", async () => (await Box.create({ ...connection, name: "fixture" })).pause())); b("POST /v2/box/{box_id}/resume", x => x.resume()); b("GET /v2/box/{box_id}/startup", x => x.getInitCommand()); b("PUT /v2/box/{box_id}/startup", x => x.setInitCommand("echo init")); b("DELETE /v2/box/{box_id}/startup", x => x.deleteInitCommand());
-  b("PUT /v2/box/{box_id}/config/model", x => x.configureModel("openai/gpt-5")); cases.push(staticCase("PUT /v2/box/{box_id}/config/custom-runner", async () => (await Box.create({ ...connection, keepAlive: true, agent: { harness: "custom", model: "custom", customHarness: { command: "runner" } } })).configureCustomHarness({ command: "runner" }))); b("PUT /v2/box/{box_id}/config/network-policy", x => x.updateNetworkPolicy({}));
+  cases.push(staticCase("POST /v2/box/{box_id}/pause", async () => (await Box.create({ ...connection, name: "fixture" })).pause(), "Box.create")); b("POST /v2/box/{box_id}/resume", x => x.resume()); b("GET /v2/box/{box_id}/startup", x => x.getInitCommand()); b("PUT /v2/box/{box_id}/startup", x => x.setInitCommand("echo init")); b("DELETE /v2/box/{box_id}/startup", x => x.deleteInitCommand());
+  b("PUT /v2/box/{box_id}/config/model", x => x.configureModel("openai/gpt-5")); cases.push(staticCase("PUT /v2/box/{box_id}/config/custom-runner", async () => (await Box.create({ ...connection, keepAlive: true, agent: { harness: "custom", model: "custom", customHarness: { command: "runner" } } })).configureCustomHarness({ command: "runner" }), "Box.create")); b("PUT /v2/box/{box_id}/config/network-policy", x => x.updateNetworkPolicy({}));
   cases.push(staticCase("GET /v2/box/settings/env", () => Box.listEnv(connection)), staticCase("PUT /v2/box/settings/env", () => Box.setAllEnv({ A: "1" }, connection)), staticCase("PUT /v2/box/settings/env/{key}", () => Box.setEnv("A", "1", connection)), staticCase("DELETE /v2/box/settings/env/{key}", () => Box.deleteEnv("A", connection)));
   b("POST /v2/box/{box_id}/run", x => x.agent.run({ prompt: "hello", webhook: { url: "https://example.invalid/hook" } })); b("POST /v2/box/{box_id}/run/stream", async x => { const r = await x.agent.stream({ prompt: "hello" }); for await (const _ of r) {} }); b("POST /v2/box/{box_id}/runs/{run_id}/cancel", async x => { const r = await x.agent.run({ prompt: "hello", webhook: { url: "https://example.invalid/hook" } }); return r.cancel(); }); b("GET /v2/box/{box_id}/runs", x => x.listRuns()); b("GET /v2/box/{box_id}/logs", x => x.logs({ limit: 2 }));
   b("POST /v2/box/{box_id}/exec", x => x.exec.command("echo hello")); b("POST /v2/box/{box_id}/exec-stream", async x => { for await (const _ of await x.exec.stream("echo hello")) {} }); b("POST /v2/box/{box_id}/code", x => x.exec.code({ code: "1+1", lang: "javascript" })); b("POST /v2/box/{box_id}/code-stream", async x => { try { for await (const _ of await x.exec.streamCode({ code: "1+1", lang: "javascript" })) {} } catch (error) { if (error?.message === "execution failed") return; throw error; } throw new Error("code stream error fixture was not consumed"); }); b("POST /v2/box/{box_id}/exec#cd", x => x.cd("src"));

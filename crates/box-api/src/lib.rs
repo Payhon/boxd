@@ -4,6 +4,7 @@
 //! Database, filesystem and VMM access are injected behind the service ports below.
 
 use std::{
+    collections::BTreeMap,
     path::{Component, Path},
     pin::Pin,
     sync::Arc,
@@ -17,7 +18,8 @@ use box_browser::{
     WaitUntil,
 };
 use box_core::{
-    AccountContext, AuthScope, AuthorizedContext, DomainError, DomainErrorKind, PreviewAuth,
+    AccountContext, AuthScope, AuthorizedContext, CustomNetworkPolicy, DomainError,
+    DomainErrorKind, NetworkPolicy, PreviewAuth,
 };
 use box_observability::{HttpSurface, Telemetry};
 use futures_util::{SinkExt, Stream, StreamExt};
@@ -242,8 +244,18 @@ pub trait AdminLoginService: Send + Sync {
 
 /// Phase-1 application port. Implementations live in composition/application crates.
 /// The JSON values are pinned wire shapes at this boundary, never SeaORM entities.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ApiCapabilityFlags {
+    pub custom_network_policy: bool,
+    pub attach_headers: bool,
+}
+
 #[async_trait]
 pub trait ApiServices: Send + Sync {
+    fn capability_flags(&self) -> ApiCapabilityFlags {
+        ApiCapabilityFlags::default()
+    }
+
     /// The composition root must prove every required Phase-1 dependency before
     /// readiness can succeed. The default is deliberately fail-closed.
     async fn ready(&self) -> Result<(), DomainError> {
@@ -406,6 +418,14 @@ pub trait ApiServices: Send + Sync {
         Err(DomainError::feature_not_supported(
             "custom harness configuration",
         ))
+    }
+    async fn update_network_policy(
+        &self,
+        _context: AccountContext,
+        _box_id: &str,
+        _policy: NetworkPolicyRequest,
+    ) -> Result<(), DomainError> {
+        Err(DomainError::feature_not_supported("custom network_policy"))
     }
     async fn get_startup_command(
         &self,
@@ -905,13 +925,178 @@ pub struct CreateBoxRequest {
     pub git_user_name: Option<String>,
     pub git_user_email: Option<String>,
     pub env_vars: Option<Value>,
-    pub attach_headers: Option<Value>,
-    pub network_policy: Option<Value>,
+    pub attach_headers: Option<BTreeMap<String, BTreeMap<String, String>>>,
+    pub network_policy: Option<NetworkPolicyRequest>,
     pub skills: Option<Value>,
     pub mcp_servers: Option<Value>,
     pub ephemeral: Option<bool>,
     pub ttl: Option<u32>,
     pub snapshot_id: Option<String>,
+}
+
+#[derive(Deserialize, Clone, Debug, PartialEq, Eq, ToSchema)]
+#[serde(deny_unknown_fields)]
+pub struct NetworkPolicyRequest {
+    pub mode: String,
+    pub allowed_domains: Option<Vec<String>>,
+    pub allowed_cidrs: Option<Vec<String>>,
+    pub denied_cidrs: Option<Vec<String>>,
+}
+
+impl NetworkPolicyRequest {
+    pub fn simple(mode: &str) -> Self {
+        Self {
+            mode: mode.to_owned(),
+            allowed_domains: None,
+            allowed_cidrs: None,
+            denied_cidrs: None,
+        }
+    }
+
+    pub fn to_domain(&self) -> Result<NetworkPolicy, DomainError> {
+        if self
+            .allowed_cidrs
+            .iter()
+            .chain(self.denied_cidrs.iter())
+            .flatten()
+            .any(|cidr| cidr.contains(':'))
+        {
+            return Err(DomainError::feature_not_supported(
+                "IPv6 custom network policy",
+            ));
+        }
+        match self.mode.as_str() {
+            "allow-all" | "deny-all"
+                if self.allowed_domains.is_none()
+                    && self.allowed_cidrs.is_none()
+                    && self.denied_cidrs.is_none() =>
+            {
+                Ok(if self.mode == "allow-all" {
+                    NetworkPolicy::RestrictedDefault
+                } else {
+                    NetworkPolicy::DenyAll
+                })
+            }
+            "custom" => Ok(NetworkPolicy::Custom(CustomNetworkPolicy::new(
+                self.allowed_domains.clone().unwrap_or_default(),
+                self.allowed_cidrs.clone().unwrap_or_default(),
+                self.denied_cidrs.clone().unwrap_or_default(),
+            )?)),
+            "allow-all" | "deny-all" => Err(DomainError::validation(
+                "allow-all and deny-all network policies must not contain custom rules",
+            )),
+            _ => Err(DomainError::validation("invalid network policy mode")),
+        }
+    }
+}
+
+pub const MAX_ATTACH_HEADER_RULES: usize = 64;
+pub const MAX_ATTACH_HEADERS_PER_RULE: usize = 32;
+pub const MAX_ATTACH_HEADER_VALUE_BYTES: usize = 8 * 1024;
+pub const MAX_ATTACH_HEADER_RULE_BYTES: usize = 32 * 1024;
+pub const MAX_ATTACH_HEADERS_TOTAL_BYTES: usize = 32 * 1024;
+
+pub fn validate_attach_headers(
+    rules: &BTreeMap<String, BTreeMap<String, String>>,
+) -> Result<BTreeMap<String, BTreeMap<String, String>>, DomainError> {
+    if rules.is_empty() || rules.len() > MAX_ATTACH_HEADER_RULES {
+        return Err(DomainError::validation(
+            "attach_headers requires between one and 64 host rules",
+        ));
+    }
+    let forbidden = [
+        "host",
+        "content-length",
+        "transfer-encoding",
+        "connection",
+        "proxy-connection",
+        "proxy-authenticate",
+        "proxy-authorization",
+        "keep-alive",
+        "upgrade",
+        "te",
+        "trailer",
+    ];
+    let mut canonical = BTreeMap::new();
+    let mut total_bytes = 0_usize;
+    for (pattern, headers) in rules {
+        let pattern = box_core::NetworkDomain::new(pattern.clone())?;
+        if headers.is_empty() || headers.len() > MAX_ATTACH_HEADERS_PER_RULE {
+            return Err(DomainError::validation(
+                "each attach_headers host rule requires between one and 32 headers",
+            ));
+        }
+        let mut canonical_headers = BTreeMap::new();
+        let mut rule_bytes = 0_usize;
+        for (name, value) in headers {
+            let name = name.to_ascii_lowercase();
+            if name.is_empty()
+                || name.len() > 128
+                || forbidden.contains(&name.as_str())
+                || !name.bytes().all(is_http_token_byte)
+                || value.is_empty()
+                || value.len() > MAX_ATTACH_HEADER_VALUE_BYTES
+                || value.bytes().any(|byte| matches!(byte, 0 | b'\r' | b'\n'))
+            {
+                return Err(DomainError::validation(
+                    "invalid or forbidden attach_headers name or value",
+                ));
+            }
+            total_bytes = total_bytes
+                .checked_add(name.len())
+                .and_then(|total| total.checked_add(value.len()))
+                .ok_or_else(|| DomainError::validation("attach_headers size overflow"))?;
+            rule_bytes = rule_bytes
+                .checked_add(name.len())
+                .and_then(|total| total.checked_add(value.len()))
+                .ok_or_else(|| DomainError::validation("attach_headers size overflow"))?;
+            if rule_bytes > MAX_ATTACH_HEADER_RULE_BYTES {
+                return Err(DomainError::validation(
+                    "attach_headers host rule exceeds the size limit",
+                ));
+            }
+            if canonical_headers.insert(name, value.clone()).is_some() {
+                return Err(DomainError::validation(
+                    "duplicate attach_headers name after canonicalization",
+                ));
+            }
+        }
+        if canonical
+            .insert(pattern.as_str().to_owned(), canonical_headers)
+            .is_some()
+        {
+            return Err(DomainError::validation(
+                "duplicate attach_headers host rule after canonicalization",
+            ));
+        }
+    }
+    if total_bytes > MAX_ATTACH_HEADERS_TOTAL_BYTES {
+        return Err(DomainError::validation(
+            "attach_headers exceeds the total size limit",
+        ));
+    }
+    Ok(canonical)
+}
+
+fn is_http_token_byte(byte: u8) -> bool {
+    byte.is_ascii_alphanumeric()
+        || matches!(
+            byte,
+            b'!' | b'#'
+                | b'$'
+                | b'%'
+                | b'&'
+                | b'\''
+                | b'*'
+                | b'+'
+                | b'-'
+                | b'.'
+                | b'^'
+                | b'_'
+                | b'`'
+                | b'|'
+                | b'~'
+        )
 }
 
 const MAX_BULK_DELETE_BOXES: usize = 100;
@@ -994,16 +1179,11 @@ impl CreateBoxRequest {
                 "init_command requires keep_alive=true",
             ));
         }
-        if self.attach_headers.is_some() {
-            return Err(DomainError::feature_not_supported("attach_headers"));
+        if let Some(headers) = &self.attach_headers {
+            validate_attach_headers(headers)?;
         }
-        if self.network_policy.as_ref().is_some_and(|policy| {
-            !matches!(
-                policy.get("mode").and_then(Value::as_str),
-                Some("allow-all" | "deny-all")
-            )
-        }) {
-            return Err(DomainError::feature_not_supported("custom network_policy"));
+        if let Some(policy) = &self.network_policy {
+            policy.to_domain()?;
         }
         if self.snapshot_id.is_some() {
             return Err(DomainError::feature_not_supported("from snapshot"));
@@ -2395,8 +2575,89 @@ async fn health_ready(depot: &Depot, res: &mut Response) {
     }
 }
 #[handler]
-async fn capabilities(res: &mut Response) {
-    res.render(Json(json!({"phase":"phase_3_complete","implemented":["box_lifecycle","async_create","ephemeral_create","init_command","startup_configuration","exec","code_javascript_typescript_python","file_read_write_list","file_upload_download_direct_folder","labels","encrypted_environment","runtime_bundle_binding","admin_session","run_history","custom_agent_box_sse_v1","custom_agent_absolute_command","custom_agent_model_update","custom_agent_runner_update","run_stream","run_stream_replay","run_stream_keepalive","run_cancel","run_webhook_at_least_once","agent_stderr_logs","git_exec","git_diff","git_status","git_checkout","git_config","git_commit","git_clone_https_github","git_push_https_github","git_create_pr_github","git_askpass","snapshot_create_list_delete","snapshot_restore","preview_issue_list_delete","preview_http_websocket_proxy","skills_context7_install_remove","console_management_surfaces","console_terminal_single_use_ticket","schedule_exec_prompt_crud_utc_lease","schedule_webhook_encrypted_at_least_once","console_schedule_management","browser_tabs_goto_content_screenshot","browser_extract_observe_act_run","browser_cdp_single_use_ticket","browser_screencast_view_only","browser_recording_hls_download_retention","api_key_request_rate_quota","tenant_box_disk_run_traffic_quotas","structured_mutation_audit","prometheus_metrics","otlp_trace_export","sqlite_postgresql_mysql_repository_matrix"],"unsupported":["nested_tree_download_upstash_box_0_6_3","run_prompt_files","run_response_schema","run_agent_options","managed_agent","schedule_agent_options","mcp_servers","attach_headers","custom_network_policy"]})));
+async fn capabilities(depot: &Depot, res: &mut Response) {
+    let flags = state(depot).services.capability_flags();
+    let mut implemented = vec![
+        "box_lifecycle",
+        "async_create",
+        "ephemeral_create",
+        "init_command",
+        "startup_configuration",
+        "exec",
+        "code_javascript_typescript_python",
+        "file_read_write_list",
+        "file_upload_download_direct_folder",
+        "labels",
+        "encrypted_environment",
+        "runtime_bundle_binding",
+        "admin_session",
+        "run_history",
+        "custom_agent_box_sse_v1",
+        "custom_agent_absolute_command",
+        "custom_agent_model_update",
+        "custom_agent_runner_update",
+        "run_stream",
+        "run_stream_replay",
+        "run_stream_keepalive",
+        "run_cancel",
+        "run_webhook_at_least_once",
+        "agent_stderr_logs",
+        "git_exec",
+        "git_diff",
+        "git_status",
+        "git_checkout",
+        "git_config",
+        "git_commit",
+        "git_clone_https_github",
+        "git_push_https_github",
+        "git_create_pr_github",
+        "git_askpass",
+        "snapshot_create_list_delete",
+        "snapshot_restore",
+        "preview_issue_list_delete",
+        "preview_http_websocket_proxy",
+        "skills_context7_install_remove",
+        "console_management_surfaces",
+        "console_terminal_single_use_ticket",
+        "schedule_exec_prompt_crud_utc_lease",
+        "schedule_webhook_encrypted_at_least_once",
+        "console_schedule_management",
+        "browser_tabs_goto_content_screenshot",
+        "browser_extract_observe_act_run",
+        "browser_cdp_single_use_ticket",
+        "browser_screencast_view_only",
+        "browser_recording_hls_download_retention",
+        "api_key_request_rate_quota",
+        "tenant_box_disk_run_traffic_quotas",
+        "structured_mutation_audit",
+        "prometheus_metrics",
+        "otlp_trace_export",
+        "sqlite_postgresql_mysql_repository_matrix",
+    ];
+    let mut unsupported = vec![
+        "nested_tree_download_upstash_box_0_6_3",
+        "run_prompt_files",
+        "run_response_schema",
+        "run_agent_options",
+        "managed_agent",
+        "schedule_agent_options",
+        "mcp_servers",
+    ];
+    if flags.custom_network_policy {
+        implemented.push("custom_network_policy_domain_cidr");
+    } else {
+        unsupported.push("custom_network_policy_domain_cidr");
+    }
+    if flags.attach_headers {
+        implemented.push("attach_headers");
+    } else {
+        unsupported.push("attach_headers");
+    }
+    res.render(Json(json!({
+        "phase":"phase_4_in_progress",
+        "implemented": implemented,
+        "unsupported": unsupported
+    })));
 }
 
 #[handler]
@@ -3607,6 +3868,12 @@ async fn dispatch_box(
                 .await?;
             Ok(json!({}))
         }
+        ("PUT", "config/network-policy") => {
+            let body: NetworkPolicyRequest = json_body(req, depot).await?;
+            body.to_domain()?;
+            service.update_network_policy(account, box_id, body).await?;
+            Ok(json!({}))
+        }
         ("GET", "runs") => service.list_runs(account, box_id).await,
         ("GET", "logs") => {
             let offset = req.query::<usize>("offset").unwrap_or(0);
@@ -3809,7 +4076,9 @@ fn phase_one_documented_implementation(method: &str, path: &str) -> bool {
             | ("POST", "/v2/box/{box_id}/config/skills")
             | (
                 "PUT",
-                "/v2/box/{box_id}/config/model" | "/v2/box/{box_id}/config/custom-runner"
+                "/v2/box/{box_id}/config/model"
+                    | "/v2/box/{box_id}/config/custom-runner"
+                    | "/v2/box/{box_id}/config/network-policy"
             )
             | ("DELETE", "/v2/box/{box_id}/config/labels/{label}")
             | ("DELETE", "/v2/box/{box_id}/config/skills/{skill_id+}")
@@ -4166,7 +4435,7 @@ pub fn phase_one_openapi() -> Value {
     });
     value["components"]["schemas"]["BoxResponse"] = json!({
         "type":"object","required":["id","customer_id","status","runtime","size","labels","enabled_skills","keep_alive","ephemeral","network_policy","created_at","updated_at"],
-        "properties":{"id":{"type":"string","format":"uuid"},"customer_id":{"type":"string","format":"uuid"},"status":{"type":"string"},"name":{"type":["string","null"]},"runtime":{"type":"string"},"size":{"type":"string"},"labels":{"type":"array","items":{"type":"string"}},"enabled_skills":{"type":"array","items":{"type":"string","pattern":"^[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*$"}},"keep_alive":{"type":"boolean"},"ephemeral":{"type":"boolean"},"expires_at":{"type":["integer","null"]},"network_policy":{"type":"object","required":["mode"],"properties":{"mode":{"type":"string","enum":["allow-all","deny-all"]}}},"created_at":{"type":"integer"},"updated_at":{"type":"integer"}}
+        "properties":{"id":{"type":"string","format":"uuid"},"customer_id":{"type":"string","format":"uuid"},"status":{"type":"string"},"name":{"type":["string","null"]},"runtime":{"type":"string"},"size":{"type":"string"},"labels":{"type":"array","items":{"type":"string"}},"enabled_skills":{"type":"array","items":{"type":"string","pattern":"^[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*$"}},"keep_alive":{"type":"boolean"},"ephemeral":{"type":"boolean"},"expires_at":{"type":["integer","null"]},"network_policy":{"$ref":"#/components/schemas/NetworkPolicyRequest"},"created_at":{"type":"integer"},"updated_at":{"type":"integer"}}
     });
     value["components"]["schemas"]["EmptyResponse"] =
         json!({"type":"object","additionalProperties":false});
@@ -4184,6 +4453,17 @@ pub fn phase_one_openapi() -> Value {
                 "protocol":{"type":"string","enum":["box-sse-v1"]}
             }
         }}
+    });
+    value["components"]["schemas"]["NetworkPolicyRequest"] = json!({
+        "type":"object",
+        "additionalProperties":false,
+        "required":["mode"],
+        "properties":{
+            "mode":{"type":"string","enum":["allow-all","deny-all","custom"]},
+            "allowed_domains":{"type":"array","maxItems":64,"items":{"type":"string","maxLength":253}},
+            "allowed_cidrs":{"type":"array","maxItems":64,"items":{"type":"string","maxLength":43}},
+            "denied_cidrs":{"type":"array","maxItems":64,"items":{"type":"string","maxLength":43}}
+        }
     });
     value["components"]["schemas"]["StatusResponse"] =
         json!({"type":"object","required":["status"],"properties":{"status":{"type":"string"}}});
@@ -4312,6 +4592,9 @@ pub fn phase_one_openapi() -> Value {
     value["paths"]["/v2/box/{box_id}/config/custom-runner"]["put"]["requestBody"] = json!({
         "required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/CustomRunnerConfigurationRequest"}}}
     });
+    value["paths"]["/v2/box/{box_id}/config/network-policy"]["put"]["requestBody"] = json!({
+        "required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/NetworkPolicyRequest"}}}
+    });
     value["paths"]["/v2/box/{box_id}/startup"]["put"]["requestBody"] = json!({
         "required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/StartupConfigurationRequest"}}}
     });
@@ -4430,6 +4713,11 @@ pub fn phase_one_openapi() -> Value {
         (
             "put",
             "/v2/box/{box_id}/config/custom-runner",
+            "EmptyResponse",
+        ),
+        (
+            "put",
+            "/v2/box/{box_id}/config/network-policy",
             "EmptyResponse",
         ),
         (
@@ -4692,6 +4980,7 @@ mod tests {
         creates: Mutex<Vec<CreateBoxRequest>>,
         models: Mutex<Vec<String>>,
         runners: Mutex<Vec<CustomAgentConfiguration>>,
+        network_policies: Mutex<Vec<NetworkPolicyRequest>>,
         startup: Mutex<Option<String>>,
         git_execs: Mutex<Vec<GitExecRequest>>,
         list_paths: Mutex<Vec<String>>,
@@ -4750,6 +5039,13 @@ mod tests {
     }
     #[async_trait]
     impl ApiServices for MockServices {
+        fn capability_flags(&self) -> ApiCapabilityFlags {
+            ApiCapabilityFlags {
+                custom_network_policy: true,
+                attach_headers: false,
+            }
+        }
+
         async fn ready(&self) -> Result<(), DomainError> {
             Ok(())
         }
@@ -5329,6 +5625,16 @@ mod tests {
         ) -> Result<(), DomainError> {
             self.seen(c);
             self.runners.lock().unwrap().push(config);
+            Ok(())
+        }
+        async fn update_network_policy(
+            &self,
+            c: AccountContext,
+            _: &str,
+            policy: NetworkPolicyRequest,
+        ) -> Result<(), DomainError> {
+            self.seen(c);
+            self.network_policies.lock().unwrap().push(policy);
             Ok(())
         }
         async fn get_startup_command(
@@ -5954,13 +6260,20 @@ mod tests {
             .await;
         assert_eq!(response.status_code, Some(StatusCode::OK));
         let body = response.take_json::<Value>().await.unwrap();
-        assert_eq!(body["phase"], "phase_3_complete");
+        assert_eq!(body["phase"], "phase_4_in_progress");
         assert!(
             body["implemented"]
                 .as_array()
                 .unwrap()
                 .iter()
                 .any(|value| value == "skills_context7_install_remove")
+        );
+        assert!(
+            body["implemented"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|value| value == "custom_network_policy_domain_cidr")
         );
         assert!(
             !body["unsupported"]
@@ -6252,6 +6565,7 @@ mod tests {
             "WebhookAcceptedResponse",
             "ModelConfigurationRequest",
             "CustomRunnerConfigurationRequest",
+            "NetworkPolicyRequest",
             "StartupConfigurationRequest",
             "StartupConfigurationResponse",
             "GitExecRequest",
@@ -6325,6 +6639,11 @@ mod tests {
             value["paths"]["/v2/box/{box_id}/config/custom-runner"]["put"]["requestBody"]["content"]
                 ["application/json"]["schema"]["$ref"],
             "#/components/schemas/CustomRunnerConfigurationRequest"
+        );
+        assert_eq!(
+            value["paths"]["/v2/box/{box_id}/config/network-policy"]["put"]["requestBody"]["content"]
+                ["application/json"]["schema"]["$ref"],
+            "#/components/schemas/NetworkPolicyRequest"
         );
         assert!(
             value["paths"]["/v2/box/{box_id}/config/model"]["put"]["responses"]["501"].is_null()
@@ -6422,9 +6741,17 @@ mod tests {
             ),
             "feature_not_supported"
         );
+        assert!(
+            serde_json::from_str::<CreateBoxRequest>(
+                r#"{"attach_headers":{"api.example.com":{"authorization":"Bearer secret"}}}"#
+            )
+            .unwrap()
+            .validate_create()
+            .is_ok()
+        );
         assert_eq!(
-            invalid(r#"{"attach_headers":{"a":"b"}}"#),
-            "feature_not_supported"
+            invalid(r#"{"attach_headers":{"api.example.com":{"Host":"evil.example"}}}"#),
+            "validation_error"
         );
         assert!(
             serde_json::from_str::<CreateBoxRequest>(r#"{"network_policy":{"mode":"allow-all"}}"#)
@@ -6432,8 +6759,20 @@ mod tests {
                 .validate_create()
                 .is_ok()
         );
+        assert!(
+            serde_json::from_str::<CreateBoxRequest>(
+                r#"{"network_policy":{"mode":"custom","allowed_domains":["api.example.com"],"allowed_cidrs":["203.0.113.0/24"],"denied_cidrs":["10.0.0.0/8"]}}"#
+            )
+            .unwrap()
+            .validate_create()
+            .is_ok()
+        );
         assert_eq!(
-            invalid(r#"{"network_policy":{"mode":"custom"}}"#),
+            invalid(r#"{"network_policy":{"mode":"custom","allowed_domains":["bad domain"]}}"#),
+            "validation_error"
+        );
+        assert_eq!(
+            invalid(r#"{"network_policy":{"mode":"custom","allowed_cidrs":["2001:db8::/32"]}}"#),
             "feature_not_supported"
         );
         assert!(
@@ -6516,6 +6855,14 @@ mod tests {
                     "args":["--json"],
                 }}),
             ),
+            (
+                "/v2/box/box-id/config/network-policy",
+                json!({
+                    "mode":"custom",
+                    "allowed_domains":["api.example.com"],
+                    "denied_cidrs":["10.0.0.0/8"]
+                }),
+            ),
         ] {
             let response = TestClient::put(format!("http://boxd.test{path}"))
                 .add_header("x-box-api-key", "good", true)
@@ -6532,6 +6879,15 @@ mod tests {
                 command: "/workspace/home/bin/new-harness".into(),
                 args: vec!["--json".into()],
                 protocol: "box-sse-v1".into(),
+            }]
+        );
+        assert_eq!(
+            services.network_policies.lock().unwrap().as_slice(),
+            [NetworkPolicyRequest {
+                mode: "custom".into(),
+                allowed_domains: Some(vec!["api.example.com".into()]),
+                allowed_cidrs: None,
+                denied_cidrs: Some(vec!["10.0.0.0/8".into()]),
             }]
         );
     }

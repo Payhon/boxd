@@ -1,0 +1,17 @@
+{
+  "schema": "boxd-phase4-security-matrix-v1",
+  "cases": [
+    {"id":"TENANT-001","category":"tenant","kind":"cross_account_box","expected":"deny","positive":false},
+    {"id":"TENANT-002","category":"tenant","kind":"same_account_same_tenant","expected":"allow","positive":true},
+    {"id":"SSRF-001","category":"ssrf","kind":"metadata_ipv4","expected":"deny","positive":false},
+    {"id":"SSRF-002","category":"ssrf","kind":"public_tcp_443","expected":"allow","positive":true},
+    {"id":"PATH-001","category":"path","kind":"parent_traversal","expected":"deny","positive":false},
+    {"id":"PATH-002","category":"path","kind":"canonical_workspace_file","expected":"allow","positive":true},
+    {"id":"REDACT-001","category":"redaction","kind":"secret_fixture_redacted","expected":"deny_leak","positive":false},
+    {"id":"REDACT-002","category":"redaction","kind":"public_error_without_secret","expected":"allow","positive":true},
+    {"id":"RESOURCE-001","category":"resource","kind":"oversized_dns","expected":"deny","positive":false},
+    {"id":"RESOURCE-002","category":"resource","kind":"within_proxy_limit","expected":"allow","positive":true},
+    {"id":"RUNTIME-001","category":"runtime","kind":"untrusted_manifest_signature","expected":"deny","positive":false},
+    {"id":"RUNTIME-002","category":"runtime","kind":"trusted_descriptor_hash","expected":"allow","positive":true}
+  ]
+}

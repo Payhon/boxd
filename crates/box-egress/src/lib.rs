@@ -13,9 +13,15 @@ use std::{
     time::Duration,
 };
 
+use box_egress_http::{
+    AllowedHostnames, AttachHeaderRules, DynamicServerCertificateResolver, Http1AttachHeadersProxy,
+    Http1TlsMitmProxy, PerBoxCertificateAuthority, RequestHeadLimits, mitm_server_config,
+    upstream_client_config,
+};
+
 use tokio::{
     io::AsyncWriteExt,
-    net::{TcpStream, UdpSocket, UnixStream as TokioUnixStream},
+    net::{TcpListener, TcpStream, UdpSocket, UnixStream as TokioUnixStream},
     sync::{Semaphore, mpsc},
     time::{interval, timeout},
 };
@@ -25,7 +31,7 @@ use smoltcp::{
     iface::{Config as InterfaceConfig, Interface, SocketHandle, SocketSet},
     socket::tcp::{Socket as TcpSocket, SocketBuffer as TcpSocketBuffer, State as TcpState},
     time::{Duration as SmolDuration, Instant},
-    wire::{EthernetAddress, HardwareAddress, IpAddress, IpCidr},
+    wire::{EthernetAddress, HardwareAddress, IpAddress, IpCidr as SmolIpCidr},
 };
 
 /// The Phase 1 guest MTU is 1500. One Ethernet header and one VLAN tag are the
@@ -521,7 +527,7 @@ impl TcpProxyCore {
         interface.update_ip_addrs(|addresses| {
             addresses.clear();
             address_configured = addresses
-                .push(IpCidr::new(IpAddress::from(GATEWAY_IPV4), 24))
+                .push(SmolIpCidr::new(IpAddress::from(GATEWAY_IPV4), 24))
                 .is_ok();
         });
         if !address_configured
@@ -1329,6 +1335,9 @@ pub enum DenyReason {
     Address(AddressClass),
     Port,
     Ipv6EgressUnsupported,
+    DomainNotAllowed,
+    CidrNotAllowed,
+    DeniedCidr,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -1344,6 +1353,249 @@ pub struct EgressEvent {
     pub address_class: AddressClass,
     pub port: u16,
     pub decision: EgressDecision,
+}
+
+/// Maximum size of a custom policy.  These limits are deliberately enforced
+/// before a policy can reach a packet data plane, so a tenant cannot turn rule
+/// matching into an unbounded allocation or linear scan.
+pub const MAX_CUSTOM_POLICY_RULES: usize = 64;
+pub const MAX_CUSTOM_DOMAIN_BYTES: usize = 253;
+pub const MAX_CUSTOM_CIDR_BYTES: usize = 43;
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum PolicyParseError {
+    EmptyDomain,
+    InvalidDomain,
+    NonAsciiDomain,
+    DomainTooLong,
+    InvalidWildcard,
+    EmptyCidr,
+    InvalidCidr,
+    CidrTooLong,
+    TooManyRules,
+}
+
+/// A parsed ASCII DNS suffix/exact-domain rule. IDNA is intentionally rejected
+/// at this boundary; callers must perform an explicit, audited IDNA conversion
+/// before constructing this value rather than relying on an implicit library
+/// or locale conversion.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DomainPattern(String);
+
+impl DomainPattern {
+    pub fn parse(value: &str) -> Result<Self, PolicyParseError> {
+        let value = value.strip_suffix('.').unwrap_or(value);
+        if value.is_empty() || value.len() > MAX_CUSTOM_DOMAIN_BYTES {
+            return Err(if value.is_empty() {
+                PolicyParseError::EmptyDomain
+            } else {
+                PolicyParseError::DomainTooLong
+            });
+        }
+        if !value.is_ascii() {
+            return Err(PolicyParseError::NonAsciiDomain);
+        }
+        let (wildcard, name) = value
+            .strip_prefix("*.")
+            .map_or((false, value), |name| (true, name));
+        if !wildcard && value.contains('*') {
+            return Err(PolicyParseError::InvalidWildcard);
+        }
+        if name.is_empty()
+            || name.starts_with('.')
+            || name.ends_with('.')
+            || name.split('.').any(|label| {
+                label.is_empty()
+                    || label.len() > 63
+                    || label.starts_with('-')
+                    || label.ends_with('-')
+                    || !label
+                        .bytes()
+                        .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+            })
+        {
+            return Err(PolicyParseError::InvalidDomain);
+        }
+        Ok(Self(format!(
+            "{}{}",
+            if wildcard { "*." } else { "" },
+            name.to_ascii_lowercase()
+        )))
+    }
+
+    fn matches(&self, hostname: &str) -> bool {
+        if hostname.contains('*') {
+            return false;
+        }
+        let Ok(hostname) = Self::parse(hostname) else {
+            return false;
+        };
+        if self.0 == hostname.0 {
+            return true;
+        }
+        self.0.strip_prefix("*.").is_some_and(|suffix| {
+            hostname.0.ends_with(suffix)
+                && hostname.0.len() > suffix.len()
+                && hostname.0.as_bytes()[hostname.0.len() - suffix.len() - 1] == b'.'
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct IpCidr {
+    network: IpAddr,
+    prefix: u8,
+}
+
+impl IpCidr {
+    pub fn parse(value: &str) -> Result<Self, PolicyParseError> {
+        if value.is_empty() {
+            return Err(PolicyParseError::EmptyCidr);
+        }
+        if value.len() > MAX_CUSTOM_CIDR_BYTES {
+            return Err(PolicyParseError::CidrTooLong);
+        }
+        let Some((address, prefix)) = value.split_once('/') else {
+            return Err(PolicyParseError::InvalidCidr);
+        };
+        let address = address
+            .parse::<IpAddr>()
+            .map_err(|_| PolicyParseError::InvalidCidr)?;
+        let prefix = prefix
+            .parse::<u8>()
+            .map_err(|_| PolicyParseError::InvalidCidr)?;
+        let max = if address.is_ipv4() { 32 } else { 128 };
+        if prefix > max {
+            return Err(PolicyParseError::InvalidCidr);
+        }
+        Ok(Self {
+            network: mask_ip(address, prefix),
+            prefix,
+        })
+    }
+
+    fn contains(self, address: IpAddr) -> bool {
+        if self.network.is_ipv4() != address.is_ipv4() {
+            return false;
+        }
+        let (network, address, bits) = match (self.network, address) {
+            (IpAddr::V4(network), IpAddr::V4(address)) => (
+                u128::from(u32::from(network)),
+                u128::from(u32::from(address)),
+                32,
+            ),
+            (IpAddr::V6(network), IpAddr::V6(address)) => {
+                (u128::from(network), u128::from(address), 128)
+            }
+            _ => return false,
+        };
+        let mask = if self.prefix == 0 {
+            0
+        } else {
+            u128::MAX << (bits - u32::from(self.prefix))
+        };
+        network == address & mask
+    }
+}
+
+fn mask_ip(address: IpAddr, prefix: u8) -> IpAddr {
+    match address {
+        IpAddr::V4(address) => IpAddr::V4(Ipv4Addr::from(
+            u32::from(address)
+                & if prefix == 0 {
+                    0
+                } else {
+                    u32::MAX << (32 - u32::from(prefix))
+                },
+        )),
+        IpAddr::V6(address) => IpAddr::V6(Ipv6Addr::from(
+            u128::from(address)
+                & if prefix == 0 {
+                    0
+                } else {
+                    u128::MAX << (128 - u32::from(prefix))
+                },
+        )),
+    }
+}
+
+/// The pinned SDK custom wire shape. There is intentionally no port field;
+/// the current data plane admits only TCP ports 80 and 443.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CustomNetworkPolicy {
+    allowed_domains: Vec<DomainPattern>,
+    allowed_cidrs: Vec<IpCidr>,
+    denied_cidrs: Vec<IpCidr>,
+}
+
+impl CustomNetworkPolicy {
+    pub fn new(
+        allowed_domains: &[&str],
+        allowed_cidrs: &[&str],
+        denied_cidrs: &[&str],
+    ) -> Result<Self, PolicyParseError> {
+        let total = allowed_domains
+            .len()
+            .saturating_add(allowed_cidrs.len())
+            .saturating_add(denied_cidrs.len());
+        if total > MAX_CUSTOM_POLICY_RULES {
+            return Err(PolicyParseError::TooManyRules);
+        }
+        Ok(Self {
+            allowed_domains: allowed_domains
+                .iter()
+                .map(|value| DomainPattern::parse(value))
+                .collect::<Result<_, _>>()?,
+            allowed_cidrs: allowed_cidrs
+                .iter()
+                .map(|value| IpCidr::parse(value))
+                .collect::<Result<_, _>>()?,
+            denied_cidrs: denied_cidrs
+                .iter()
+                .map(|value| IpCidr::parse(value))
+                .collect::<Result<_, _>>()?,
+        })
+    }
+
+    pub fn from_strings(
+        allowed_domains: Vec<String>,
+        allowed_cidrs: Vec<String>,
+        denied_cidrs: Vec<String>,
+    ) -> Result<Self, PolicyParseError> {
+        let domains = allowed_domains
+            .iter()
+            .map(String::as_str)
+            .collect::<Vec<_>>();
+        let allowed = allowed_cidrs.iter().map(String::as_str).collect::<Vec<_>>();
+        let denied = denied_cidrs.iter().map(String::as_str).collect::<Vec<_>>();
+        Self::new(&domains, &allowed, &denied)
+    }
+
+    pub fn allowed_domains(&self) -> &[DomainPattern] {
+        &self.allowed_domains
+    }
+
+    pub fn allowed_cidrs(&self) -> &[IpCidr] {
+        &self.allowed_cidrs
+    }
+
+    pub fn denied_cidrs(&self) -> &[IpCidr] {
+        &self.denied_cidrs
+    }
+
+    fn allows(&self, hostname: Option<&str>, address: IpAddr) -> bool {
+        if self.allowed_domains.is_empty() && self.allowed_cidrs.is_empty() {
+            return false;
+        }
+        let domain_match = hostname.is_some_and(|hostname| {
+            self.allowed_domains
+                .iter()
+                .any(|pattern| pattern.matches(hostname))
+        });
+        let cidr_match = self.allowed_cidrs.iter().any(|cidr| cidr.contains(address));
+        ((!self.allowed_domains.is_empty() && domain_match) || self.allowed_domains.is_empty())
+            && ((!self.allowed_cidrs.is_empty() && cidr_match) || self.allowed_cidrs.is_empty())
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -1637,6 +1889,71 @@ pub fn evaluate_tcp_connect(address: IpAddr, port: u16) -> EgressDecision {
     EgressDecision::Allow
 }
 
+/// Evaluates a custom-policy DNS answer. Special-use addresses are classified
+/// first, so an allowed hostname can never make metadata/private space public.
+pub fn evaluate_custom_dns_answer(
+    policy: &CustomNetworkPolicy,
+    hostname: &str,
+    address: IpAddr,
+) -> EgressDecision {
+    if let decision @ EgressDecision::Deny(_) = evaluate_address(address) {
+        return decision;
+    }
+    let address = policy_address(address);
+    if policy
+        .denied_cidrs
+        .iter()
+        .any(|cidr| cidr.contains(address))
+    {
+        return EgressDecision::Deny(DenyReason::DeniedCidr);
+    }
+    if policy.allows(Some(hostname), address) {
+        EgressDecision::Allow
+    } else if !policy.allowed_domains.is_empty() {
+        EgressDecision::Deny(DenyReason::DomainNotAllowed)
+    } else {
+        EgressDecision::Deny(DenyReason::CidrNotAllowed)
+    }
+}
+
+/// Evaluates the actual numeric destination of a custom-policy TCP connect.
+/// `hostname` is optional for CIDR-only policies and never replaces `address`.
+pub fn evaluate_custom_tcp_connect(
+    policy: &CustomNetworkPolicy,
+    hostname: Option<&str>,
+    address: IpAddr,
+    port: u16,
+) -> EgressDecision {
+    if let decision @ EgressDecision::Deny(_) = evaluate_tcp_connect(address, port) {
+        return decision;
+    }
+    let address = policy_address(address);
+    if policy
+        .denied_cidrs
+        .iter()
+        .any(|cidr| cidr.contains(address))
+    {
+        return EgressDecision::Deny(DenyReason::DeniedCidr);
+    }
+    if policy.allows(hostname, address) {
+        EgressDecision::Allow
+    } else if !policy.allowed_domains.is_empty() {
+        EgressDecision::Deny(DenyReason::DomainNotAllowed)
+    } else {
+        EgressDecision::Deny(DenyReason::CidrNotAllowed)
+    }
+}
+
+fn policy_address(address: IpAddr) -> IpAddr {
+    match address {
+        IpAddr::V6(address) => address
+            .to_ipv4_mapped()
+            .map(IpAddr::V4)
+            .unwrap_or(IpAddr::V6(address)),
+        address => address,
+    }
+}
+
 const PROXY_TICK: Duration = Duration::from_millis(5);
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 const DNS_TIMEOUT: Duration = Duration::from_secs(2);
@@ -1696,10 +2013,60 @@ struct HostConnection {
     guest_shutdown: bool,
 }
 
+struct DialConnection {
+    stream: TcpStream,
+}
+
 struct DnsResult {
     request_frame: Vec<u8>,
     response: Vec<u8>,
+    custom_lease: Option<CustomDnsLease>,
 }
+
+/// Per-Box transparent HTTP interception state. Secret-bearing rules and CA
+/// material are deliberately hidden from Debug output.
+pub struct HttpInterceptionConfig {
+    tls: Arc<Http1TlsMitmProxy>,
+    http: Http1AttachHeadersProxy,
+}
+
+impl std::fmt::Debug for HttpInterceptionConfig {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("HttpInterceptionConfig([REDACTED])")
+    }
+}
+
+impl HttpInterceptionConfig {
+    pub fn new(authority: Arc<PerBoxCertificateAuthority>, rules: AttachHeaderRules) -> Self {
+        let rules = Arc::new(rules);
+        let resolver = Arc::new(DynamicServerCertificateResolver::new(authority));
+        let server = mitm_server_config(resolver);
+        let tls = Http1TlsMitmProxy::new(
+            server,
+            upstream_client_config(),
+            Arc::clone(&rules),
+            RequestHeadLimits::default(),
+        );
+        Self {
+            tls: Arc::new(tls),
+            http: Http1AttachHeadersProxy::new(rules, RequestHeadLimits::default()),
+        }
+    }
+}
+
+struct CustomDnsLease {
+    hostname: String,
+    answers: Vec<DnsAnswer>,
+}
+
+#[derive(Clone)]
+struct CachedDomain {
+    hostname: String,
+    expires_at_millis: i64,
+}
+
+const MAX_CUSTOM_DNS_CACHE_ADDRESSES: usize = 256;
+const MAX_CUSTOM_DNS_NAMES_PER_ADDRESS: usize = 8;
 
 /// Runs one fail-closed restricted-default data plane over libkrun's framed
 /// Unix stream. All host connects are numeric, every destination is classified
@@ -1710,6 +2077,80 @@ pub async fn run_restricted_proxy(
     resolvers: Vec<Ipv4Addr>,
     dns_over_https_name: Option<String>,
     proxy_limits: ProxyLimits,
+) -> Result<(), RestrictedProxyError> {
+    run_packet_proxy(
+        stream,
+        resolvers,
+        dns_over_https_name,
+        proxy_limits,
+        None,
+        None,
+    )
+    .await
+}
+
+pub async fn run_restricted_proxy_with_http_interception(
+    stream: UnixStream,
+    resolvers: Vec<Ipv4Addr>,
+    dns_over_https_name: Option<String>,
+    proxy_limits: ProxyLimits,
+    interception: Arc<HttpInterceptionConfig>,
+) -> Result<(), RestrictedProxyError> {
+    run_packet_proxy(
+        stream,
+        resolvers,
+        dns_over_https_name,
+        proxy_limits,
+        None,
+        Some(interception),
+    )
+    .await
+}
+
+pub async fn run_custom_proxy(
+    stream: UnixStream,
+    resolvers: Vec<Ipv4Addr>,
+    dns_over_https_name: Option<String>,
+    proxy_limits: ProxyLimits,
+    policy: CustomNetworkPolicy,
+) -> Result<(), RestrictedProxyError> {
+    run_packet_proxy(
+        stream,
+        resolvers,
+        dns_over_https_name,
+        proxy_limits,
+        Some(Arc::new(policy)),
+        None,
+    )
+    .await
+}
+
+pub async fn run_custom_proxy_with_http_interception(
+    stream: UnixStream,
+    resolvers: Vec<Ipv4Addr>,
+    dns_over_https_name: Option<String>,
+    proxy_limits: ProxyLimits,
+    policy: CustomNetworkPolicy,
+    interception: Arc<HttpInterceptionConfig>,
+) -> Result<(), RestrictedProxyError> {
+    run_packet_proxy(
+        stream,
+        resolvers,
+        dns_over_https_name,
+        proxy_limits,
+        Some(Arc::new(policy)),
+        Some(interception),
+    )
+    .await
+}
+
+async fn run_packet_proxy(
+    stream: UnixStream,
+    resolvers: Vec<Ipv4Addr>,
+    dns_over_https_name: Option<String>,
+    proxy_limits: ProxyLimits,
+    custom_policy: Option<Arc<CustomNetworkPolicy>>,
+    interception: Option<Arc<HttpInterceptionConfig>>,
 ) -> Result<(), RestrictedProxyError> {
     validate_resolvers(&resolvers)?;
     validate_dns_over_https_name(dns_over_https_name.as_deref())?;
@@ -1723,10 +2164,12 @@ pub async fn run_restricted_proxy(
         proxy_limits,
     )?;
     let mut host_connections = BTreeMap::<ConnectionId, HostConnection>::new();
+    let mut custom_dns_cache = BTreeMap::<Ipv4Addr, Vec<CachedDomain>>::new();
     let mut output = VecDeque::<Vec<u8>>::new();
     let mut output_bytes = 0_usize;
     let mut output_offset = 0_usize;
-    let (dial_tx, mut dial_rx) = mpsc::channel(proxy_limits.max_connections);
+    let (dial_tx, mut dial_rx) =
+        mpsc::channel::<(ConnectionId, Result<DialConnection, ()>)>(proxy_limits.max_connections);
     let dial_admission = Arc::new(Semaphore::new(proxy_limits.max_connections));
     let (dns_tx, mut dns_rx) = mpsc::channel(MAX_DNS_IN_FLIGHT);
     let dns_admission = Arc::new(Semaphore::new(MAX_DNS_IN_FLIGHT));
@@ -1791,15 +2234,44 @@ pub async fn run_restricted_proxy(
                                     let request_frame = frame.clone();
                                     let request = datagram.payload.to_vec();
                                     let sender = dns_tx.clone();
+                                    let custom_policy = custom_policy.clone();
+                                    let cache_dns = custom_policy.is_some() || interception.is_some();
                                     tokio::spawn(async move {
                                         let _permit = permit;
+                                        let query_for_policy = query.clone();
                                         if let Ok(response) = forward_dns(
                                             resolver,
                                             dns_over_https_name.as_deref(),
                                             request,
                                             query,
                                         ).await {
-                                            let _ = sender.try_send(DnsResult { request_frame, response });
+                                            let custom_lease = match (custom_policy, cache_dns) {
+                                                (_, false) => None,
+                                                (None, true) => {
+                                                    let Some(hostname) = dns_query_hostname(&query_for_policy) else { return; };
+                                                    let Ok(answers) = inspect_dns_response(&response, &query_for_policy) else { return; };
+                                                    Some(CustomDnsLease { hostname, answers })
+                                                }
+                                                (Some(policy), true) => {
+                                                    let Some(hostname) = dns_query_hostname(&query_for_policy) else {
+                                                        return;
+                                                    };
+                                                    let Ok(answers) = inspect_dns_response(&response, &query_for_policy) else {
+                                                        return;
+                                                    };
+                                                    if answers.iter().any(|answer| {
+                                                        evaluate_custom_dns_answer(
+                                                            &policy,
+                                                            &hostname,
+                                                            IpAddr::V4(answer.address),
+                                                        ) != EgressDecision::Allow
+                                                    }) {
+                                                        return;
+                                                    }
+                                                    Some(CustomDnsLease { hostname, answers })
+                                                }
+                                            };
+                                            let _ = sender.try_send(DnsResult { request_frame, response, custom_lease });
                                         }
                                     });
                                 }
@@ -1818,9 +2290,9 @@ pub async fn run_restricted_proxy(
             }
             Some((id, result)) = dial_rx.recv() => {
                 match result {
-                    Ok(stream) => {
+                    Ok(connection) => {
                         host_connections.insert(id, HostConnection {
-                            stream,
+                            stream: connection.stream,
                             to_host: VecDeque::new(),
                             to_guest: VecDeque::new(),
                             host_eof: false,
@@ -1831,6 +2303,29 @@ pub async fn run_restricted_proxy(
                 }
             }
             Some(result) = dns_rx.recv() => {
+                if let Some(lease) = result.custom_lease {
+                    let now = i64::try_from(started.elapsed().as_millis()).unwrap_or(i64::MAX);
+                    for answer in lease.answers {
+                        if !custom_dns_cache.contains_key(&answer.address)
+                            && custom_dns_cache.len() >= MAX_CUSTOM_DNS_CACHE_ADDRESSES
+                        {
+                            continue;
+                        }
+                        let names = custom_dns_cache.entry(answer.address).or_default();
+                        names.retain(|cached| cached.expires_at_millis > now);
+                        let expires_at_millis = now.saturating_add(
+                            i64::from(answer.ttl_seconds).saturating_mul(1_000),
+                        );
+                        if let Some(existing) = names.iter_mut().find(|cached| cached.hostname == lease.hostname) {
+                            existing.expires_at_millis = expires_at_millis;
+                        } else if names.len() < MAX_CUSTOM_DNS_NAMES_PER_ADDRESS {
+                            names.push(CachedDomain {
+                                hostname: lease.hostname.clone(),
+                                expires_at_millis,
+                            });
+                        }
+                    }
+                }
                 if let Ok(datagram) = admitted_guest_datagram(&result.request_frame, GUEST_MAC)
                     && let Ok(response) = build_udp_ethernet_response(datagram, GATEWAY_MAC, &result.response)
                 {
@@ -1839,24 +2334,44 @@ pub async fn run_restricted_proxy(
             }
             _ = tick.tick() => {
                 let now = i64::try_from(started.elapsed().as_millis()).unwrap_or(i64::MAX);
+                custom_dns_cache.retain(|_, names| {
+                    names.retain(|cached| cached.expires_at_millis > now);
+                    !names.is_empty()
+                });
                 for event in tcp.poll(now)? {
                     match event {
                         TcpProxyEvent::Dial { id, target } => {
+                            let address = *target.ip();
+                            let allowed_hosts = custom_policy.as_ref().and_then(|policy|
+                                cached_allowed_hostnames(policy, &custom_dns_cache, address, target.port(), now));
+                            let direct_allowed = match &custom_policy {
+                                Some(policy) => evaluate_custom_tcp_connect(policy, None, IpAddr::V4(address), target.port()) == EgressDecision::Allow,
+                                None => evaluate_tcp_connect(IpAddr::V4(address), target.port()) == EgressDecision::Allow,
+                            };
+                            let domain_only = custom_policy.as_ref().is_some_and(|p| !p.allowed_domains.is_empty() && p.allowed_cidrs.is_empty());
+                            if (!direct_allowed && allowed_hosts.is_none()) || (domain_only && interception.is_none()) {
+                                let _ = tcp.abort(id);
+                                continue;
+                            }
                             let Ok(permit) = Arc::clone(&dial_admission).try_acquire_owned() else {
                                 let _ = tcp.abort(id);
                                 continue;
                             };
                             let sender = dial_tx.clone();
+                            let interception = interception.clone();
+                            let allowed_hosts = allowed_hosts.or_else(|| {
+                                (interception.is_some() && !domain_only).then(|| {
+                                    cached_hostnames(&custom_dns_cache, address, now)
+                                }).flatten()
+                            });
                             tokio::spawn(async move {
                                 let _permit = permit;
-                                let result = timeout(
-                                    CONNECT_TIMEOUT,
-                                    TcpStream::connect(SocketAddr::V4(target)),
+                                let result = dial_connection(
+                                    SocketAddr::V4(target),
+                                    interception,
+                                    allowed_hosts,
                                 )
-                                .await
-                                .ok()
-                                .and_then(Result::ok)
-                                .ok_or(());
+                                .await;
                                 let _ = sender.try_send((id, result));
                             });
                         }
@@ -1871,6 +2386,149 @@ pub async fn run_restricted_proxy(
             }
         }
     }
+}
+
+fn dns_query_hostname(query: &DnsQuery) -> Option<String> {
+    let mut hostname = String::new();
+    let mut cursor = 0_usize;
+    while cursor < query.canonical_name.len() {
+        let length = usize::from(*query.canonical_name.get(cursor)?);
+        cursor += 1;
+        if length == 0 {
+            return (cursor == query.canonical_name.len() && !hostname.is_empty())
+                .then_some(hostname);
+        }
+        let label = query
+            .canonical_name
+            .get(cursor..cursor.checked_add(length)?)?;
+        if !label.is_ascii() {
+            return None;
+        }
+        if !hostname.is_empty() {
+            hostname.push('.');
+        }
+        hostname.push_str(std::str::from_utf8(label).ok()?);
+        cursor += length;
+    }
+    None
+}
+
+#[allow(dead_code)]
+fn custom_connect_allowed(
+    policy: &CustomNetworkPolicy,
+    cache: &BTreeMap<Ipv4Addr, Vec<CachedDomain>>,
+    address: Ipv4Addr,
+    port: u16,
+    now_millis: i64,
+) -> bool {
+    cache.get(&address).is_some_and(|names| {
+        names.iter().any(|cached| {
+            cached.expires_at_millis > now_millis
+                && evaluate_custom_tcp_connect(
+                    policy,
+                    Some(&cached.hostname),
+                    IpAddr::V4(address),
+                    port,
+                ) == EgressDecision::Allow
+        })
+    }) || evaluate_custom_tcp_connect(policy, None, IpAddr::V4(address), port)
+        == EgressDecision::Allow
+}
+
+fn cached_hostnames(
+    cache: &BTreeMap<Ipv4Addr, Vec<CachedDomain>>,
+    address: Ipv4Addr,
+    now_millis: i64,
+) -> Option<AllowedHostnames> {
+    let names = cache
+        .get(&address)?
+        .iter()
+        .filter(|entry| entry.expires_at_millis > now_millis)
+        .map(|entry| entry.hostname.clone())
+        .collect::<Vec<_>>();
+    (!names.is_empty())
+        .then(|| AllowedHostnames::new(names).ok())
+        .flatten()
+}
+
+fn cached_allowed_hostnames(
+    policy: &CustomNetworkPolicy,
+    cache: &BTreeMap<Ipv4Addr, Vec<CachedDomain>>,
+    address: Ipv4Addr,
+    port: u16,
+    now_millis: i64,
+) -> Option<AllowedHostnames> {
+    let names = cache
+        .get(&address)?
+        .iter()
+        .filter(|entry| entry.expires_at_millis > now_millis)
+        .filter(|entry| {
+            evaluate_custom_tcp_connect(policy, Some(&entry.hostname), IpAddr::V4(address), port)
+                == EgressDecision::Allow
+        })
+        .map(|entry| entry.hostname.clone())
+        .collect::<Vec<_>>();
+    (!names.is_empty())
+        .then(|| AllowedHostnames::new(names).ok())
+        .flatten()
+}
+
+async fn dial_connection(
+    target: SocketAddr,
+    interception: Option<Arc<HttpInterceptionConfig>>,
+    allowed_hostnames: Option<AllowedHostnames>,
+) -> Result<DialConnection, ()> {
+    let Some(interception) = interception.filter(|_| allowed_hostnames.is_some()) else {
+        return timeout(CONNECT_TIMEOUT, TcpStream::connect(target))
+            .await
+            .ok()
+            .and_then(Result::ok)
+            .map(|stream| DialConnection { stream })
+            .ok_or(());
+    };
+    let allowed_hostnames = allowed_hostnames.ok_or(())?;
+    let listener = timeout(CONNECT_TIMEOUT, TcpListener::bind("127.0.0.1:0"))
+        .await
+        .ok()
+        .and_then(Result::ok)
+        .ok_or(())?;
+    let local_addr = listener.local_addr().map_err(|_| ())?;
+    let client = timeout(CONNECT_TIMEOUT, TcpStream::connect(local_addr))
+        .await
+        .ok()
+        .and_then(Result::ok)
+        .ok_or(())?;
+    let (guest, peer) = timeout(CONNECT_TIMEOUT, listener.accept())
+        .await
+        .ok()
+        .and_then(Result::ok)
+        .ok_or(())?;
+    if peer != client.local_addr().map_err(|_| ())? {
+        return Err(());
+    }
+    let upstream = timeout(CONNECT_TIMEOUT, TcpStream::connect(target))
+        .await
+        .ok()
+        .and_then(Result::ok)
+        .ok_or(())?;
+    tokio::spawn(async move {
+        if target.port() == 443 {
+            let _ = interception
+                .tls
+                .proxy_single_http1_tls_connection_for_allowed_hostnames(
+                    guest,
+                    upstream,
+                    &allowed_hostnames,
+                )
+                .await;
+        } else {
+            let _ = interception
+                .http
+                .proxy_single_http1_connection(guest, upstream, &allowed_hostnames)
+                .await;
+        }
+    });
+    Ok(DialConnection { stream: client })
 }
 
 /// Worker-thread entry point. The runtime is current-thread only, so all
@@ -1890,6 +2548,48 @@ pub fn run_restricted_proxy_blocking(
             resolvers,
             dns_over_https_name,
             proxy_limits,
+        ))
+}
+
+pub fn run_restricted_proxy_blocking_with_http_interception(
+    stream: UnixStream,
+    resolvers: Vec<Ipv4Addr>,
+    dns_over_https_name: Option<String>,
+    proxy_limits: ProxyLimits,
+    interception: Arc<HttpInterceptionConfig>,
+) -> Result<(), RestrictedProxyError> {
+    tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .map_err(RestrictedProxyError::Io)?
+        .block_on(run_restricted_proxy_with_http_interception(
+            stream,
+            resolvers,
+            dns_over_https_name,
+            proxy_limits,
+            interception,
+        ))
+}
+
+pub fn run_custom_proxy_blocking_with_http_interception(
+    stream: UnixStream,
+    resolvers: Vec<Ipv4Addr>,
+    dns_over_https_name: Option<String>,
+    proxy_limits: ProxyLimits,
+    policy: CustomNetworkPolicy,
+    interception: Arc<HttpInterceptionConfig>,
+) -> Result<(), RestrictedProxyError> {
+    tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .map_err(RestrictedProxyError::Io)?
+        .block_on(run_custom_proxy_with_http_interception(
+            stream,
+            resolvers,
+            dns_over_https_name,
+            proxy_limits,
+            policy,
+            interception,
         ))
 }
 
@@ -1938,6 +2638,154 @@ pub fn spawn_restricted_proxy(
         }
         Err(_) => Err(RestrictedProxyError::Configuration(
             "restricted proxy readiness timed out",
+        )),
+    }
+}
+
+/// Spawn variant enabling the per-Box HTTP/S interception bridge.
+pub fn spawn_restricted_proxy_with_http_interception(
+    stream: UnixStream,
+    resolvers: Vec<Ipv4Addr>,
+    dns_over_https_name: Option<String>,
+    proxy_limits: ProxyLimits,
+    interception: Arc<HttpInterceptionConfig>,
+) -> Result<std::thread::JoinHandle<()>, RestrictedProxyError> {
+    validate_resolvers(&resolvers)?;
+    validate_dns_over_https_name(dns_over_https_name.as_deref())?;
+    let (ready_tx, ready_rx) = std::sync::mpsc::sync_channel(1);
+    let handle = std::thread::Builder::new()
+        .name("boxd-net-restricted".into())
+        .spawn(move || {
+            let runtime = match tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+            {
+                Ok(runtime) => runtime,
+                Err(error) => {
+                    let _ = ready_tx.send(Err(error.to_string()));
+                    return;
+                }
+            };
+            if ready_tx.send(Ok(())).is_err() {
+                return;
+            }
+            let _ = runtime.block_on(run_restricted_proxy_with_http_interception(
+                stream,
+                resolvers,
+                dns_over_https_name,
+                proxy_limits,
+                interception,
+            ));
+        })?;
+    match ready_rx.recv_timeout(Duration::from_secs(5)) {
+        Ok(Ok(())) => Ok(handle),
+        Ok(Err(_)) => {
+            let _ = handle.join();
+            Err(RestrictedProxyError::Configuration(
+                "restricted proxy runtime initialization failed",
+            ))
+        }
+        Err(_) => Err(RestrictedProxyError::Configuration(
+            "restricted proxy readiness timed out",
+        )),
+    }
+}
+
+pub fn spawn_custom_proxy(
+    stream: UnixStream,
+    resolvers: Vec<Ipv4Addr>,
+    dns_over_https_name: Option<String>,
+    proxy_limits: ProxyLimits,
+    policy: CustomNetworkPolicy,
+) -> Result<std::thread::JoinHandle<()>, RestrictedProxyError> {
+    validate_resolvers(&resolvers)?;
+    validate_dns_over_https_name(dns_over_https_name.as_deref())?;
+    let (ready_tx, ready_rx) = std::sync::mpsc::sync_channel(1);
+    let handle = std::thread::Builder::new()
+        .name("boxd-net-custom".into())
+        .spawn(move || {
+            let runtime = match tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+            {
+                Ok(runtime) => runtime,
+                Err(error) => {
+                    let _ = ready_tx.send(Err(error.to_string()));
+                    return;
+                }
+            };
+            if ready_tx.send(Ok(())).is_err() {
+                return;
+            }
+            let _ = runtime.block_on(run_custom_proxy(
+                stream,
+                resolvers,
+                dns_over_https_name,
+                proxy_limits,
+                policy,
+            ));
+        })?;
+    match ready_rx.recv_timeout(Duration::from_secs(5)) {
+        Ok(Ok(())) => Ok(handle),
+        Ok(Err(_)) => {
+            let _ = handle.join();
+            Err(RestrictedProxyError::Configuration(
+                "custom proxy runtime initialization failed",
+            ))
+        }
+        Err(_) => Err(RestrictedProxyError::Configuration(
+            "custom proxy readiness timed out",
+        )),
+    }
+}
+
+/// Spawn variant enabling the per-Box HTTP/S interception bridge.
+pub fn spawn_custom_proxy_with_http_interception(
+    stream: UnixStream,
+    resolvers: Vec<Ipv4Addr>,
+    dns_over_https_name: Option<String>,
+    proxy_limits: ProxyLimits,
+    policy: CustomNetworkPolicy,
+    interception: Arc<HttpInterceptionConfig>,
+) -> Result<std::thread::JoinHandle<()>, RestrictedProxyError> {
+    validate_resolvers(&resolvers)?;
+    validate_dns_over_https_name(dns_over_https_name.as_deref())?;
+    let (ready_tx, ready_rx) = std::sync::mpsc::sync_channel(1);
+    let handle = std::thread::Builder::new()
+        .name("boxd-net-custom".into())
+        .spawn(move || {
+            let runtime = match tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+            {
+                Ok(runtime) => runtime,
+                Err(error) => {
+                    let _ = ready_tx.send(Err(error.to_string()));
+                    return;
+                }
+            };
+            if ready_tx.send(Ok(())).is_err() {
+                return;
+            }
+            let _ = runtime.block_on(run_custom_proxy_with_http_interception(
+                stream,
+                resolvers,
+                dns_over_https_name,
+                proxy_limits,
+                policy,
+                interception,
+            ));
+        })?;
+    match ready_rx.recv_timeout(Duration::from_secs(5)) {
+        Ok(Ok(())) => Ok(handle),
+        Ok(Err(_)) => {
+            let _ = handle.join();
+            Err(RestrictedProxyError::Configuration(
+                "custom proxy runtime initialization failed",
+            ))
+        }
+        Err(_) => Err(RestrictedProxyError::Configuration(
+            "custom proxy readiness timed out",
         )),
     }
 }
@@ -2364,6 +3212,164 @@ mod tests {
 
     fn ip(value: &str) -> IpAddr {
         value.parse().expect("test address")
+    }
+
+    #[test]
+    fn custom_domain_patterns_canonicalize_and_match_safely() {
+        let exact = DomainPattern::parse("API.Example.COM.").expect("valid domain");
+        assert!(exact.matches("api.example.com"));
+        assert!(exact.matches("API.EXAMPLE.COM."));
+        assert!(!exact.matches("other.example.com"));
+
+        let wildcard = DomainPattern::parse("*.Example.com.").expect("valid wildcard");
+        assert!(wildcard.matches("api.example.com"));
+        assert!(wildcard.matches("deep.api.example.com"));
+        assert!(!wildcard.matches("example.com"));
+        assert!(!wildcard.matches("*.example.com"));
+
+        for invalid in ["", ".example.com", "api..example.com", "api_1.example.com"] {
+            assert!(DomainPattern::parse(invalid).is_err(), "{invalid}");
+        }
+        assert_eq!(
+            DomainPattern::parse("münich.example").unwrap_err(),
+            PolicyParseError::NonAsciiDomain
+        );
+        assert_eq!(
+            DomainPattern::parse("api.*.example.com").unwrap_err(),
+            PolicyParseError::InvalidWildcard
+        );
+    }
+
+    #[test]
+    fn custom_cidr_parsing_normalizes_network_and_separates_families() {
+        let cidr = IpCidr::parse("192.168.1.99/24").expect("valid CIDR");
+        assert!(cidr.contains(ip("192.168.1.1")));
+        assert!(!cidr.contains(ip("192.168.2.1")));
+        let v6 = IpCidr::parse("2001:db8::1234/64").expect("valid IPv6 CIDR");
+        assert!(v6.contains(ip("2001:db8::1")));
+        assert!(!v6.contains(ip("2001:db9::1")));
+        for invalid in ["192.168.1.1", "192.168.1.1/33", "2001:db8::/129", "bad/24"] {
+            assert!(IpCidr::parse(invalid).is_err(), "{invalid}");
+        }
+    }
+
+    #[test]
+    fn custom_policy_is_deny_by_default_and_deny_wins() {
+        let empty = CustomNetworkPolicy::new(&[], &[], &[]).expect("empty policy");
+        assert_eq!(
+            evaluate_custom_tcp_connect(&empty, Some("api.example.com"), ip("1.1.1.1"), 443),
+            EgressDecision::Deny(DenyReason::CidrNotAllowed)
+        );
+
+        let policy = CustomNetworkPolicy::new(&["*.example.com"], &["1.1.1.0/24"], &["1.1.1.8/32"])
+            .expect("valid policy");
+        let cases = [
+            ("api.example.com", "1.1.1.1", 443, EgressDecision::Allow),
+            (
+                "example.com",
+                "1.1.1.1",
+                443,
+                EgressDecision::Deny(DenyReason::DomainNotAllowed),
+            ),
+            (
+                "api.example.com",
+                "1.1.1.8",
+                443,
+                EgressDecision::Deny(DenyReason::DeniedCidr),
+            ),
+            (
+                "api.other.com",
+                "1.1.1.1",
+                443,
+                EgressDecision::Deny(DenyReason::DomainNotAllowed),
+            ),
+            (
+                "api.example.com",
+                "1.1.2.1",
+                443,
+                EgressDecision::Deny(DenyReason::DomainNotAllowed),
+            ),
+            (
+                "api.example.com",
+                "1.1.1.1",
+                8080,
+                EgressDecision::Deny(DenyReason::Port),
+            ),
+        ];
+        for (host, address, port, expected) in cases {
+            assert_eq!(
+                evaluate_custom_tcp_connect(&policy, Some(host), ip(address), port),
+                expected,
+                "{host} {address}:{port}"
+            );
+        }
+    }
+
+    #[test]
+    fn custom_dns_and_connect_recheck_actual_address() {
+        let policy =
+            CustomNetworkPolicy::new(&["metadata.example.com"], &[], &[]).expect("valid policy");
+        assert_eq!(
+            evaluate_custom_dns_answer(&policy, "metadata.example.com", ip("169.254.169.254")),
+            EgressDecision::Deny(DenyReason::Address(AddressClass::Metadata))
+        );
+        assert_eq!(
+            evaluate_custom_tcp_connect(
+                &policy,
+                Some("metadata.example.com"),
+                ip("169.254.169.254"),
+                443
+            ),
+            EgressDecision::Deny(DenyReason::Address(AddressClass::Metadata))
+        );
+
+        let cidr_only = CustomNetworkPolicy::new(&[], &["1.1.1.0/24"], &[]).expect("valid policy");
+        assert_eq!(
+            evaluate_custom_dns_answer(&cidr_only, "untrusted.invalid", ip("1.1.1.1")),
+            EgressDecision::Allow
+        );
+        assert_eq!(
+            evaluate_custom_tcp_connect(&cidr_only, None, ip("1.1.1.1"), 80),
+            EgressDecision::Allow
+        );
+    }
+
+    #[test]
+    fn custom_connect_requires_a_live_matching_dns_lease_for_domain_rules() {
+        let query = inspect_dns_query(&dns_query(7, 1)).unwrap();
+        assert_eq!(dns_query_hostname(&query).as_deref(), Some("example.com"));
+        let policy = CustomNetworkPolicy::new(&["example.com"], &[], &[]).unwrap();
+        let address = Ipv4Addr::new(1, 1, 1, 1);
+        let mut cache = BTreeMap::new();
+        cache.insert(
+            address,
+            vec![CachedDomain {
+                hostname: "example.com".into(),
+                expires_at_millis: 1_000,
+            }],
+        );
+        assert!(custom_connect_allowed(&policy, &cache, address, 443, 999));
+        assert!(!custom_connect_allowed(
+            &policy, &cache, address, 443, 1_000
+        ));
+        assert!(!custom_connect_allowed(&policy, &cache, address, 80, 1_001));
+        let cidr = CustomNetworkPolicy::new(&[], &["1.1.1.0/24"], &[]).unwrap();
+        assert!(custom_connect_allowed(
+            &cidr,
+            &BTreeMap::new(),
+            address,
+            80,
+            0
+        ));
+    }
+
+    #[test]
+    fn custom_policy_limits_rule_count_without_panicking() {
+        let domains = vec!["a.example.com"; MAX_CUSTOM_POLICY_RULES + 1];
+        assert_eq!(
+            CustomNetworkPolicy::new(&domains, &[], &[]).unwrap_err(),
+            PolicyParseError::TooManyRules
+        );
     }
 
     #[test]
@@ -3152,7 +4158,7 @@ mod tests {
             let mut interface = Interface::new(config, &mut device, Instant::ZERO);
             interface.update_ip_addrs(|addresses| {
                 addresses
-                    .push(IpCidr::new(IpAddress::from(GUEST_IPV4), 24))
+                    .push(SmolIpCidr::new(IpAddress::from(GUEST_IPV4), 24))
                     .expect("guest address");
             });
             interface

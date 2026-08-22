@@ -9,6 +9,7 @@ license.workspace = true
 path = "src/lib.rs"
 
 [dependencies]
+box-egress-http = { path = "../box-egress-http" }
 reqwest.workspace = true
 smoltcp.workspace = true
 tokio = { workspace = true, features = ["io-util", "net", "rt", "sync", "time"] }

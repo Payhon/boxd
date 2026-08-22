@@ -116,8 +116,34 @@ jobs:
       - run: npm ci
       - run: npm run check:manifest
       - run: npm run check:coverage
+      - run: npm run check:differential
       - run: npm test
       - run: git diff --exit-code -- coverage-table.json fixtures/public-captures.json
+
+  phase4-portable:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Compile Phase 4 tooling
+        run: python3 -m py_compile scripts/phase4-*.py tests/*/test_*.py
+      - name: Run hermetic security, load, recovery, and release tests
+        run: |
+          python3 -m unittest discover -s tests/security -p 'test_*.py' -v
+          python3 -m unittest discover -s tests/load -p 'test_*.py' -v
+          python3 -m unittest discover -s tests/recovery -p 'test_*.py' -v
+          python3 -m unittest discover -s tests/phase4 -p 'test_*.py' -v
+      - name: Exercise portable harnesses
+        run: |
+          python3 scripts/phase4-security-matrix.py --cases tests/security/cases.json > "${RUNNER_TEMP}/security-matrix.json"
+          python3 scripts/phase4-load-harness.py --fixture tests/load/fixture.json
+          python3 scripts/phase4-recovery-harness.py --fixture tests/recovery/fixture.json
+          python3 scripts/phase4-validate-services.py \
+            --systemd release/services/boxd.service \
+            --launchd release/services/com.payhon.boxd.plist
 
   embedded-console:
     runs-on: ubuntu-24.04

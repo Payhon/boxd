@@ -18,7 +18,55 @@ impl MigratorTrait for Migrator {
             Box::new(SnapshotRestoreBindingSchema),
             Box::new(PreviewConstraintSchema),
             Box::new(SkillSchema),
+            Box::new(NetworkPolicyTextSchema),
         ]
+    }
+}
+
+struct NetworkPolicyTextSchema;
+impl MigrationName for NetworkPolicyTextSchema {
+    fn name(&self) -> &str {
+        "m0010_network_policy_text"
+    }
+}
+#[async_trait::async_trait]
+impl MigrationTrait for NetworkPolicyTextSchema {
+    async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        // SQLite does not enforce VARCHAR lengths and cannot portably alter a
+        // column type in place. Fresh SQLite schemas already use TEXT below.
+        if manager.get_database_backend() == sea_orm::DatabaseBackend::Sqlite {
+            return Ok(());
+        }
+        manager
+            .alter_table(
+                Table::alter()
+                    .table(Alias::new("boxes"))
+                    .modify_column(
+                        ColumnDef::new(Alias::new("network_policy"))
+                            .text()
+                            .not_null(),
+                    )
+                    .to_owned(),
+            )
+            .await
+    }
+
+    async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        if manager.get_database_backend() == sea_orm::DatabaseBackend::Sqlite {
+            return Ok(());
+        }
+        manager
+            .alter_table(
+                Table::alter()
+                    .table(Alias::new("boxes"))
+                    .modify_column(
+                        ColumnDef::new(Alias::new("network_policy"))
+                            .string_len(32)
+                            .not_null(),
+                    )
+                    .to_owned(),
+            )
+            .await
     }
 }
 
@@ -822,13 +870,15 @@ fn column_kind(table: &str, column: &str) -> ColumnKind {
         "idempotency_key" => ColumnKind::String(128),
         "username" | "request_id" | "checksum" => ColumnKind::String(128),
         "role" | "platform" | "arch" | "runtime" | "size" | "status" | "kind" | "type"
-        | "event_type" | "auth" | "network_policy" | "stopped_reason" => ColumnKind::String(32),
+        | "event_type" | "auth" | "stopped_reason" => ColumnKind::String(32),
         "timezone" | "ip" | "cost" => ColumnKind::String(64),
         "name" | "password_hash" | "model" | "lease_token" | "nonce" | "cron" | "actor"
         | "action" | "resource" | "session_id" => ColumnKind::String(255),
         "scopes_json" | "capabilities_json" | "agent_json" | "counters_json" | "ciphertext"
         | "prompt" | "output" | "error" | "payload_json" | "manifest_json" | "markers_json"
-        | "metadata_json" | "disk_path" | "path" | "playlist_path" => ColumnKind::Text,
+        | "metadata_json" | "disk_path" | "path" | "playlist_path" | "network_policy" => {
+            ColumnKind::Text
+        }
         "created_at"
         | "updated_at"
         | "last_used_at"
@@ -1329,12 +1379,27 @@ const INDEXES: &[IndexSpec] = &[
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sea_orm::{ConnectionTrait, Database};
+    use sea_orm::{ConnectionTrait, Database, DatabaseBackend, Statement};
     #[tokio::test]
     async fn sqlite_migration_is_reversible() {
         let db = Database::connect("sqlite::memory:").await.unwrap();
         Migrator::up(&db, None).await.unwrap();
         db.execute_unprepared("SELECT * FROM boxes").await.unwrap();
+        let columns = db
+            .query_all_raw(Statement::from_string(
+                DatabaseBackend::Sqlite,
+                "PRAGMA table_info(boxes)",
+            ))
+            .await
+            .unwrap();
+        let network_policy = columns
+            .iter()
+            .find(|column| column.try_get_by_index::<String>(1).unwrap() == "network_policy")
+            .expect("fresh boxes schema must contain network_policy");
+        assert_eq!(
+            network_policy.try_get_by_index::<String>(2).unwrap(),
+            "TEXT"
+        );
         Migrator::down(&db, None).await.unwrap();
         assert!(db.execute_unprepared("SELECT * FROM boxes").await.is_err());
     }

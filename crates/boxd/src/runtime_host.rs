@@ -1375,6 +1375,7 @@ impl RuntimeController for RuntimeHost {
         &self,
         value: &DomainBox,
         environment: &BTreeMap<String, String>,
+        network_secrets: &box_service::RuntimeNetworkSecrets,
     ) -> box_core::Result<()> {
         let resources = value.spec.size.resources();
         async {
@@ -1452,6 +1453,11 @@ impl RuntimeController for RuntimeHost {
             getrandom::fill(&mut nonce).map_err(runtime_error)?;
             self.remove_socket_path(value.id)?;
             let socket = self.socket_root.socket_path(value.id);
+            let needs_network_tls = !network_secrets.attach_headers.is_empty()
+                || matches!(
+                    &value.spec.network_policy,
+                    NetworkPolicy::Custom(policy) if !policy.allowed_domains().is_empty()
+                );
             let spec = WorkerSpec {
                 version: WORKER_SPEC_VERSION,
                 box_id: value.id.to_string(),
@@ -1481,22 +1487,44 @@ impl RuntimeController for RuntimeHost {
                 libkrun_identity: self.identity(),
                 libkrun_firmware: self.assets.libkrunfw.clone(),
                 libkrun_firmware_identity: self.firmware_identity(),
-                network_mode: match value.spec.network_policy {
+                network_mode: match &value.spec.network_policy {
                     NetworkPolicy::DenyAll => NetworkMode::DenyAll,
                     NetworkPolicy::RestrictedDefault => NetworkMode::RestrictedDefault,
-                    NetworkPolicy::Custom => {
-                        return Err(box_core::DomainError::feature_not_supported(
-                            "custom network_policy",
+                    NetworkPolicy::Custom(_) => NetworkMode::Custom,
+                },
+                custom_network_policy: match &value.spec.network_policy {
+                    NetworkPolicy::Custom(policy) => Some(box_runtime::CustomNetworkPolicySpec {
+                        allowed_domains: policy.allowed_domains().iter().map(|value| value.as_str().to_owned()).collect(),
+                        allowed_cidrs: policy.allowed_cidrs().iter().map(ToString::to_string).collect(),
+                        denied_cidrs: policy.denied_cidrs().iter().map(ToString::to_string).collect(),
+                    }),
+                    NetworkPolicy::DenyAll | NetworkPolicy::RestrictedDefault => None,
+                },
+                attach_headers: match (
+                    needs_network_tls,
+                    network_secrets.ca_private_key_der.as_ref(),
+                    network_secrets.ca_certificate_der.is_empty(),
+                    network_secrets.attach_headers.is_empty(),
+                ) {
+                    (false, _, _, _) => None,
+                    (true, Some(private_key), false, _) => Some(box_runtime::AttachHeadersSpec {
+                        rules: network_secrets.attach_headers.clone(),
+                        ca_certificate_der: network_secrets.ca_certificate_der.clone(),
+                        ca_private_key_der: private_key.expose_secret().to_vec(),
+                    }),
+                    _ => {
+                        return Err(unavailable(
+                            "runtime network TLS secret material is incomplete",
                         ));
                     }
                 },
-                dns_servers: match value.spec.network_policy {
-                    NetworkPolicy::RestrictedDefault => self.dns_servers.clone(),
-                    NetworkPolicy::DenyAll | NetworkPolicy::Custom => vec![],
+                dns_servers: match &value.spec.network_policy {
+                    NetworkPolicy::RestrictedDefault | NetworkPolicy::Custom(_) => self.dns_servers.clone(),
+                    NetworkPolicy::DenyAll => vec![],
                 },
-                dns_over_https_name: match value.spec.network_policy {
-                    NetworkPolicy::RestrictedDefault => self.dns_over_https_name.clone(),
-                    NetworkPolicy::DenyAll | NetworkPolicy::Custom => None,
+                dns_over_https_name: match &value.spec.network_policy {
+                    NetworkPolicy::RestrictedDefault | NetworkPolicy::Custom(_) => self.dns_over_https_name.clone(),
+                    NetworkPolicy::DenyAll => None,
                 },
             };
             let prepared = self

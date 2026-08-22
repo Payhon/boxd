@@ -1,0 +1,1 @@
+Fixture license evidence for pinned libkrun firmware ABI 5.

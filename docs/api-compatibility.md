@@ -101,9 +101,14 @@ port。浏览器端不持久 ticket、CSRF token 或 API Key 明文。
 
 目标 MVP network policy 包含受限默认 egress 与 `deny-all`；当前 SDK 省略 policy
 时使用受限默认 DNS/HTTP(S)，显式 `deny-all` 保持全断，二者均有 macOS HVF 与
-daemon-restart 证据。custom 规则和 HTTPS `attach_headers` 均属明确 501 子集边界，
-见 [ADR-0003](adr/0003-mvp-network-policy.md)。Browser、recording 与完整网络
-策略不属于 Phase 1。
+daemon-restart 证据。Phase 4 已加入 feature-gated custom domain/CIDR 控制面与
+host-owned egress 数据面，但双平台真实 VM evidence 尚未完成；配置关闭时仍返回 501。
+HTTPS `attach_headers` 已接通 feature-gated 的 HTTP/1.1/TLS interception、SNI/Host
+绑定、WebPKI upstream 校验、加密 secret、per-Box CA 与 guest trust-store 安装；只有
+`features.attach_headers=true` 且 restricted egress 已 armed 时 capability 才为 true，
+否则仍返回 501。HTTP/2、CONNECT、Upgrade 与歧义 framing 会 fail closed。
+见 [ADR-0003](adr/0003-mvp-network-policy.md) 与
+[ADR-0007](adr/0007-phase4-custom-network-policy.md)。
 
 ## Verification
 
@@ -114,6 +119,8 @@ npm --prefix compat/upstash-box-0.6.3 test
 rg -n '677ca0827a6f54bc328b4b3e97d32a7cc5ac1934|86|80|78|feature_not_supported' compat crates docs
 ```
 
-这些命令现已可执行；每次变更都必须重新执行。官方服务目前只有无效 fixture key 的
-只读 401 样本，authenticated/success differential 仍需测试账户，不能由 mock capture
+这些命令现已可执行；每次变更都必须重新执行。Phase 4 differential executor 已能用
+隔离 credential 对 official/local 发起真实双端请求，并实现 3 个安全 adapter；其余
+79 cases 会明确 `blocked: adapter_missing`。当前环境没有 official credential/runtime/
+provider，因此 authenticated/success differential 尚未执行，不能由双 fixture server
 代替。状态边界见 [implementation status](implementation-status.md)。

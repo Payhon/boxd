@@ -1,0 +1,72 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "boxd-fixture-release",
+  "documentNamespace": "urn:boxd:phase4:fixture:release",
+  "creationInfo": {"created": "2026-08-22T00:00:00Z", "creators": ["Tool: phase4-fixture"]},
+  "packages": [
+    {
+      "name": "boxd",
+      "SPDXID": "SPDXRef-boxd",
+      "versionInfo": "0.4.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "NOASSERTION",
+      "checksums": [{"algorithm": "SHA256", "checksumValue": "3e37d1acbd76cacaee088a6d662d6dada8bc7885128e0bb2f0aba0bb161ae5a1"}]
+    },
+    {
+      "name": "boxd-console",
+      "SPDXID": "SPDXRef-boxd-console",
+      "versionInfo": "0.4.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "checksums": [{"algorithm": "SHA256", "checksumValue": "1111111111111111111111111111111111111111111111111111111111111111"}]
+    },
+    {
+      "name": "libkrun",
+      "SPDXID": "SPDXRef-libkrun",
+      "versionInfo": "1.19.4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "checksums": [{"algorithm": "SHA256", "checksumValue": "64d0169f6b60a8f10b10a4c930c032654b3c4bd5dbbe93c4de3726749b2c7cb9"}]
+    },
+    {
+      "name": "libkrunfw",
+      "SPDXID": "SPDXRef-libkrunfw",
+      "versionInfo": "5",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "checksums": [{"algorithm": "SHA256", "checksumValue": "8601aaac9233b0643c285c72e50611f78cf3e2a08e9c49a124468bb8758b400c"}]
+    },
+    {
+      "name": "runtime-bundle",
+      "SPDXID": "SPDXRef-runtime-bundle",
+      "versionInfo": "fixture",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "checksums": [{"algorithm": "SHA256", "checksumValue": "3e51c8d2e1f996c7cbde8aca856f72a039e7c4d599b6ed971df58c554b7c5f8f"}]
+    }
+  ],
+  "relationships": [
+    {"spdxElementId": "SPDXRef-DOCUMENT", "relationshipType": "DESCRIBES", "relatedSpdxElement": "SPDXRef-boxd"},
+    {"spdxElementId": "SPDXRef-DOCUMENT", "relationshipType": "DESCRIBES", "relatedSpdxElement": "SPDXRef-boxd-console"},
+    {"spdxElementId": "SPDXRef-DOCUMENT", "relationshipType": "DESCRIBES", "relatedSpdxElement": "SPDXRef-libkrun"},
+    {"spdxElementId": "SPDXRef-DOCUMENT", "relationshipType": "DESCRIBES", "relatedSpdxElement": "SPDXRef-libkrunfw"},
+    {"spdxElementId": "SPDXRef-DOCUMENT", "relationshipType": "DESCRIBES", "relatedSpdxElement": "SPDXRef-runtime-bundle"}
+  ]
+}

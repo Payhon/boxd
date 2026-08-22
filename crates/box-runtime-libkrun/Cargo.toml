@@ -6,7 +6,9 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
+base64.workspace = true
 box-egress = { path = "../box-egress" }
+box-egress-http = { path = "../box-egress-http" }
 box-runtime = { path = "../box-runtime" }
 libloading = "0.8"
 serde.workspace = true

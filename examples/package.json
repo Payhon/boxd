@@ -7,12 +7,13 @@
     "node": ">=22"
   },
   "scripts": {
-    "check": "node --check _common.mjs && node --check 01-lifecycle.mjs && node --check 02-browser.mjs && node --check 03-schedule.mjs && node --check 04-snapshot.mjs && node --check 05-ephemeral.mjs",
+    "check": "node --check _common.mjs && node --check 01-lifecycle.mjs && node --check 02-browser.mjs && node --check 03-schedule.mjs && node --check 04-snapshot.mjs && node --check 05-ephemeral.mjs && node --check 06-network-policy.mjs",
     "lifecycle": "node 01-lifecycle.mjs",
     "browser": "node 02-browser.mjs",
     "schedule": "node 03-schedule.mjs",
     "snapshot": "node 04-snapshot.mjs",
-    "ephemeral": "node 05-ephemeral.mjs"
+    "ephemeral": "node 05-ephemeral.mjs",
+    "network-policy": "node 06-network-policy.mjs"
   },
   "dependencies": {
     "@upstash/box": "0.6.3"

@@ -201,6 +201,25 @@ Phase 3 最终门禁（2026-08-16）：Rust workspace fmt、全 targets/features
 86/80/77+1、coverage 82/159、Node contract 20/20；Console Node 22.19.0
 lint/typecheck、Vitest 11/11、production build、Playwright 1/1 全绿。
 
+## Phase 4 — 完全兼容与生产加固（实施中）
+
+- [x] feature-gated custom network policy 控制面、持久化、PUT 重启与 host egress 数据面；
+- [x] feature-gated HTTP/HTTPS `attach_headers`、加密 secret、per-Box CA、guest trust 与 libkrun 接线；
+- [ ] 78 contracts / 82 public cases authenticated official/local differential；
+- [ ] fuzz、安全矩阵、负载与故障恢复；
+- [ ] macOS Developer ID/notarization/stapling 与 Linux 双架构 KVM；
+- [ ] release SBOM/provenance、systemd/launchd、升级/回滚演练；
+- [ ] Blueprint §20.3 全部门禁与已知差异为 0。
+
+实施顺序、wire 边界、外部输入与 evidence 规则见
+[Phase 4 implementation plan](phase4-implementation-plan.md)。当前 capabilities 仍必须
+报告兼容子集；在所有复选项有当前 commit 的真实证据前，不得改称 `phase_4_complete`。
+
+custom policy 与 `attach_headers` 已有 Rust 单元/集成边界证据，但当前 commit 尚未取得
+真实 Linux KVM 和 macOS HVF guest smoke，因此这里只表示实现切片完成，不表示跨平台
+平台验收完成。Differential executor 目前仅 3/82 cases 有真实 adapter，另外 79 cases
+会明确 blocked；缺少官方测试账户时不会发送请求或伪造通过结果。
+
 ## Required evidence before checking items
 
 | Area | Minimum evidence |

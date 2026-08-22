@@ -27,8 +27,8 @@ use box_api::{
     CustomAgentConfiguration, ExecRequest as ApiExecRequest, ExecResult, FileEntry as ApiFileEntry,
     GitCheckoutRequest, GitCloneRequest, GitCommitRequest, GitCommitResult, GitConfigResult,
     GitConfigUpdateRequest, GitCreatePrRequest, GitExecRequest, GitExecResult, GitPushRequest,
-    PatchField, PublicUrl, PullRequest, RunWebhook, ScheduleCreateRequest, ScheduleResponse,
-    ScheduleUpdateRequest, UploadFile, WriteFileRequest,
+    NetworkPolicyRequest, PatchField, PublicUrl, PullRequest, RunWebhook, ScheduleCreateRequest,
+    ScheduleResponse, ScheduleUpdateRequest, UploadFile, WriteFileRequest, validate_attach_headers,
 };
 use box_browser::{
     BrowserActAction, BrowserActResult, BrowserContent, BrowserInstruction, BrowserObserveResult,
@@ -42,6 +42,7 @@ use box_core::{
     Label, NetworkPolicy, ReadFileRequest, Run, RunEvent, RunEventType, RunId, RunKind,
     RunRepository, RunStatus, Runtime, UtcEpochMillis, WriteFileRequest as CoreWriteFileRequest,
 };
+use box_egress_http::{PerBoxCertificateAuthority, SecretPrivateKeyDer};
 use box_observability::{NoopTelemetry, Telemetry};
 use box_preview::{IssuedPreviewCredential, PreviewTokenCodec};
 use box_scheduler::{
@@ -377,6 +378,39 @@ pub trait ResourceAdmission: Send + Sync {
     async fn release_box(&self, box_id: BoxId) -> box_core::Result<()>;
 }
 
+/// Secrets needed only by the host network data plane. Debug output is
+/// structural and can never print header values.
+#[derive(Clone, Default, PartialEq, Eq)]
+pub struct RuntimeNetworkSecrets {
+    pub attach_headers: BTreeMap<String, BTreeMap<String, String>>,
+    pub ca_certificate_der: Vec<u8>,
+    pub ca_private_key_der: Option<SecretPrivateKeyDer>,
+}
+
+impl std::fmt::Debug for RuntimeNetworkSecrets {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("RuntimeNetworkSecrets")
+            .field("attach_header_rule_count", &self.attach_headers.len())
+            .field("ca_certificate_bytes", &self.ca_certificate_der.len())
+            .field(
+                "ca_private_key",
+                &self.ca_private_key_der.as_ref().map(|_| "[REDACTED]"),
+            )
+            .field("values", &"[REDACTED]")
+            .finish()
+    }
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct PersistedAttachHeaders {
+    version: u16,
+    rules: BTreeMap<String, BTreeMap<String, String>>,
+    ca_certificate_der: Vec<u8>,
+    ca_private_key_der: Vec<u8>,
+}
+
 /// A Phase-1 control-plane façade over the worker supervisor.
 #[async_trait]
 pub trait RuntimeController: Send + Sync {
@@ -385,6 +419,7 @@ pub trait RuntimeController: Send + Sync {
         &self,
         box_value: &DomainBox,
         environment: &BTreeMap<String, String>,
+        network_secrets: &RuntimeNetworkSecrets,
     ) -> box_core::Result<()>;
     async fn start(&self, box_id: BoxId) -> box_core::Result<()>;
     async fn stop(&self, box_id: BoxId, grace: Duration) -> box_core::Result<()>;
@@ -2937,6 +2972,8 @@ pub struct BoxService<B> {
     create_deadline: Duration,
     default_network_policy: NetworkPolicy,
     restricted_egress_enabled: bool,
+    custom_network_policy_enabled: bool,
+    attach_headers_enabled: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -3071,6 +3108,8 @@ impl<B> Clone for BoxService<B> {
             create_deadline: self.create_deadline,
             default_network_policy: self.default_network_policy.clone(),
             restricted_egress_enabled: self.restricted_egress_enabled,
+            custom_network_policy_enabled: self.custom_network_policy_enabled,
+            attach_headers_enabled: self.attach_headers_enabled,
         }
     }
 }
@@ -3127,6 +3166,8 @@ where
             create_deadline: CREATE_DEADLINE,
             default_network_policy: NetworkPolicy::DenyAll,
             restricted_egress_enabled: false,
+            custom_network_policy_enabled: false,
+            attach_headers_enabled: false,
         }
     }
     pub fn with_network_policy(
@@ -3134,8 +3175,23 @@ where
         default_network_policy: NetworkPolicy,
         restricted_egress_enabled: bool,
     ) -> Self {
+        self = self.with_network_policy_features(
+            default_network_policy,
+            restricted_egress_enabled,
+            restricted_egress_enabled,
+        );
+        self.attach_headers_enabled = restricted_egress_enabled;
+        self
+    }
+
+    pub fn with_network_policy_features(
+        mut self,
+        default_network_policy: NetworkPolicy,
+        restricted_egress_enabled: bool,
+        custom_network_policy_enabled: bool,
+    ) -> Self {
         assert!(
-            default_network_policy != NetworkPolicy::Custom,
+            !matches!(default_network_policy, NetworkPolicy::Custom(_)),
             "custom network policy is not a valid service default"
         );
         assert!(
@@ -3144,6 +3200,16 @@ where
         );
         self.default_network_policy = default_network_policy;
         self.restricted_egress_enabled = restricted_egress_enabled;
+        self.custom_network_policy_enabled = custom_network_policy_enabled;
+        self
+    }
+
+    pub fn with_attach_headers(mut self, attach_headers_enabled: bool) -> Self {
+        assert!(
+            !attach_headers_enabled || self.restricted_egress_enabled,
+            "attach_headers requires an armed restricted egress data plane"
+        );
+        self.attach_headers_enabled = attach_headers_enabled;
         self
     }
     pub fn with_browser_model_provider(
@@ -3857,12 +3923,17 @@ where
         }
     }
     fn response(value: &DomainBox) -> Value {
-        let network_mode = match value.spec.network_policy {
-            NetworkPolicy::DenyAll => "deny-all",
-            NetworkPolicy::RestrictedDefault => "allow-all",
-            NetworkPolicy::Custom => "custom",
+        let network_policy = match &value.spec.network_policy {
+            NetworkPolicy::DenyAll => json!({"mode":"deny-all"}),
+            NetworkPolicy::RestrictedDefault => json!({"mode":"allow-all"}),
+            NetworkPolicy::Custom(policy) => json!({
+                "mode":"custom",
+                "allowed_domains": policy.allowed_domains().iter().map(|value| value.as_str()).collect::<Vec<_>>(),
+                "allowed_cidrs": policy.allowed_cidrs().iter().map(ToString::to_string).collect::<Vec<_>>(),
+                "denied_cidrs": policy.denied_cidrs().iter().map(ToString::to_string).collect::<Vec<_>>(),
+            }),
         };
-        json!({"id":value.id.to_string(),"customer_id":value.account_id.to_string(),"status":status(value.status),"name":value.spec.name,"labels":value.spec.labels.iter().map(Label::as_str).collect::<Vec<_>>(),"enabled_skills":[],"runtime":runtime(value.spec.runtime),"size":size(value.spec.size),"browser":value.spec.browser,"keep_alive":value.spec.keep_alive,"ephemeral":value.spec.ephemeral.is_some(),"expires_at":value.spec.ephemeral.map(|e| value.created_at.as_unix_seconds()+i64::from(e.ttl_seconds)),"network_policy":{"mode":network_mode},"created_at":value.created_at.as_unix_seconds(),"updated_at":value.updated_at.as_unix_seconds()})
+        json!({"id":value.id.to_string(),"customer_id":value.account_id.to_string(),"status":status(value.status),"name":value.spec.name,"labels":value.spec.labels.iter().map(Label::as_str).collect::<Vec<_>>(),"enabled_skills":[],"runtime":runtime(value.spec.runtime),"size":size(value.spec.size),"browser":value.spec.browser,"keep_alive":value.spec.keep_alive,"ephemeral":value.spec.ephemeral.is_some(),"expires_at":value.spec.ephemeral.map(|e| value.created_at.as_unix_seconds()+i64::from(e.ttl_seconds)),"network_policy":network_policy,"created_at":value.created_at.as_unix_seconds(),"updated_at":value.updated_at.as_unix_seconds()})
     }
     async fn response_with_skills(
         &self,
@@ -4002,6 +4073,17 @@ where
         let github_token = req.github_token.take();
         let git_user_name = req.git_user_name.take();
         let git_user_email = req.git_user_email.take();
+        let attach_headers = req
+            .attach_headers
+            .take()
+            .as_ref()
+            .map(validate_attach_headers)
+            .transpose()?;
+        if attach_headers.is_some() && !self.attach_headers_enabled {
+            return Err(DomainError::feature_not_supported(
+                "attach_headers is disabled or its HTTPS interception data plane is not armed",
+            ));
+        }
         let skill_requests = parse_create_skill_requests(req.skills.take())?;
         let agent_config = req.custom_agent()?;
         req.agent = None;
@@ -4018,21 +4100,27 @@ where
         let requested_network_mode = req
             .network_policy
             .as_ref()
-            .and_then(|policy| policy.get("mode"))
-            .and_then(Value::as_str);
-        if requested_network_mode == Some("allow-all") && !self.restricted_egress_enabled {
+            .map(|policy| policy.mode.as_str());
+        if matches!(requested_network_mode, Some("allow-all")) && !self.restricted_egress_enabled {
             return Err(DomainError::feature_not_supported(
                 "allow-all requires the restricted-default egress data plane",
             ));
         }
+        if matches!(requested_network_mode, Some("custom"))
+            && (!self.restricted_egress_enabled || !self.custom_network_policy_enabled)
+        {
+            return Err(DomainError::feature_not_supported(
+                "custom network policy is disabled or its egress data plane is not armed",
+            ));
+        }
         if req.network_policy.is_none() {
-            req.network_policy = Some(json!({
-                "mode": match self.default_network_policy {
+            req.network_policy = Some(NetworkPolicyRequest::simple(
+                match self.default_network_policy {
                     NetworkPolicy::DenyAll => "deny-all",
                     NetworkPolicy::RestrictedDefault => "allow-all",
-                    NetworkPolicy::Custom => unreachable!("validated service default"),
-                }
-            }));
+                    NetworkPolicy::Custom(_) => unreachable!("validated service default"),
+                },
+            ));
         }
         let mut requested_env = creation_step(deadline, self.load_account_env(c)).await?;
         let skill_packages = self
@@ -4041,6 +4129,16 @@ where
         let box_env = parse_env_map(req.env_vars.take())?;
         requested_env.extend(box_env.clone());
         let spec = spec_from(req)?;
+        if attach_headers.is_some() && matches!(&spec.network_policy, NetworkPolicy::DenyAll) {
+            return Err(DomainError::validation(
+                "attach_headers requires allow-all or custom network policy",
+            ));
+        }
+        let requires_network_tls = attach_headers.is_some()
+            || matches!(
+                &spec.network_policy,
+                NetworkPolicy::Custom(policy) if !policy.allowed_domains().is_empty()
+            );
         // Persist the unbound Creating record before any image lookup or pull.
         // Binding is the first tracked background stage in finish_creation_core.
         let mut value = DomainBox::new(c, spec, now())?;
@@ -4057,6 +4155,10 @@ where
                 creation_step(deadline, self.runs.save_agent_config(c, value.id, config)).await?;
             }
             creation_step(deadline, self.persist_env(c, value.id, &box_env)).await?;
+            if requires_network_tls {
+                let rules = attach_headers.as_ref().cloned().unwrap_or_default();
+                creation_step(deadline, self.persist_attach_headers(c, value.id, &rules)).await?;
+            }
             for package in &skill_packages {
                 let skill = box_core::EnabledSkill::new(
                     c,
@@ -4200,8 +4302,9 @@ where
                 }
             }
             self.admission.commit_disk(value.id).await?;
+            let network_secrets = self.load_runtime_network_secrets(c, value.id).await?;
             tokio::select! {
-                result = self.runtime.prepare(&value, &requested_env) => result?,
+                result = self.runtime.prepare(&value, &requested_env, &network_secrets) => result?,
                 _ = cancellation.cancelled() => return Err(unavailable("box creation was cancelled")),
             }
             let boot_started = std::time::Instant::now();
@@ -6381,6 +6484,88 @@ where
         Ok(values)
     }
 
+    async fn persist_attach_headers(
+        &self,
+        context: AccountContext,
+        box_id: BoxId,
+        rules: &BTreeMap<String, BTreeMap<String, String>>,
+    ) -> box_core::Result<()> {
+        let canonical = if rules.is_empty() {
+            BTreeMap::new()
+        } else {
+            validate_attach_headers(rules)?
+        };
+        let authority = PerBoxCertificateAuthority::generate(box_id.to_string())
+            .map_err(|_| unavailable("attach_headers CA generation unavailable"))?;
+        let private_key = authority.private_key_der();
+        let plaintext = Zeroizing::new(
+            serde_json::to_vec(&PersistedAttachHeaders {
+                version: 1,
+                rules: canonical,
+                ca_certificate_der: authority.certificate_der().as_ref().to_vec(),
+                ca_private_key_der: private_key.expose_secret().to_vec(),
+            })
+            .map_err(|_| unavailable("attach_headers serialization unavailable"))?,
+        );
+        let reference = attach_headers_secret_ref(context, box_id)?;
+        let encrypted = box_secrets::encrypt(self.master_keys.as_ref(), reference, &plaintext)
+            .map_err(|_| unavailable("attach_headers encryption unavailable"))?;
+        self.secrets.put(encrypted).await
+    }
+
+    async fn ensure_network_tls_identity(
+        &self,
+        context: AccountContext,
+        box_id: BoxId,
+    ) -> box_core::Result<bool> {
+        let reference = attach_headers_secret_ref(context, box_id)?;
+        if self.secrets.get(&reference).await?.is_some() {
+            self.load_runtime_network_secrets(context, box_id).await?;
+            return Ok(false);
+        }
+        self.persist_attach_headers(context, box_id, &BTreeMap::new())
+            .await?;
+        Ok(true)
+    }
+
+    async fn load_runtime_network_secrets(
+        &self,
+        context: AccountContext,
+        box_id: BoxId,
+    ) -> box_core::Result<RuntimeNetworkSecrets> {
+        let reference = attach_headers_secret_ref(context, box_id)?;
+        let Some(encrypted) = self.secrets.get(&reference).await? else {
+            return Ok(RuntimeNetworkSecrets::default());
+        };
+        let plaintext = box_secrets::decrypt(self.master_keys.as_ref(), &encrypted, &reference)
+            .map_err(|_| unavailable("attach_headers decryption unavailable"))?;
+        let persisted = serde_json::from_slice::<PersistedAttachHeaders>(plaintext.as_slice())
+            .map_err(|_| unavailable("persisted attach_headers are invalid"))?;
+        if persisted.version != 1 {
+            return Err(unavailable(
+                "persisted attach_headers version is unsupported",
+            ));
+        }
+        let private_key = SecretPrivateKeyDer::new(persisted.ca_private_key_der)
+            .map_err(|_| unavailable("persisted attach_headers CA key is invalid"))?;
+        PerBoxCertificateAuthority::from_der(
+            box_id.to_string(),
+            persisted.ca_certificate_der.clone(),
+            private_key.clone(),
+        )
+        .map_err(|_| unavailable("persisted attach_headers CA is invalid"))?;
+        Ok(RuntimeNetworkSecrets {
+            attach_headers: if persisted.rules.is_empty() {
+                BTreeMap::new()
+            } else {
+                validate_attach_headers(&persisted.rules)
+                    .map_err(|_| unavailable("persisted attach_headers failed validation"))?
+            },
+            ca_certificate_der: persisted.ca_certificate_der,
+            ca_private_key_der: Some(private_key),
+        })
+    }
+
     pub async fn reconcile_startup(&self, _contexts: &[AccountContext]) -> box_core::Result<()> {
         self.reconciled.store(false, Ordering::Release);
         let mut global_failure = None;
@@ -6875,10 +7060,13 @@ where
             let mut environment = self.load_account_env(context).await?;
             environment.extend(self.load_box_env(context, value.id).await?);
             validate_environment(&environment)?;
+            let network_secrets = self.load_runtime_network_secrets(context, value.id).await?;
             // Runtime cleanup only removes worker state. The private disk remains
             // owned by ImageStore and must not be recloned during reconciliation.
             self.runtime.delete(value.id).await?;
-            self.runtime.prepare(value, &environment).await?;
+            self.runtime
+                .prepare(value, &environment, &network_secrets)
+                .await?;
             self.runtime.start(value.id).await?;
             self.wait_for_agent_health(context, value.id).await?;
             self.install_configured_skills(
@@ -7183,16 +7371,11 @@ fn spec_from(r: CreateBoxRequest) -> box_core::Result<BoxCreateSpec> {
     if r.snapshot_id.is_some() {
         return Err(DomainError::feature_not_supported("from snapshot"));
     }
-    let policy = match r.network_policy {
-        None => NetworkPolicy::DenyAll,
-        Some(v) if v.get("mode").and_then(Value::as_str) == Some("deny-all") => {
-            NetworkPolicy::DenyAll
-        }
-        Some(v) if v.get("mode").and_then(Value::as_str) == Some("allow-all") => {
-            NetworkPolicy::RestrictedDefault
-        }
-        _ => return Err(DomainError::feature_not_supported("custom network_policy")),
-    };
+    let policy = r
+        .network_policy
+        .map(|value| value.to_domain())
+        .transpose()?
+        .unwrap_or(NetworkPolicy::DenyAll);
     Ok(BoxCreateSpec {
         name: r.name,
         labels: r
@@ -7931,6 +8114,14 @@ impl<B> ApiServices for BoxService<B>
 where
     B: ServiceBoxRepository + 'static,
 {
+    fn capability_flags(&self) -> box_api::ApiCapabilityFlags {
+        box_api::ApiCapabilityFlags {
+            custom_network_policy: self.restricted_egress_enabled
+                && self.custom_network_policy_enabled,
+            attach_headers: self.restricted_egress_enabled && self.attach_headers_enabled,
+        }
+    }
+
     async fn ready(&self) -> box_core::Result<()> {
         if !self.reconciled.load(Ordering::Acquire) {
             return Err(unavailable("startup reconciliation has not completed"));
@@ -8133,8 +8324,13 @@ where
             let mut environment = self.load_account_env(c).await?;
             environment.extend(self.load_box_env(c, id).await?);
             validate_environment(&environment)?;
+            let network_secrets = self.load_runtime_network_secrets(c, id).await?;
             let mut reservation = Some(self.admission.reserve(id, b.spec.size).await?);
-            if let Err(error) = self.runtime.prepare(&b, &environment).await {
+            if let Err(error) = self
+                .runtime
+                .prepare(&b, &environment, &network_secrets)
+                .await
+            {
                 self.cleanup_failed_resume(c, id, reservation.take().expect("reservation exists"))
                     .await?;
                 return Err(error);
@@ -8342,6 +8538,82 @@ where
             config.command = replacement.command;
             config.args = replacement.args;
             config.protocol = replacement.protocol;
+            Ok(())
+        })
+        .await
+    }
+    async fn update_network_policy(
+        &self,
+        context: AccountContext,
+        raw_box_id: &str,
+        request: NetworkPolicyRequest,
+    ) -> box_core::Result<()> {
+        let policy = request.to_domain()?;
+        if matches!(policy, NetworkPolicy::RestrictedDefault) && !self.restricted_egress_enabled {
+            return Err(DomainError::feature_not_supported(
+                "network policy requires the egress data plane",
+            ));
+        }
+        if matches!(policy, NetworkPolicy::Custom(_))
+            && (!self.restricted_egress_enabled || !self.custom_network_policy_enabled)
+        {
+            return Err(DomainError::feature_not_supported(
+                "custom network policy is disabled or its egress data plane is not armed",
+            ));
+        }
+        let box_id = BoxId::parse(raw_box_id)?;
+        let (_guard, lease, mut value) = self.locked_box(context, box_id).await?;
+        self.run_with_lease(context, box_id, &lease, async {
+            if !matches!(value.status, BoxStatus::Idle | BoxStatus::Paused) {
+                return Err(DomainError::state_conflict(
+                    "network policy requires an idle or paused box",
+                ));
+            }
+            if value.spec.network_policy == policy {
+                return Ok(());
+            }
+            let needs_network_tls = matches!(
+                &policy,
+                NetworkPolicy::Custom(custom) if !custom.allowed_domains().is_empty()
+            );
+            let created_network_tls = if needs_network_tls {
+                self.ensure_network_tls_identity(context, box_id).await?
+            } else {
+                false
+            };
+            let was_idle = value.status == BoxStatus::Idle;
+            if was_idle
+                && let Err(error) = async {
+                    self.agent.quiesce(context, box_id).await?;
+                    self.agent.shutdown(context, box_id).await?;
+                    self.runtime.stop(box_id, SHUTDOWN_GRACE).await
+                }
+                .await
+            {
+                if created_network_tls {
+                    let reference = attach_headers_secret_ref(context, box_id)?;
+                    let _ = self.secrets.delete(&reference).await;
+                }
+                self.recover_box(context, box_id).await?;
+                return Err(error);
+            }
+            let before = value.clone();
+            let expected_version = value.version;
+            value.set_network_policy(policy, now())?;
+            if let Err(error) = self.boxes.save(context, &value, expected_version).await {
+                if created_network_tls {
+                    let reference = attach_headers_secret_ref(context, box_id)?;
+                    let _ = self.secrets.delete(&reference).await;
+                }
+                if was_idle {
+                    let mut recover = before;
+                    self.restart_during_reconcile(context, &mut recover).await?;
+                }
+                return Err(error);
+            }
+            if was_idle {
+                self.restart_during_reconcile(context, &mut value).await?;
+            }
             Ok(())
         })
         .await
@@ -8744,6 +9016,7 @@ where
             let result: box_core::Result<()> = async {
                 let mut environment = self.load_account_env(context).await?;
                 environment.extend(self.load_box_env(context, box_id).await?);
+                let network_secrets = self.load_runtime_network_secrets(context, box_id).await?;
                 self.agent.quiesce(context, box_id).await?;
                 restart_required = true;
                 self.agent.shutdown(context, box_id).await?;
@@ -8759,7 +9032,9 @@ where
                 snapshot.updated_at = now();
                 self.snapshots.save(context, &snapshot).await?;
                 ready_persisted = true;
-                self.runtime.prepare(&value, &environment).await?;
+                self.runtime
+                    .prepare(&value, &environment, &network_secrets)
+                    .await?;
                 self.runtime.start(box_id).await?;
                 self.wait_for_agent_health(context, box_id).await?;
                 Ok(())
@@ -8778,7 +9053,11 @@ where
                         self.runtime.delete(box_id).await?;
                         let mut environment = self.load_account_env(context).await?;
                         environment.extend(self.load_box_env(context, box_id).await?);
-                        self.runtime.prepare(&value, &environment).await?;
+                        let network_secrets =
+                            self.load_runtime_network_secrets(context, box_id).await?;
+                        self.runtime
+                            .prepare(&value, &environment, &network_secrets)
+                            .await?;
                         self.runtime.start(box_id).await?;
                         self.wait_for_agent_health(context, box_id).await
                     }
@@ -11098,6 +11377,12 @@ fn init_secret_ref(c: AccountContext, id: BoxId) -> box_core::Result<SecretRef> 
     Ok(reference)
 }
 
+fn attach_headers_secret_ref(c: AccountContext, id: BoxId) -> box_core::Result<SecretRef> {
+    let mut reference = secret_ref(c, &id.to_string(), "rules")?;
+    reference.kind = "attach_headers".into();
+    Ok(reference)
+}
+
 fn webhook_secret_ref(
     c: AccountContext,
     box_id: BoxId,
@@ -11505,6 +11790,7 @@ mod tests {
     struct FakeRuntime {
         states: Mutex<HashMap<BoxId, RuntimeInspection>>,
         prepared_env: Mutex<HashMap<BoxId, BTreeMap<String, String>>>,
+        prepared_network_secrets: Mutex<HashMap<BoxId, RuntimeNetworkSecrets>>,
         fail_start: AtomicBool,
         prepare_delay_ms: AtomicU64,
         hang_prepare: AtomicBool,
@@ -11523,6 +11809,7 @@ mod tests {
             &self,
             b: &DomainBox,
             environment: &BTreeMap<String, String>,
+            network_secrets: &RuntimeNetworkSecrets,
         ) -> box_core::Result<()> {
             if self.hang_prepare.load(Ordering::SeqCst) {
                 return std::future::pending().await;
@@ -11535,6 +11822,10 @@ mod tests {
                 .lock()
                 .await
                 .insert(b.id, environment.clone());
+            self.prepared_network_secrets
+                .lock()
+                .await
+                .insert(b.id, network_secrets.clone());
             self.states
                 .lock()
                 .await
@@ -12847,7 +13138,7 @@ mod tests {
         );
 
         let mut explicit = request(None);
-        explicit.network_policy = Some(json!({"mode":"deny-all"}));
+        explicit.network_policy = Some(NetworkPolicyRequest::simple("deny-all"));
         let explicit_response = service
             .create_box(context, explicit)
             .await
@@ -12856,12 +13147,181 @@ mod tests {
 
         let (_db, context, _repo, _images, _runtime, _agent, deny_service) = fixture().await;
         let mut allow = request(None);
-        allow.network_policy = Some(json!({"mode":"allow-all"}));
+        allow.network_policy = Some(NetworkPolicyRequest::simple("allow-all"));
         let error = deny_service
             .create_box(context, allow)
             .await
             .expect_err("unarmed service must reject allow-all");
         assert_eq!(error.code, "feature_not_supported");
+    }
+
+    #[tokio::test]
+    async fn custom_network_policy_create_and_put_are_tenant_scoped_and_restart_idle_runtime() {
+        let (_db, context, repo, _images, runtime, agent, service) = fixture().await;
+        let service = service.with_network_policy(NetworkPolicy::RestrictedDefault, true);
+        let mut create = request(None);
+        create.network_policy = Some(NetworkPolicyRequest {
+            mode: "custom".into(),
+            allowed_domains: Some(vec!["API.Example.com.".into()]),
+            allowed_cidrs: Some(vec!["93.184.216.0/24".into()]),
+            denied_cidrs: Some(vec!["10.0.0.0/8".into()]),
+        });
+        let created = service.create_box(context, create).await.unwrap();
+        let id = BoxId::parse(created["id"].as_str().unwrap()).unwrap();
+        wait_for_status(repo.as_ref(), context, id, BoxStatus::Idle).await;
+        let current = service.get_box(context, &id.to_string()).await.unwrap();
+        assert_eq!(current["network_policy"]["mode"], "custom");
+        assert_eq!(
+            current["network_policy"]["allowed_domains"],
+            json!(["api.example.com"])
+        );
+        let network_secrets = runtime
+            .prepared_network_secrets
+            .lock()
+            .await
+            .get(&id)
+            .cloned()
+            .expect("domain policy receives a per-Box TLS identity");
+        assert!(network_secrets.attach_headers.is_empty());
+        assert!(!network_secrets.ca_certificate_der.is_empty());
+        assert!(network_secrets.ca_private_key_der.is_some());
+
+        service
+            .update_network_policy(
+                context,
+                &id.to_string(),
+                NetworkPolicyRequest::simple("deny-all"),
+            )
+            .await
+            .unwrap();
+        assert_eq!(agent.quiesced.load(Ordering::SeqCst), 1);
+        assert_eq!(agent.shutdowns.load(Ordering::SeqCst), 1);
+        assert_eq!(runtime.stopped.load(Ordering::SeqCst), 1);
+        assert_eq!(runtime.deleted.load(Ordering::SeqCst), 1);
+        assert_eq!(
+            ServiceBoxRepository::find(repo.as_ref(), context, id)
+                .await
+                .unwrap()
+                .unwrap()
+                .spec
+                .network_policy,
+            NetworkPolicy::DenyAll
+        );
+
+        let other = AccountContext {
+            account_id: context.account_id,
+            tenant_id: box_core::TenantId::new(),
+        };
+        assert_eq!(
+            service
+                .update_network_policy(
+                    other,
+                    &id.to_string(),
+                    NetworkPolicyRequest::simple("allow-all"),
+                )
+                .await
+                .unwrap_err()
+                .code,
+            "not_found"
+        );
+    }
+
+    #[tokio::test]
+    async fn custom_network_policy_feature_flag_fails_closed() {
+        let (_db, context, _repo, _images, _runtime, _agent, service) = fixture().await;
+        let service =
+            service.with_network_policy_features(NetworkPolicy::RestrictedDefault, true, false);
+        assert!(!service.capability_flags().custom_network_policy);
+        assert!(!service.capability_flags().attach_headers);
+        let custom = NetworkPolicyRequest {
+            mode: "custom".into(),
+            allowed_domains: Some(vec!["api.example.com".into()]),
+            allowed_cidrs: None,
+            denied_cidrs: None,
+        };
+        let mut create = request(None);
+        create.network_policy = Some(custom.clone());
+
+        assert_eq!(
+            service.create_box(context, create).await.unwrap_err().code,
+            "feature_not_supported"
+        );
+
+        let created = service
+            .create_box(context, request(None))
+            .await
+            .expect("restricted-default remains enabled");
+        assert_eq!(
+            service
+                .update_network_policy(context, created["id"].as_str().unwrap(), custom)
+                .await
+                .unwrap_err()
+                .code,
+            "feature_not_supported"
+        );
+
+        let service =
+            service.with_network_policy_features(NetworkPolicy::RestrictedDefault, true, true);
+        assert!(service.capability_flags().custom_network_policy);
+        assert!(!service.capability_flags().attach_headers);
+        assert!(
+            service
+                .with_attach_headers(true)
+                .capability_flags()
+                .attach_headers
+        );
+    }
+
+    #[tokio::test]
+    async fn attach_headers_and_per_box_ca_are_encrypted_and_restored_for_runtime() {
+        let (_db, context, repo, _images, runtime, _agent, service) = fixture().await;
+        let service = service.with_network_policy(NetworkPolicy::RestrictedDefault, true);
+        let mut create = request(None);
+        create.attach_headers = Some(BTreeMap::from([(
+            "API.Example.com".into(),
+            BTreeMap::from([("Authorization".into(), "Bearer fixture-secret".into())]),
+        )]));
+
+        let created = service.create_box(context, create).await.unwrap();
+        let id = BoxId::parse(created["id"].as_str().unwrap()).unwrap();
+        wait_for_status(repo.as_ref(), context, id, BoxStatus::Idle).await;
+
+        let prepared = runtime
+            .prepared_network_secrets
+            .lock()
+            .await
+            .get(&id)
+            .cloned()
+            .expect("runtime receives network secrets");
+        assert_eq!(
+            prepared.attach_headers["api.example.com"]["authorization"],
+            "Bearer fixture-secret"
+        );
+        assert!(!prepared.ca_certificate_der.is_empty());
+        assert!(prepared.ca_private_key_der.is_some());
+        assert!(!format!("{prepared:?}").contains("fixture-secret"));
+
+        let reference = attach_headers_secret_ref(context, id).unwrap();
+        let encrypted = service.secrets.get(&reference).await.unwrap().unwrap();
+        assert!(
+            !encrypted
+                .ciphertext
+                .windows(b"fixture-secret".len())
+                .any(|window| window == b"fixture-secret")
+        );
+        assert!(!format!("{encrypted:?}").contains("fixture-secret"));
+
+        let restored = service
+            .load_runtime_network_secrets(context, id)
+            .await
+            .unwrap();
+        let private_key = restored.ca_private_key_der.clone().unwrap();
+        PerBoxCertificateAuthority::from_der(
+            id.to_string(),
+            restored.ca_certificate_der,
+            private_key,
+        )
+        .expect("persisted CA survives restart validation");
     }
 
     #[tokio::test]

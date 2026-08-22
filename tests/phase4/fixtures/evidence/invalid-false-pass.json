@@ -1,0 +1,17 @@
+{
+  "schema": "boxd-phase4-evidence-v1",
+  "suite": "fixture-release-integrity",
+  "commit": "0123456789abcdef0123456789abcdef01234567",
+  "platform": {"os": "linux", "arch": "x86_64", "virtualization": "none"},
+  "toolchain": {"python": "3.12.0"},
+  "inputs": [
+    {"name": "release-manifest", "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
+  ],
+  "cases": [
+    {"id": "release.integrity", "expected": "pass", "observed": "credential missing", "status": "blocked"}
+  ],
+  "artifacts": [],
+  "external_requirements": [],
+  "secret_scan": {"status": "pass", "scanner": "fixture-scanner", "findings": 0},
+  "summary": {"status": "pass", "passed": 0, "failed": 0, "blocked": 1, "total": 1}
+}

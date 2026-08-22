@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://boxd.invalid/schemas/upstash-box-0.6.3/differential-run-manifest.json",
+  "title": "boxd pinned SDK differential run evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "sdk", "mode", "status", "selection", "targets", "limits", "executor", "gates", "results"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "sdk": { "const": "@upstash/box@0.6.3" },
+    "mode": { "const": "authenticated-differential" },
+    "status": { "enum": ["blocked", "passed", "failed"] },
+    "selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contracts", "cases"],
+      "properties": {
+        "contracts": { "type": "integer", "minimum": 0, "maximum": 78 },
+        "cases": { "type": "integer", "minimum": 0, "maximum": 82 }
+      }
+    },
+    "targets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["official", "local"],
+      "properties": {
+        "official": { "type": ["string", "null"] },
+        "local": { "type": ["string", "null"] }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["request_timeout_ms", "global_timeout_ms", "concurrency", "budget_usd"],
+      "properties": {
+        "request_timeout_ms": { "type": "integer", "minimum": 1 },
+        "global_timeout_ms": { "type": "integer", "minimum": 1 },
+        "concurrency": { "type": "integer", "minimum": 1, "maximum": 8 },
+        "budget_usd": { "type": ["number", "null"], "minimum": 0 }
+      }
+    },
+    "executor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapter_cases", "blocked_without_adapter"],
+      "properties": {
+        "adapter_cases": { "type": "integer", "minimum": 0, "maximum": 82 },
+        "blocked_without_adapter": { "type": "integer", "minimum": 0, "maximum": 82 }
+      }
+    },
+    "gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed", "blockers"],
+      "properties": {
+        "allowed": { "type": "boolean" },
+        "blockers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["gate", "reason"],
+            "properties": {
+              "gate": { "enum": ["credential", "base_url", "resource_prefix", "runtime", "provider", "externally_mutating_opt_in", "cost_opt_in", "budget", "adapter"] },
+              "reason": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "results": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["executed_cases", "passed_cases", "failed_cases", "blocked_cases", "cleanup_failed_cases", "evidence_redacted", "cases"],
+      "properties": {
+        "executed_cases": { "type": "integer", "minimum": 0 },
+        "passed_cases": { "type": "integer", "minimum": 0 },
+        "failed_cases": { "type": "integer", "minimum": 0 },
+        "blocked_cases": { "type": "integer", "minimum": 0 },
+        "cleanup_failed_cases": { "type": "integer", "minimum": 0 },
+        "evidence_redacted": { "const": true },
+        "cases": { "type": "array", "items": { "type": "object" } }
+      }
+    }
+  }
+}

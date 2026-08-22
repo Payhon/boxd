@@ -1,0 +1,31 @@
+{
+  "schema": "boxd-phase4-evidence-v1",
+  "suite": "fixture-release-integrity",
+  "commit": "0123456789abcdef0123456789abcdef01234567",
+  "platform": {"os": "linux", "arch": "x86_64", "virtualization": "none"},
+  "toolchain": {"python": "3.12.0"},
+  "inputs": [
+    {"name": "release-manifest", "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
+  ],
+  "cases": [
+    {
+      "id": "release.integrity",
+      "expected": "all staged artifact hashes match",
+      "observed": "all staged artifact hashes matched",
+      "status": "pass",
+      "artifact_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  ],
+  "artifacts": [
+    {"path": "reports/release-integrity.json", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}
+  ],
+  "external_requirements": [
+    {
+      "id": "linux-kvm",
+      "status": "blocked",
+      "detail": "hosted fixture has no writable KVM device"
+    }
+  ],
+  "secret_scan": {"status": "pass", "scanner": "fixture-scanner", "findings": 0},
+  "summary": {"status": "blocked", "passed": 1, "failed": 0, "blocked": 0, "total": 1}
+}

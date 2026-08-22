@@ -1,0 +1,21 @@
+{
+  "schema": "boxd-release-input-v1",
+  "version": "0.4.0-rc.1",
+  "commit": "0123456789abcdef0123456789abcdef01234567",
+  "target": "linux-x86_64",
+  "source_date_epoch": 1787356800,
+  "toolchain": {"rust": "1.94.0", "node": "22.18.0", "python": "3.12.0"},
+  "builder": {"id": "fixture-builder", "kind": "local-hermetic"},
+  "provenance": {
+    "uri": "urn:boxd:provenance:fixture",
+    "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+  },
+  "artifacts": {
+    "boxd": "boxd-linux-x86_64",
+    "libkrun": "lib/libkrun.so.1",
+    "libkrunfw": "lib/libkrunfw.so.5",
+    "runtime_bundle": "runtimes/box-runtime-node-x86_64.tar.zst",
+    "sbom": "sbom.spdx.json",
+    "licenses": "licenses/index.json"
+  }
+}

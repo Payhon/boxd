@@ -38,6 +38,7 @@ npm run browser
 npm run schedule
 npm run snapshot
 npm run ephemeral
+npm run network-policy
 ```
 
 | Script | Demonstrates | Notes |
@@ -47,6 +48,7 @@ npm run ephemeral
 | `03-schedule.mjs` | create/pause/resume/get/delete an exec schedule | Waits up to 90 seconds for the next UTC cron minute. |
 | `04-snapshot.mjs` | snapshot, restore, verify persisted file, cleanup | Requires enough disk space for the restored box. |
 | `05-ephemeral.mjs` | TTL box, exec and file roundtrip | Uses a 300-second TTL and also deletes explicitly. |
+| `06-network-policy.mjs` | custom domain/CIDR policy | Requires `features.custom_network_policy=true`; verifies one allowed public domain and one disallowed public domain. |
 
 To choose a different browser target or output file:
 
@@ -56,9 +58,10 @@ BOXD_EXAMPLE_SCREENSHOT=/tmp/boxd-example.png \
   npm run browser
 ```
 
-The examples deliberately avoid managed-agent credentials, `attach_headers`,
-and complete custom network policy because those remain explicit
-`feature_not_supported` boundaries. Nested tree download is also not used: the
+The examples deliberately avoid managed-agent credentials and `attach_headers` secrets.
+`attach_headers` is available only when `features.attach_headers=true`, and should be
+verified against an operator-controlled endpoint without printing the injected value.
+Nested tree download is also not used: the
 pinned SDK cannot preserve nested local directories, so boxd returns a truthful
 HTTP 501 for that case. See `docs/manual/boxd-local-sandbox-testing.md` for the
 full build, runtime import, doctor, and manual validation procedure.

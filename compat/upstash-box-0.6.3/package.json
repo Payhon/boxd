@@ -10,7 +10,10 @@
     "check:coverage": "node scripts/capture-runner.mjs",
     "list:cases": "node scripts/capture-runner.mjs --list-cases",
     "generate:coverage": "node scripts/generate-coverage.mjs",
-    "check:official-readonly": "node scripts/official-differential.mjs",
+    "generate:differential": "node scripts/generate-differential-matrix.mjs",
+    "check:differential": "node scripts/check-differential.mjs",
+    "run:differential": "node scripts/differential-runner.mjs",
+    "check:official-readonly": "node scripts/differential-runner.mjs --case 'GET /v2/box'",
     "vendor:upstream": "node scripts/vendor-upstream.mjs",
     "verify:upstream": "node scripts/vendor-upstream.mjs && node scripts/check-manifest.mjs"
   },

@@ -1,6 +1,15 @@
 //! The only crate permitted to use libkrun FFI. `start_enter` is deliberately
 //! private to the worker entry point: it consumes the context and may call `exit`.
-use box_egress::{GUEST_MAC, ProxyLimits, spawn_restricted_proxy};
+use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
+use box_egress::{
+    CustomNetworkPolicy, GUEST_MAC, HttpInterceptionConfig, ProxyLimits, spawn_custom_proxy,
+    spawn_custom_proxy_with_http_interception, spawn_restricted_proxy,
+    spawn_restricted_proxy_with_http_interception,
+};
+use box_egress_http::{
+    AttachHeaderRule, AttachHeaderRules, HostPattern, PerBoxCertificateAuthority,
+    SecretHeaderValue, SecretPrivateKeyDer,
+};
 use box_runtime::{
     DriverCapabilities, FirmwareIdentity, LibraryIdentity, MAX_WORKER_SPEC_BYTES, NetworkMode,
     Result as RuntimeResult, RuntimeError, WorkerSpec,
@@ -14,6 +23,7 @@ use std::{
     os::unix::fs::MetadataExt,
     os::unix::net::UnixStream,
     path::{Path, PathBuf},
+    sync::Arc,
     time::{Duration, Instant},
 };
 
@@ -1840,6 +1850,7 @@ impl<'a, A: KrunApi> Context<'a, A> {
         match s.network_mode {
             NetworkMode::DenyAll => self.configure_deny_all_network(),
             NetworkMode::RestrictedDefault => self.configure_restricted_network(),
+            NetworkMode::Custom => self.configure_network_pair("custom", NET_FLAG_DHCP_CLIENT),
         }
     }
 
@@ -1887,6 +1898,7 @@ impl<'a, A: KrunApi> Context<'a, A> {
             .network_peer
             .take()
             .ok_or_else(|| RuntimeError("network peer is not configured".into()))?;
+        let interception = http_interception(spec)?;
         match spec.network_mode {
             NetworkMode::DenyAll => {
                 std::thread::Builder::new()
@@ -1900,14 +1912,54 @@ impl<'a, A: KrunApi> Context<'a, A> {
             }
             NetworkMode::RestrictedDefault => {
                 let resolvers = spec.dns_servers.clone();
-                spawn_restricted_proxy(
-                    peer,
-                    resolvers,
-                    spec.dns_over_https_name.clone(),
-                    ProxyLimits::default(),
-                )
-                .map_err(|error| {
+                let result = match interception {
+                    Some(interception) => spawn_restricted_proxy_with_http_interception(
+                        peer,
+                        resolvers,
+                        spec.dns_over_https_name.clone(),
+                        ProxyLimits::default(),
+                        interception,
+                    ),
+                    None => spawn_restricted_proxy(
+                        peer,
+                        resolvers,
+                        spec.dns_over_https_name.clone(),
+                        ProxyLimits::default(),
+                    ),
+                };
+                result.map_err(|error| {
                     RuntimeError(format!("cannot start restricted network proxy: {error}"))
+                })?;
+            }
+            NetworkMode::Custom => {
+                let policy = spec.custom_network_policy.as_ref().ok_or_else(|| {
+                    RuntimeError("custom network policy is missing after validation".into())
+                })?;
+                let policy = CustomNetworkPolicy::from_strings(
+                    policy.allowed_domains.clone(),
+                    policy.allowed_cidrs.clone(),
+                    policy.denied_cidrs.clone(),
+                )
+                .map_err(|_| RuntimeError("custom network policy failed revalidation".into()))?;
+                let result = match interception {
+                    Some(interception) => spawn_custom_proxy_with_http_interception(
+                        peer,
+                        spec.dns_servers.clone(),
+                        spec.dns_over_https_name.clone(),
+                        ProxyLimits::default(),
+                        policy,
+                        interception,
+                    ),
+                    None => spawn_custom_proxy(
+                        peer,
+                        spec.dns_servers.clone(),
+                        spec.dns_over_https_name.clone(),
+                        ProxyLimits::default(),
+                        policy,
+                    ),
+                };
+                result.map_err(|error| {
+                    RuntimeError(format!("cannot start custom network proxy: {error}"))
                 })?;
             }
         }
@@ -1918,6 +1970,41 @@ impl<'a, A: KrunApi> Context<'a, A> {
         let _libkrun_owned_fd = guest.into_raw_fd();
         Ok(())
     }
+}
+
+fn http_interception(spec: &WorkerSpec) -> RuntimeResult<Option<Arc<HttpInterceptionConfig>>> {
+    let Some(attach_headers) = &spec.attach_headers else {
+        return Ok(None);
+    };
+    let mut rules = Vec::with_capacity(attach_headers.rules.len());
+    for (pattern, headers) in &attach_headers.rules {
+        let pattern = HostPattern::parse(pattern)
+            .map_err(|_| RuntimeError("invalid attach_headers host pattern".into()))?;
+        let mut values = Vec::with_capacity(headers.len());
+        for (name, value) in headers {
+            let value = SecretHeaderValue::new(value.as_bytes().to_vec())
+                .map_err(|_| RuntimeError("invalid attach_headers value".into()))?;
+            values.push((name.as_str(), value));
+        }
+        rules.push(
+            AttachHeaderRule::new(pattern, values)
+                .map_err(|_| RuntimeError("invalid attach_headers rule".into()))?,
+        );
+    }
+    let rules = AttachHeaderRules::new(rules)
+        .map_err(|_| RuntimeError("invalid attach_headers rules".into()))?;
+    let private_key = SecretPrivateKeyDer::new(attach_headers.ca_private_key_der.clone())
+        .map_err(|_| RuntimeError("invalid attach_headers CA private key".into()))?;
+    let authority = PerBoxCertificateAuthority::from_der(
+        spec.box_id.clone(),
+        attach_headers.ca_certificate_der.clone(),
+        private_key,
+    )
+    .map_err(|_| RuntimeError("invalid attach_headers CA certificate or key".into()))?;
+    Ok(Some(Arc::new(HttpInterceptionConfig::new(
+        Arc::new(authority),
+        rules,
+    ))))
 }
 
 fn guest_environment(spec: &WorkerSpec) -> RuntimeResult<Vec<String>> {
@@ -1943,6 +2030,7 @@ fn guest_environment(spec: &WorkerSpec) -> RuntimeResult<Vec<String>> {
             match spec.network_mode {
                 NetworkMode::DenyAll => "deny-all",
                 NetworkMode::RestrictedDefault => "restricted-default",
+                NetworkMode::Custom => "custom",
             }
         ),
         format!("BOXD_RUNTIME={}", spec.runtime),
@@ -1952,6 +2040,21 @@ fn guest_environment(spec: &WorkerSpec) -> RuntimeResult<Vec<String>> {
         "BOXD_WORKSPACE=/workspace".to_owned(),
         format!("BOXD_AGENT_PATH={GUEST_AGENT_PATH}"),
     ];
+    if let Some(attach_headers) = &spec.attach_headers {
+        let body = BASE64.encode(&attach_headers.ca_certificate_der);
+        let mut pem = String::from("-----BEGIN CERTIFICATE-----\n");
+        for chunk in body.as_bytes().chunks(64) {
+            pem.push_str(std::str::from_utf8(chunk).map_err(|_| {
+                RuntimeError("egress CA base64 encoding produced invalid UTF-8".into())
+            })?);
+            pem.push('\n');
+        }
+        pem.push_str("-----END CERTIFICATE-----\n");
+        environment.push(format!(
+            "BOXD_EGRESS_CA_PEM_BASE64={}",
+            BASE64.encode(pem.as_bytes())
+        ));
+    }
     environment.extend(
         spec.guest_environment
             .iter()
@@ -2503,6 +2606,8 @@ mod tests {
                 artifact_sha256: "0".repeat(64),
             },
             network_mode: NetworkMode::DenyAll,
+            custom_network_policy: None,
+            attach_headers: None,
             dns_servers: vec![],
             dns_over_https_name: None,
         };
@@ -2572,6 +2677,8 @@ mod tests {
                 artifact_sha256: "0".repeat(64),
             },
             network_mode: NetworkMode::DenyAll,
+            custom_network_policy: None,
+            attach_headers: None,
             dns_servers: vec![],
             dns_over_https_name: None,
         };
@@ -2637,7 +2744,7 @@ mod tests {
             std::fs::write(root.join(name), []).unwrap();
         }
         let mut c = Context::create(&f).unwrap();
-        let s = WorkerSpec {
+        let mut s = WorkerSpec {
             version: WORKER_SPEC_VERSION,
             box_id: "01890f3e-7b2a-7cc1-8000-000000000001".into(),
             expected_parent_pid: 0,
@@ -2676,6 +2783,8 @@ mod tests {
                 artifact_sha256: "0".repeat(64),
             },
             network_mode: NetworkMode::RestrictedDefault,
+            custom_network_policy: None,
+            attach_headers: None,
             dns_servers: vec!["1.1.1.1".parse().unwrap()],
             dns_over_https_name: None,
         };
@@ -2687,6 +2796,92 @@ mod tests {
                 .iter()
                 .any(|value| value == "BOXD_NETWORK_MODE=restricted-default")
         );
+        s.network_mode = NetworkMode::Custom;
+        s.custom_network_policy = Some(box_runtime::CustomNetworkPolicySpec {
+            allowed_domains: vec!["api.example.com".into()],
+            allowed_cidrs: vec![],
+            denied_cidrs: vec!["10.0.0.0/8".into()],
+        });
+        let mut custom = Context::create(&f).unwrap();
+        custom.configure(&s).unwrap();
+        assert_eq!(f.network_flags.borrow().last(), Some(&NET_FLAG_DHCP_CLIENT));
+    }
+
+    #[test]
+    fn attach_headers_builds_redacted_host_interception_and_exports_only_the_ca() {
+        let authority =
+            PerBoxCertificateAuthority::generate("01890f3e-7b2a-7cc1-8000-000000000001").unwrap();
+        let certificate = authority.certificate_der().as_ref().to_vec();
+        let private_key = authority.private_key_der().expose_secret().to_vec();
+        let header_secret = "phase4-header-secret";
+        let spec = WorkerSpec {
+            version: WORKER_SPEC_VERSION,
+            box_id: "01890f3e-7b2a-7cc1-8000-000000000001".into(),
+            expected_parent_pid: 0,
+            agent_protocol_version: 1,
+            browser_enabled: false,
+            runtime: "node".into(),
+            arch: "aarch64".into(),
+            data_root: Default::default(),
+            base_root_disk: Default::default(),
+            writable_data_disk: Default::default(),
+            vcpus: 1,
+            memory_mib: 128,
+            console_path: Default::default(),
+            vsock_socket: Default::default(),
+            vsock_port: 18_080,
+            boot_nonce: "0123456789abcdef".repeat(4),
+            workdir: Default::default(),
+            guest_environment: Default::default(),
+            limits: box_runtime::ResourceLimits {
+                vcpus: 1,
+                memory_mib: 128,
+                host_worker_max_processes: 2,
+                host_worker_max_open_files: 16,
+            },
+            libkrun_library: Default::default(),
+            libkrun_identity: LibraryIdentity {
+                tag: LIBKRUN_TAG.into(),
+                commit: LIBKRUN_COMMIT.into(),
+                header_sha256: LIBKRUN_HEADER_SHA256.into(),
+                artifact_sha256: "0".repeat(64),
+            },
+            libkrun_firmware: Default::default(),
+            libkrun_firmware_identity: FirmwareIdentity {
+                version: "5".into(),
+                soname: FIRMWARE_SONAME.into(),
+                artifact_sha256: "0".repeat(64),
+            },
+            network_mode: NetworkMode::RestrictedDefault,
+            custom_network_policy: None,
+            attach_headers: Some(box_runtime::AttachHeadersSpec {
+                rules: [(
+                    "api.example.com".into(),
+                    [("authorization".into(), header_secret.into())].into(),
+                )]
+                .into(),
+                ca_certificate_der: certificate,
+                ca_private_key_der: private_key.clone(),
+            }),
+            dns_servers: vec!["1.1.1.1".parse().unwrap()],
+            dns_over_https_name: None,
+        };
+
+        let interception = http_interception(&spec).unwrap().unwrap();
+        assert_eq!(
+            format!("{interception:?}"),
+            "HttpInterceptionConfig([REDACTED])"
+        );
+        let environment = guest_environment(&spec).unwrap();
+        assert!(
+            environment
+                .iter()
+                .any(|entry| entry.starts_with("BOXD_EGRESS_CA_PEM_BASE64="))
+        );
+        let joined_environment = environment.join("\n");
+        assert!(!joined_environment.contains(header_secret));
+        assert!(!joined_environment.contains(&BASE64.encode(&private_key)));
+        assert!(!format!("{spec:?}").contains(header_secret));
     }
 
     #[test]
@@ -2741,6 +2936,8 @@ mod tests {
                 artifact_sha256: "0".repeat(64),
             },
             network_mode: NetworkMode::DenyAll,
+            custom_network_policy: None,
+            attach_headers: None,
             dns_servers: vec![],
             dns_over_https_name: None,
         };
@@ -2926,6 +3123,8 @@ mod tests {
                 artifact_sha256: format!("{:x}", Sha256::digest(b"verified-firmware")),
             },
             network_mode: NetworkMode::DenyAll,
+            custom_network_policy: None,
+            attach_headers: None,
             dns_servers: vec![],
             dns_over_https_name: None,
         };

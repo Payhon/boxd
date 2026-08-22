@@ -177,14 +177,16 @@ pub async fn serve(config: AppConfig) -> Result<(), String> {
         preview_base_url,
     )
     .map_err(|error| format!("preview service initialization failed: {error}"))?
-    .with_network_policy(
+    .with_network_policy_features(
         if config.network.default_policy == "restricted-default" {
             NetworkPolicy::RestrictedDefault
         } else {
             NetworkPolicy::DenyAll
         },
         config.network.default_policy == "restricted-default",
-    );
+        config.features.custom_network_policy,
+    )
+    .with_attach_headers(config.features.attach_headers);
     let service = if config.features.schedules {
         service.with_schedule_repository(repository)
     } else {

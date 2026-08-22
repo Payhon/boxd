@@ -2023,8 +2023,8 @@ impl ApiKeyStore {
 mod tests {
     use super::*;
     use box_core::{
-        AccountId, BoxSize, BoxStatus, Label, NetworkPolicy, Preview, PreviewAuth,
-        PreviewRepository, Runtime, SnapshotRepository, SnapshotStatus, TenantId,
+        AccountId, BoxSize, BoxStatus, CustomNetworkPolicy, Label, NetworkPolicy, Preview,
+        PreviewAuth, PreviewRepository, Runtime, SnapshotRepository, SnapshotStatus, TenantId,
     };
     use box_scheduler::{ScheduleKind, ScheduleSpec, UtcCron};
     use std::collections::BTreeMap;
@@ -2055,6 +2055,18 @@ mod tests {
             account_id: AccountId::new(),
             tenant_id: TenantId::new(),
         }
+    }
+    fn long_custom_network_policy() -> CustomNetworkPolicy {
+        let allowed_domains = (0..32)
+            .map(|index| format!("rule-{index}.example.com"))
+            .collect();
+        let allowed_cidrs = (0..16)
+            .map(|index| format!("198.51.100.{index}/32"))
+            .collect();
+        let denied_cidrs = (0..15)
+            .map(|index| format!("203.0.113.{index}/32"))
+            .collect();
+        CustomNetworkPolicy::new(allowed_domains, allowed_cidrs, denied_cidrs).unwrap()
     }
     fn box_value(c: AccountContext) -> DomainBox {
         let mut value = DomainBox::new(
@@ -2103,6 +2115,22 @@ mod tests {
         seed_account(&db, context).await;
         let boxes = SeaRepository::new(db.clone());
         let mut value = box_value(context);
+        value.spec.network_policy = NetworkPolicy::Custom(long_custom_network_policy());
+        let NetworkPolicy::Custom(policy) = &value.spec.network_policy else {
+            unreachable!("portable fixture must exercise custom network policy");
+        };
+        assert_eq!(
+            policy.allowed_domains().len()
+                + policy.allowed_cidrs().len()
+                + policy.denied_cidrs().len(),
+            63
+        );
+        assert!(
+            serde_json::to_string(&value.spec.network_policy)
+                .unwrap()
+                .len()
+                > 32
+        );
         BoxRepository::create(&boxes, context, &value)
             .await
             .unwrap();

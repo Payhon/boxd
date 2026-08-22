@@ -23,8 +23,9 @@ bundle 和 pinned `@upstash/box@0.6.3` SDK 完成 Phase 3 验收，证明以下�
 
 - macOS 验收只证明 Apple Silicon HVF；Linux KVM 仍需在原生 KVM 主机执行门禁；
 - 真实执行证据覆盖 Node/Browser bundle，不等于十种 runtime 均已发布和验收；
-- nested tree download、managed agent options、完整 custom network policy、HTTPS
-  `attach_headers` 等能力仍会明确返回 HTTP 501 `feature_not_supported`；
+- nested tree download 与 managed agent options 等能力仍会明确返回 HTTP 501
+  `feature_not_supported`；custom network policy 和 HTTPS `attach_headers` 已完成
+  feature-gated 数据面接线，但只有完成下文真实 HVF/KVM 测试后才能作为平台验收结论；
 - 本地 ad-hoc 签名不是 Developer ID、Team ID、hardened runtime、notarization 或
   production release 证据。
 
@@ -296,11 +297,13 @@ allow_private_cidrs = false
 [features]
 browser = true
 schedules = true
-custom_network_policy = false
-attach_headers = false
+custom_network_policy = true
+attach_headers = true
 ```
 
-没有 Browser bundle 时可临时设置 `browser=false`；不要把未实现项设为 true。配置的
+没有 Browser bundle 时可临时设置 `browser=false`。若不测试 Phase 4 网络能力，将
+`custom_network_policy=false`、`attach_headers=false`；关闭时相关 SDK 请求会返回
+HTTP 501，而不会静默忽略。配置的
 20 GiB 必须与 bundle rootfs 的签名大小一致，并且创建第一个 Box 前至少要有约
 `20 + minimum_free_gib` GiB 可用空间。
 
@@ -539,6 +542,45 @@ const box = await Box.create({
 完整 Browser/recording/OTLP 回归入口是 `scripts/phase3-browser-smoke.mjs`，它还要求
 受控 model/OTLP fixture。普通人工测试不要在未准备 fixture 时直接把其失败解释为
 Browser basic action 失败。
+
+### 9.5 Phase 4 custom policy 与 `attachHeaders`
+
+仓库的常见 SDK 示例可以直接做 custom policy 人工测试：
+
+```sh
+npm --prefix examples ci
+npm --prefix examples run check
+BOXD_EXAMPLE_URL=https://example.com npm --prefix examples run network-policy
+```
+
+脚本会创建只允许目标 hostname 的 Box，验证目标请求成功、另一个公开 hostname 被
+阻断，并在 `finally` 删除 Box。此结果仍必须来自真实 guest；Node syntax check 不能代替。
+
+`attachHeaders` 只应对你控制的 HTTPS endpoint 测试。下面的 header value 应从当前
+终端读取，不要写进脚本、TOML、shell history 或验收报告：
+
+```js
+const box = await Box.create({
+  runtime: "node",
+  networkPolicy: {
+    mode: "custom",
+    allowedDomains: ["headers.your-test-domain.example"],
+  },
+  attachHeaders: {
+    "headers.your-test-domain.example": {
+      authorization: process.env.BOXD_MANUAL_ATTACH_VALUE,
+    },
+  },
+  timeout: 300_000,
+});
+```
+
+随后在 guest 中请求该 endpoint，并在 endpoint 服务端确认 header 已注入；不要让
+endpoint 回显 credential。还应追加两项反向验证：请求未列入 custom policy 的 hostname
+必须失败；把 `features.attach_headers=false` 后，同一个 create 必须返回 HTTP 501
+`feature_not_supported`。boxd 日志、worker argv/environment、Console 与 audit 中都不应
+出现 header value。当前 interception 仅支持有界 HTTP/1.1；HTTP/2、CONNECT、Upgrade、
+chunked request 或歧义 framing 会 fail closed。
 
 ## 10. 人工验证 daemon restart
 

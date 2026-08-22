@@ -1,0 +1,1879 @@
+{
+  "schema_version": 1,
+  "sdk": "@upstash/box@0.6.3",
+  "source_commit": "677ca0827a6f54bc328b4b3e97d32a7cc5ac1934",
+  "generated_from": [
+    {
+      "path": "route-manifest.json",
+      "sha256": "97cd48ffa125aee88457c219700b56ffa27071fb7739ecb94fac1d82997a8ef4"
+    },
+    {
+      "path": "public-case-registry.mjs",
+      "sha256": "85fc4e79a936ebf185829d662db3602d81dad059e9f009c36a04dc509ab5f4bb"
+    }
+  ],
+  "summary": {
+    "contracts": 78,
+    "public_cases": 82,
+    "uncovered_contracts": 0
+  },
+  "contracts": [
+    {
+      "contract_id": "DELETE /v2/box",
+      "method": "DELETE",
+      "path": "/v2/box",
+      "relation": "direct",
+      "case_ids": [
+        "DELETE /v2/box"
+      ]
+    },
+    {
+      "contract_id": "DELETE /v2/box/{box_id}",
+      "method": "DELETE",
+      "path": "/v2/box/{box_id}",
+      "relation": "direct",
+      "case_ids": [
+        "DELETE /v2/box/{box_id}"
+      ]
+    },
+    {
+      "contract_id": "DELETE /v2/box/{box_id}/browser/tabs/{tab_id}",
+      "method": "DELETE",
+      "path": "/v2/box/{box_id}/browser/tabs/{tab_id}",
+      "relation": "direct",
+      "case_ids": [
+        "DELETE /v2/box/{box_id}/browser/tabs/{tab_id}"
+      ]
+    },
+    {
+      "contract_id": "DELETE /v2/box/{box_id}/config/labels/{label}",
+      "method": "DELETE",
+      "path": "/v2/box/{box_id}/config/labels/{label}",
+      "relation": "direct",
+      "case_ids": [
+        "DELETE /v2/box/{box_id}/config/labels/{label}"
+      ]
+    },
+    {
+      "contract_id": "DELETE /v2/box/{box_id}/config/skills/{skill_id+}",
+      "method": "DELETE",
+      "path": "/v2/box/{box_id}/config/skills/{skill_id+}",
+      "relation": "direct",
+      "case_ids": [
+        "DELETE /v2/box/{box_id}/config/skills/{skill_id+}"
+      ]
+    },
+    {
+      "contract_id": "DELETE /v2/box/{box_id}/preview/{port}",
+      "method": "DELETE",
+      "path": "/v2/box/{box_id}/preview/{port}",
+      "relation": "direct",
+      "case_ids": [
+        "DELETE /v2/box/{box_id}/preview/{port}"
+      ]
+    },
+    {
+      "contract_id": "DELETE /v2/box/{box_id}/schedules/{id}",
+      "method": "DELETE",
+      "path": "/v2/box/{box_id}/schedules/{id}",
+      "relation": "direct",
+      "case_ids": [
+        "DELETE /v2/box/{box_id}/schedules/{id}"
+      ]
+    },
+    {
+      "contract_id": "DELETE /v2/box/{box_id}/snapshots/{snapshot_id}",
+      "method": "DELETE",
+      "path": "/v2/box/{box_id}/snapshots/{snapshot_id}",
+      "relation": "direct",
+      "case_ids": [
+        "DELETE /v2/box/{box_id}/snapshots/{snapshot_id}"
+      ]
+    },
+    {
+      "contract_id": "DELETE /v2/box/{box_id}/startup",
+      "method": "DELETE",
+      "path": "/v2/box/{box_id}/startup",
+      "relation": "direct",
+      "case_ids": [
+        "DELETE /v2/box/{box_id}/startup"
+      ]
+    },
+    {
+      "contract_id": "DELETE /v2/box/settings/env/{key}",
+      "method": "DELETE",
+      "path": "/v2/box/settings/env/{key}",
+      "relation": "direct",
+      "case_ids": [
+        "DELETE /v2/box/settings/env/{key}"
+      ]
+    },
+    {
+      "contract_id": "DELETE /v2/box/snapshots",
+      "method": "DELETE",
+      "path": "/v2/box/snapshots",
+      "relation": "direct",
+      "case_ids": [
+        "DELETE /v2/box/snapshots"
+      ]
+    },
+    {
+      "contract_id": "GET /v2/box",
+      "method": "GET",
+      "path": "/v2/box",
+      "relation": "direct",
+      "case_ids": [
+        "GET /v2/box"
+      ]
+    },
+    {
+      "contract_id": "GET /v2/box/{box_id}",
+      "method": "GET",
+      "path": "/v2/box/{box_id}",
+      "relation": "direct",
+      "case_ids": [
+        "GET /v2/box/{box_id}",
+        "GET /v2/box/{box_id}#labels",
+        "GET /v2/box/{box_id}#skills"
+      ]
+    },
+    {
+      "contract_id": "GET /v2/box/{box_id}/browser/content",
+      "method": "GET",
+      "path": "/v2/box/{box_id}/browser/content",
+      "relation": "direct",
+      "case_ids": [
+        "GET /v2/box/{box_id}/browser/content"
+      ]
+    },
+    {
+      "contract_id": "GET /v2/box/{box_id}/browser/recordings",
+      "method": "GET",
+      "path": "/v2/box/{box_id}/browser/recordings",
+      "relation": "direct",
+      "case_ids": [
+        "GET /v2/box/{box_id}/browser/recordings"
+      ]
+    },
+    {
+      "contract_id": "GET /v2/box/{box_id}/browser/recordings/{id}",
+      "method": "GET",
+      "path": "/v2/box/{box_id}/browser/recordings/{id}",
+      "relation": "direct",
+      "case_ids": [
+        "GET /v2/box/{box_id}/browser/recordings/{id}"
+      ]
+    },
+    {
+      "contract_id": "GET /v2/box/{box_id}/browser/recordings/{id}/download",
+      "method": "GET",
+      "path": "/v2/box/{box_id}/browser/recordings/{id}/download",
+      "relation": "direct",
+      "case_ids": [
+        "GET /v2/box/{box_id}/browser/recordings/{id}/download"
+      ]
+    },
+    {
+      "contract_id": "GET /v2/box/{box_id}/browser/recordings/{id}/playlist",
+      "method": "GET",
+      "path": "/v2/box/{box_id}/browser/recordings/{id}/playlist",
+      "relation": "response_linked_capability",
+      "case_ids": [
+        "GET /v2/box/{box_id}/browser/recordings/{id}"
+      ]
+    },
+    {
+      "contract_id": "GET /v2/box/{box_id}/browser/screenshot",
+      "method": "GET",
+      "path": "/v2/box/{box_id}/browser/screenshot",
+      "relation": "direct",
+      "case_ids": [
+        "GET /v2/box/{box_id}/browser/screenshot"
+      ]
+    },
+    {
+      "contract_id": "GET /v2/box/{box_id}/browser/tabs",
+      "method": "GET",
+      "path": "/v2/box/{box_id}/browser/tabs",
+      "relation": "direct",
+      "case_ids": [
+        "GET /v2/box/{box_id}/browser/tabs"
+      ]
+    },
+    {
+      "contract_id": "GET /v2/box/{box_id}/files/download",
+      "method": "GET",
+      "path": "/v2/box/{box_id}/files/download",
+      "relation": "direct",
+      "case_ids": [
+        "GET /v2/box/{box_id}/files/download"
+      ]
+    },
+    {
+      "contract_id": "GET /v2/box/{box_id}/files/list",
+      "method": "GET",
+      "path": "/v2/box/{box_id}/files/list",
+      "relation": "direct",
+      "case_ids": [
+        "GET /v2/box/{box_id}/files/list"
+      ]
+    },
+    {
+      "contract_id": "GET /v2/box/{box_id}/files/read",
+      "method": "GET",
+      "path": "/v2/box/{box_id}/files/read",
+      "relation": "direct",
+      "case_ids": [
+        "GET /v2/box/{box_id}/files/read"
+      ]
+    },
+    {
+      "contract_id": "GET /v2/box/{box_id}/git/diff",
+      "method": "GET",
+      "path": "/v2/box/{box_id}/git/diff",
+      "relation": "direct",
+      "case_ids": [
+        "GET /v2/box/{box_id}/git/diff"
+      ]
+    },
+    {
+      "contract_id": "GET /v2/box/{box_id}/git/status",
+      "method": "GET",
+      "path": "/v2/box/{box_id}/git/status",
+      "relation": "direct",
+      "case_ids": [
+        "GET /v2/box/{box_id}/git/status"
+      ]
+    },
+    {
+      "contract_id": "GET /v2/box/{box_id}/logs",
+      "method": "GET",
+      "path": "/v2/box/{box_id}/logs",
+      "relation": "direct",
+      "case_ids": [
+        "GET /v2/box/{box_id}/logs"
+      ]
+    },
+    {
+      "contract_id": "GET /v2/box/{box_id}/preview",
+      "method": "GET",
+      "path": "/v2/box/{box_id}/preview",
+      "relation": "direct",
+      "case_ids": [
+        "GET /v2/box/{box_id}/preview"
+      ]
+    },
+    {
+      "contract_id": "GET /v2/box/{box_id}/runs",
+      "method": "GET",
+      "path": "/v2/box/{box_id}/runs",
+      "relation": "direct",
+      "case_ids": [
+        "GET /v2/box/{box_id}/runs"
+      ]
+    },
+    {
+      "contract_id": "GET /v2/box/{box_id}/schedules",
+      "method": "GET",
+      "path": "/v2/box/{box_id}/schedules",
+      "relation": "direct",
+      "case_ids": [
+        "GET /v2/box/{box_id}/schedules"
+      ]
+    },
+    {
+      "contract_id": "GET /v2/box/{box_id}/schedules/{id}",
+      "method": "GET",
+      "path": "/v2/box/{box_id}/schedules/{id}",
+      "relation": "direct",
+      "case_ids": [
+        "GET /v2/box/{box_id}/schedules/{id}"
+      ]
+    },
+    {
+      "contract_id": "GET /v2/box/{box_id}/snapshots",
+      "method": "GET",
+      "path": "/v2/box/{box_id}/snapshots",
+      "relation": "direct",
+      "case_ids": [
+        "GET /v2/box/{box_id}/snapshots"
+      ]
+    },
+    {
+      "contract_id": "GET /v2/box/{box_id}/startup",
+      "method": "GET",
+      "path": "/v2/box/{box_id}/startup",
+      "relation": "direct",
+      "case_ids": [
+        "GET /v2/box/{box_id}/startup"
+      ]
+    },
+    {
+      "contract_id": "GET /v2/box/{box_id}/status",
+      "method": "GET",
+      "path": "/v2/box/{box_id}/status",
+      "relation": "direct",
+      "case_ids": [
+        "GET /v2/box/{box_id}/status"
+      ]
+    },
+    {
+      "contract_id": "GET /v2/box/settings/env",
+      "method": "GET",
+      "path": "/v2/box/settings/env",
+      "relation": "direct",
+      "case_ids": [
+        "GET /v2/box/settings/env"
+      ]
+    },
+    {
+      "contract_id": "PATCH /v2/box/{box_id}/schedules/{id}",
+      "method": "PATCH",
+      "path": "/v2/box/{box_id}/schedules/{id}",
+      "relation": "direct",
+      "case_ids": [
+        "PATCH /v2/box/{box_id}/schedules/{id}"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box",
+      "method": "POST",
+      "path": "/v2/box",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box#ephemeral"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/browser/act",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/browser/act",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/browser/act"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/browser/connect",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/browser/connect",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/browser/connect"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/browser/extract",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/browser/extract",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/browser/extract"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/browser/goto",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/browser/goto",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/browser/goto"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/browser/observe",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/browser/observe",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/browser/observe"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/browser/recordings",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/browser/recordings",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/browser/recordings"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/browser/recordings/stop",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/browser/recordings/stop",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/browser/recordings/stop"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/browser/run",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/browser/run",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/browser/run"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/browser/screencast",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/browser/screencast",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/browser/screencast"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/browser/tabs",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/browser/tabs",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/browser/tabs"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/code",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/code",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/code"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/code-stream",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/code-stream",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/code-stream"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/config/labels",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/config/labels",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/config/labels"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/config/skills",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/config/skills",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/config/skills"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/exec",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/exec",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/exec",
+        "POST /v2/box/{box_id}/exec#cd"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/exec-stream",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/exec-stream",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/exec-stream"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/files/upload",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/files/upload",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/files/upload"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/files/write",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/files/write",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/files/write"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/git/checkout",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/git/checkout",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/git/checkout"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/git/clone",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/git/clone",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/git/clone"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/git/commit",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/git/commit",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/git/commit"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/git/create-pr",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/git/create-pr",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/git/create-pr"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/git/exec",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/git/exec",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/git/exec"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/git/push",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/git/push",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/git/push"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/pause",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/pause",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/pause"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/preview",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/preview",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/preview"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/resume",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/resume",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/resume"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/run",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/run",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/run"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/run/stream",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/run/stream",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/run/stream"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/runs/{run_id}/cancel",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/runs/{run_id}/cancel",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/runs/{run_id}/cancel"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/schedules",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/schedules",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/schedules#agent",
+        "POST /v2/box/{box_id}/schedules#exec"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/schedules/{id}/pause",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/schedules/{id}/pause",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/schedules/{id}/pause"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/schedules/{id}/resume",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/schedules/{id}/resume",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/schedules/{id}/resume"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/{box_id}/snapshots",
+      "method": "POST",
+      "path": "/v2/box/{box_id}/snapshots",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/{box_id}/snapshots"
+      ]
+    },
+    {
+      "contract_id": "POST /v2/box/from-snapshot",
+      "method": "POST",
+      "path": "/v2/box/from-snapshot",
+      "relation": "direct",
+      "case_ids": [
+        "POST /v2/box/from-snapshot",
+        "POST /v2/box/from-snapshot#ephemeral"
+      ]
+    },
+    {
+      "contract_id": "PUT /v2/box/{box_id}/config/custom-runner",
+      "method": "PUT",
+      "path": "/v2/box/{box_id}/config/custom-runner",
+      "relation": "direct",
+      "case_ids": [
+        "PUT /v2/box/{box_id}/config/custom-runner"
+      ]
+    },
+    {
+      "contract_id": "PUT /v2/box/{box_id}/config/model",
+      "method": "PUT",
+      "path": "/v2/box/{box_id}/config/model",
+      "relation": "direct",
+      "case_ids": [
+        "PUT /v2/box/{box_id}/config/model"
+      ]
+    },
+    {
+      "contract_id": "PUT /v2/box/{box_id}/config/network-policy",
+      "method": "PUT",
+      "path": "/v2/box/{box_id}/config/network-policy",
+      "relation": "direct",
+      "case_ids": [
+        "PUT /v2/box/{box_id}/config/network-policy"
+      ]
+    },
+    {
+      "contract_id": "PUT /v2/box/{box_id}/git-config",
+      "method": "PUT",
+      "path": "/v2/box/{box_id}/git-config",
+      "relation": "direct",
+      "case_ids": [
+        "PUT /v2/box/{box_id}/git-config"
+      ]
+    },
+    {
+      "contract_id": "PUT /v2/box/{box_id}/startup",
+      "method": "PUT",
+      "path": "/v2/box/{box_id}/startup",
+      "relation": "direct",
+      "case_ids": [
+        "PUT /v2/box/{box_id}/startup"
+      ]
+    },
+    {
+      "contract_id": "PUT /v2/box/settings/env",
+      "method": "PUT",
+      "path": "/v2/box/settings/env",
+      "relation": "direct",
+      "case_ids": [
+        "PUT /v2/box/settings/env"
+      ]
+    },
+    {
+      "contract_id": "PUT /v2/box/settings/env/{key}",
+      "method": "PUT",
+      "path": "/v2/box/settings/env/{key}",
+      "relation": "direct",
+      "case_ids": [
+        "PUT /v2/box/settings/env/{key}"
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "GET /v2/box",
+      "declared_contract": "GET /v2/box",
+      "setup": null,
+      "risk": {
+        "classification": "read_only",
+        "destructive": false,
+        "may_incur_cost": false
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "DELETE /v2/box",
+      "declared_contract": "DELETE /v2/box",
+      "setup": null,
+      "risk": {
+        "classification": "sandbox_mutating",
+        "destructive": true,
+        "may_incur_cost": false
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "DELETE /v2/box/snapshots",
+      "declared_contract": "DELETE /v2/box/snapshots",
+      "setup": null,
+      "risk": {
+        "classification": "sandbox_mutating",
+        "destructive": true,
+        "may_incur_cost": false
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/from-snapshot",
+      "declared_contract": "POST /v2/box/from-snapshot",
+      "setup": null,
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/from-snapshot#ephemeral",
+      "declared_contract": "POST /v2/box/from-snapshot",
+      "setup": null,
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box#ephemeral",
+      "declared_contract": "POST /v2/box",
+      "setup": null,
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}",
+      "declared_contract": "GET /v2/box/{box_id}",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "DELETE /v2/box/{box_id}",
+      "declared_contract": "DELETE /v2/box/{box_id}",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/status",
+      "declared_contract": "GET /v2/box/{box_id}/status",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/pause",
+      "declared_contract": "POST /v2/box/{box_id}/pause",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/resume",
+      "declared_contract": "POST /v2/box/{box_id}/resume",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/startup",
+      "declared_contract": "GET /v2/box/{box_id}/startup",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "PUT /v2/box/{box_id}/startup",
+      "declared_contract": "PUT /v2/box/{box_id}/startup",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "DELETE /v2/box/{box_id}/startup",
+      "declared_contract": "DELETE /v2/box/{box_id}/startup",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "PUT /v2/box/{box_id}/config/model",
+      "declared_contract": "PUT /v2/box/{box_id}/config/model",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "PUT /v2/box/{box_id}/config/custom-runner",
+      "declared_contract": "PUT /v2/box/{box_id}/config/custom-runner",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "PUT /v2/box/{box_id}/config/network-policy",
+      "declared_contract": "PUT /v2/box/{box_id}/config/network-policy",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/settings/env",
+      "declared_contract": "GET /v2/box/settings/env",
+      "setup": null,
+      "risk": {
+        "classification": "read_only",
+        "destructive": false,
+        "may_incur_cost": false
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "PUT /v2/box/settings/env",
+      "declared_contract": "PUT /v2/box/settings/env",
+      "setup": null,
+      "risk": {
+        "classification": "externally_mutating",
+        "destructive": true,
+        "may_incur_cost": false
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "PUT /v2/box/settings/env/{key}",
+      "declared_contract": "PUT /v2/box/settings/env/{key}",
+      "setup": null,
+      "risk": {
+        "classification": "externally_mutating",
+        "destructive": true,
+        "may_incur_cost": false
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "DELETE /v2/box/settings/env/{key}",
+      "declared_contract": "DELETE /v2/box/settings/env/{key}",
+      "setup": null,
+      "risk": {
+        "classification": "externally_mutating",
+        "destructive": true,
+        "may_incur_cost": false
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/run",
+      "declared_contract": "POST /v2/box/{box_id}/run",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/run/stream",
+      "declared_contract": "POST /v2/box/{box_id}/run/stream",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/runs/{run_id}/cancel",
+      "declared_contract": "POST /v2/box/{box_id}/runs/{run_id}/cancel",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/runs",
+      "declared_contract": "GET /v2/box/{box_id}/runs",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/logs",
+      "declared_contract": "GET /v2/box/{box_id}/logs",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/exec",
+      "declared_contract": "POST /v2/box/{box_id}/exec",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/exec-stream",
+      "declared_contract": "POST /v2/box/{box_id}/exec-stream",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/code",
+      "declared_contract": "POST /v2/box/{box_id}/code",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/code-stream",
+      "declared_contract": "POST /v2/box/{box_id}/code-stream",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/exec#cd",
+      "declared_contract": "POST /v2/box/{box_id}/exec",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/files/read",
+      "declared_contract": "GET /v2/box/{box_id}/files/read",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/files/write",
+      "declared_contract": "POST /v2/box/{box_id}/files/write",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/files/list",
+      "declared_contract": "GET /v2/box/{box_id}/files/list",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/files/upload",
+      "declared_contract": "POST /v2/box/{box_id}/files/upload",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/files/download",
+      "declared_contract": "GET /v2/box/{box_id}/files/download",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/snapshots",
+      "declared_contract": "POST /v2/box/{box_id}/snapshots",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/snapshots",
+      "declared_contract": "GET /v2/box/{box_id}/snapshots",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "DELETE /v2/box/{box_id}/snapshots/{snapshot_id}",
+      "declared_contract": "DELETE /v2/box/{box_id}/snapshots/{snapshot_id}",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/git/clone",
+      "declared_contract": "POST /v2/box/{box_id}/git/clone",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/git/diff",
+      "declared_contract": "GET /v2/box/{box_id}/git/diff",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/git/status",
+      "declared_contract": "GET /v2/box/{box_id}/git/status",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/git/commit",
+      "declared_contract": "POST /v2/box/{box_id}/git/commit",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "PUT /v2/box/{box_id}/git-config",
+      "declared_contract": "PUT /v2/box/{box_id}/git-config",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/git/push",
+      "declared_contract": "POST /v2/box/{box_id}/git/push",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/git/create-pr",
+      "declared_contract": "POST /v2/box/{box_id}/git/create-pr",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/git/exec",
+      "declared_contract": "POST /v2/box/{box_id}/git/exec",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/git/checkout",
+      "declared_contract": "POST /v2/box/{box_id}/git/checkout",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/config/skills",
+      "declared_contract": "POST /v2/box/{box_id}/config/skills",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "DELETE /v2/box/{box_id}/config/skills/{skill_id+}",
+      "declared_contract": "DELETE /v2/box/{box_id}/config/skills/{skill_id+}",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}#skills",
+      "declared_contract": "GET /v2/box/{box_id}",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/config/labels",
+      "declared_contract": "POST /v2/box/{box_id}/config/labels",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "DELETE /v2/box/{box_id}/config/labels/{label}",
+      "declared_contract": "DELETE /v2/box/{box_id}/config/labels/{label}",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}#labels",
+      "declared_contract": "GET /v2/box/{box_id}",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/schedules#exec",
+      "declared_contract": "POST /v2/box/{box_id}/schedules",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/schedules#agent",
+      "declared_contract": "POST /v2/box/{box_id}/schedules",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/schedules",
+      "declared_contract": "GET /v2/box/{box_id}/schedules",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/schedules/{id}",
+      "declared_contract": "GET /v2/box/{box_id}/schedules/{id}",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "PATCH /v2/box/{box_id}/schedules/{id}",
+      "declared_contract": "PATCH /v2/box/{box_id}/schedules/{id}",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/schedules/{id}/pause",
+      "declared_contract": "POST /v2/box/{box_id}/schedules/{id}/pause",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/schedules/{id}/resume",
+      "declared_contract": "POST /v2/box/{box_id}/schedules/{id}/resume",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "DELETE /v2/box/{box_id}/schedules/{id}",
+      "declared_contract": "DELETE /v2/box/{box_id}/schedules/{id}",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/preview",
+      "declared_contract": "POST /v2/box/{box_id}/preview",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/preview",
+      "declared_contract": "GET /v2/box/{box_id}/preview",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "DELETE /v2/box/{box_id}/preview/{port}",
+      "declared_contract": "DELETE /v2/box/{box_id}/preview/{port}",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/browser/tabs",
+      "declared_contract": "POST /v2/box/{box_id}/browser/tabs",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/browser/tabs",
+      "declared_contract": "GET /v2/box/{box_id}/browser/tabs",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/browser/goto",
+      "declared_contract": "POST /v2/box/{box_id}/browser/goto",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/browser/extract",
+      "declared_contract": "POST /v2/box/{box_id}/browser/extract",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/browser/observe",
+      "declared_contract": "POST /v2/box/{box_id}/browser/observe",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/browser/act",
+      "declared_contract": "POST /v2/box/{box_id}/browser/act",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/browser/run",
+      "declared_contract": "POST /v2/box/{box_id}/browser/run",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/browser/content",
+      "declared_contract": "GET /v2/box/{box_id}/browser/content",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/browser/screenshot",
+      "declared_contract": "GET /v2/box/{box_id}/browser/screenshot",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/browser/screencast",
+      "declared_contract": "POST /v2/box/{box_id}/browser/screencast",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/browser/connect",
+      "declared_contract": "POST /v2/box/{box_id}/browser/connect",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/browser/recordings",
+      "declared_contract": "POST /v2/box/{box_id}/browser/recordings",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "POST /v2/box/{box_id}/browser/recordings/stop",
+      "declared_contract": "POST /v2/box/{box_id}/browser/recordings/stop",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/browser/recordings",
+      "declared_contract": "GET /v2/box/{box_id}/browser/recordings",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/browser/recordings/{id}",
+      "declared_contract": "GET /v2/box/{box_id}/browser/recordings/{id}",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "GET /v2/box/{box_id}/browser/recordings/{id}/download",
+      "declared_contract": "GET /v2/box/{box_id}/browser/recordings/{id}/download",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    },
+    {
+      "case_id": "DELETE /v2/box/{box_id}/browser/tabs/{tab_id}",
+      "declared_contract": "DELETE /v2/box/{box_id}/browser/tabs/{tab_id}",
+      "setup": "Box.create",
+      "risk": {
+        "classification": "cost_incurring",
+        "destructive": true,
+        "may_incur_cost": true
+      },
+      "credentials": [
+        "official_api_key",
+        "local_api_key"
+      ]
+    }
+  ]
+}

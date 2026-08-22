@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Payhon/boxd/release/schemas/release-manifest-v1.schema.json",
+  "title": "boxd release manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "version", "commit", "target", "source_date_epoch", "toolchain",
+    "builder", "provenance", "artifacts"
+  ],
+  "properties": {
+    "schema": {"const": "boxd-release-manifest-v1"},
+    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"},
+    "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "target": {"enum": ["darwin-arm64", "linux-x86_64", "linux-aarch64"]},
+    "source_date_epoch": {"type": "integer", "minimum": 0},
+    "toolchain": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "minLength": 1, "maxLength": 256},
+      "minProperties": 1
+    },
+    "builder": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "kind": {"enum": ["github-actions", "local-hermetic", "release-builder"]}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["uri", "sha256"],
+      "properties": {
+        "uri": {"type": "string", "pattern": "^(https://|urn:)[^ ]+$", "maxLength": 1024},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 7,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "path", "sha256", "size"],
+        "properties": {
+          "role": {"enum": ["boxd", "libkrun", "libkrunfw", "runtime_bundle", "sbom", "licenses", "checksums"]},
+          "path": {"$ref": "#/$defs/relativePath"},
+          "sha256": {"$ref": "#/$defs/sha256"},
+          "size": {"type": "integer", "minimum": 1}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "relativePath": {
+      "type": "string",
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._/+@=-]+$"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+[Unit]
+Description=boxd sandbox service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=boxd
+Group=boxd
+WorkingDirectory=/var/lib/boxd
+ExecStart=/usr/local/bin/boxd serve -c /etc/boxd/boxd.toml
+Restart=on-failure
+RestartSec=5s
+LimitNOFILE=1048576
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+DevicePolicy=closed
+DeviceAllow=/dev/kvm rw
+DeviceAllow=/dev/net/tun rw
+ReadWritePaths=/var/lib/boxd
+
+[Install]
+WantedBy=multi-user.target

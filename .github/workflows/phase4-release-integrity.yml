@@ -1,0 +1,52 @@
+name: phase4-release-integrity
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase4-release-integrity-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hermetic-integrity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Compile Phase 4 tooling
+        run: python3 -m py_compile scripts/phase4-*.py tests/phase4/test_phase4_integrity.py
+      - name: Run fail-closed integrity tests
+        run: python3 -m unittest discover -s tests/phase4 -p 'test_*.py' -v
+      - name: Exercise blocked upgrade evidence boundary
+        run: |
+          evidence_path="${RUNNER_TEMP}/boxd-phase4-upgrade-evidence.json"
+          python3 scripts/phase4-upgrade-rollback-drill.py --commit "${GITHUB_SHA}" --output "${evidence_path}"
+          python3 scripts/phase4-evidence.py "${evidence_path}"
+          python3 - "${evidence_path}" <<'PY'
+          import json
+          import sys
+          evidence = json.load(open(sys.argv[1], encoding="utf-8"))
+          if evidence["summary"]["status"] != "blocked":
+              raise SystemExit("hermetic drill must not claim real-platform completion")
+          PY
+      - name: Validate service templates
+        run: |
+          python3 scripts/phase4-validate-services.py \
+            --systemd release/services/boxd.service \
+            --launchd release/services/com.payhon.boxd.plist
+      - name: Verify clean generated fixture
+        run: |
+          release_dir="${RUNNER_TEMP}/phase4-release"
+          cp -R tests/phase4/fixtures/release/payload "${release_dir}"
+          python3 scripts/phase4-release-integrity.py generate \
+            --release-dir "${release_dir}" \
+            --input tests/phase4/fixtures/release/release-input.json
+          python3 scripts/phase4-release-integrity.py verify --release-dir "${release_dir}"

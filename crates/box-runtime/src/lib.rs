@@ -1,6 +1,10 @@
 //! Control-plane runtime abstractions. This crate never starts a VMM in-process.
 use async_trait::async_trait;
 use box_egress::{AddressClass, classify_address};
+use box_egress_http::{
+    AttachHeaderRule, AttachHeaderRules, HostPattern, PerBoxCertificateAuthority,
+    SecretHeaderValue, SecretPrivateKeyDer,
+};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -22,7 +26,7 @@ use tokio::{
     time::{sleep, timeout},
 };
 
-pub const WORKER_SPEC_VERSION: u16 = 3;
+pub const WORKER_SPEC_VERSION: u16 = 5;
 pub const MAX_WORKER_SPEC_BYTES: usize = 64 * 1024;
 pub const AGENT_VSOCK_PORT: u32 = 18_080;
 pub const DEFAULT_WORKER_WRITE_TIMEOUT: Duration = Duration::from_secs(5);
@@ -32,6 +36,10 @@ const MAX_GUEST_ENVIRONMENT_VALUE_BYTES: usize = 16 * 1024;
 const MAX_GUEST_ENVIRONMENT_TOTAL_BYTES: usize = 48 * 1024;
 const WORKER_POLL_INTERVAL: Duration = Duration::from_millis(20);
 const FORCE_REAP_TIMEOUT: Duration = Duration::from_secs(5);
+const MAX_ATTACH_HEADER_RULES: usize = 128;
+const MAX_ATTACH_HEADERS_PER_RULE: usize = 64;
+const MAX_ATTACH_HEADERS_TOTAL_BYTES: usize = 48 * 1024;
+const MAX_ATTACH_CERTIFICATE_BYTES: usize = 32 * 1024;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RuntimeError(pub String);
@@ -98,6 +106,42 @@ pub enum NetworkMode {
     /// Installs the bounded packet proxy. Only configured numeric DNS
     /// resolvers and public IPv4 TCP destinations on ports 80/443 are valid.
     RestrictedDefault,
+    /// Applies the pinned SDK custom domain/CIDR policy in the same bounded
+    /// packet proxy. The wire intentionally has no port rules.
+    Custom,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CustomNetworkPolicySpec {
+    pub allowed_domains: Vec<String>,
+    pub allowed_cidrs: Vec<String>,
+    pub denied_cidrs: Vec<String>,
+}
+
+/// Host-only, secret-bearing HTTPS header configuration sent through the
+/// inherited worker pipe. It is never passed through argv or the environment.
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AttachHeadersSpec {
+    pub rules: BTreeMap<String, BTreeMap<String, String>>,
+    pub ca_certificate_der: Vec<u8>,
+    pub ca_private_key_der: Vec<u8>,
+}
+
+impl fmt::Debug for AttachHeadersSpec {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("AttachHeadersSpec")
+            .field("rule_count", &self.rules.len())
+            .field(
+                "header_count",
+                &self.rules.values().map(BTreeMap::len).sum::<usize>(),
+            )
+            .field("certificate_bytes", &self.ca_certificate_der.len())
+            .field("private_key_bytes", &self.ca_private_key_der.len())
+            .finish()
+    }
 }
 
 /// Versioned, potentially secret-bearing input sent over an inherited pipe,
@@ -133,6 +177,10 @@ pub struct WorkerSpec {
     pub libkrun_firmware: PathBuf,
     pub libkrun_firmware_identity: FirmwareIdentity,
     pub network_mode: NetworkMode,
+    #[serde(default)]
+    pub custom_network_policy: Option<CustomNetworkPolicySpec>,
+    #[serde(default)]
+    pub attach_headers: Option<AttachHeadersSpec>,
     /// Numeric upstream resolvers. Hostname resolvers would introduce an
     /// implicit host lookup before the egress policy can classify an address.
     pub dns_servers: Vec<Ipv4Addr>,
@@ -158,6 +206,17 @@ impl std::fmt::Debug for WorkerSpec {
             .field("vcpus", &self.vcpus)
             .field("memory_mib", &self.memory_mib)
             .field("network_mode", &self.network_mode)
+            .field(
+                "custom_network_policy_rule_counts",
+                &self.custom_network_policy.as_ref().map(|policy| {
+                    (
+                        policy.allowed_domains.len(),
+                        policy.allowed_cidrs.len(),
+                        policy.denied_cidrs.len(),
+                    )
+                }),
+            )
+            .field("attach_headers", &self.attach_headers)
             .field("dns_server_count", &self.dns_servers.len())
             .field(
                 "dns_over_https",
@@ -206,14 +265,17 @@ impl WorkerSpec {
         }
         match self.network_mode {
             NetworkMode::DenyAll
-                if !self.dns_servers.is_empty() || self.dns_over_https_name.is_some() =>
+                if !self.dns_servers.is_empty()
+                    || self.dns_over_https_name.is_some()
+                    || self.custom_network_policy.is_some()
+                    || self.attach_headers.is_some() =>
             {
                 return Err(RuntimeError(
                     "deny-all worker spec must not contain DNS configuration".into(),
                 ));
             }
             NetworkMode::DenyAll => {}
-            NetworkMode::RestrictedDefault => {
+            NetworkMode::RestrictedDefault | NetworkMode::Custom => {
                 if !(1..=3).contains(&self.dns_servers.len()) {
                     return Err(RuntimeError(
                         "restricted-default requires one to three DNS resolvers".into(),
@@ -238,7 +300,32 @@ impl WorkerSpec {
                         "DNS-over-HTTPS authority must be a canonical ASCII hostname".into(),
                     ));
                 }
+                match (&self.network_mode, &self.custom_network_policy) {
+                    (NetworkMode::RestrictedDefault, None) => {}
+                    (NetworkMode::RestrictedDefault, Some(_)) => {
+                        return Err(RuntimeError(
+                            "restricted-default must not contain a custom policy".into(),
+                        ));
+                    }
+                    (NetworkMode::Custom, Some(policy)) => {
+                        box_egress::CustomNetworkPolicy::from_strings(
+                            policy.allowed_domains.clone(),
+                            policy.allowed_cidrs.clone(),
+                            policy.denied_cidrs.clone(),
+                        )
+                        .map_err(|_| RuntimeError("invalid custom network policy".into()))?;
+                    }
+                    (NetworkMode::Custom, None) => {
+                        return Err(RuntimeError(
+                            "custom network mode requires a custom policy".into(),
+                        ));
+                    }
+                    (NetworkMode::DenyAll, _) => unreachable!(),
+                }
             }
+        }
+        if let Some(attach_headers) = &self.attach_headers {
+            validate_attach_headers(&self.box_id, attach_headers)?;
         }
         self.limits.validate()?;
         if self.vcpus != self.limits.vcpus || self.memory_mib != self.limits.memory_mib {
@@ -337,6 +424,62 @@ impl WorkerSpec {
         spec.validate()?;
         Ok(spec)
     }
+}
+
+fn validate_attach_headers(box_id: &str, spec: &AttachHeadersSpec) -> Result<()> {
+    if spec.rules.len() > MAX_ATTACH_HEADER_RULES
+        || spec.ca_certificate_der.is_empty()
+        || spec.ca_certificate_der.len() > MAX_ATTACH_CERTIFICATE_BYTES
+        || spec.ca_private_key_der.is_empty()
+    {
+        return Err(RuntimeError(
+            "invalid attach_headers size or rule count".into(),
+        ));
+    }
+    let mut total = spec
+        .ca_certificate_der
+        .len()
+        .checked_add(spec.ca_private_key_der.len())
+        .ok_or_else(|| RuntimeError("attach_headers size overflow".into()))?;
+    let mut rules = Vec::with_capacity(spec.rules.len());
+    for (pattern, headers) in &spec.rules {
+        if headers.len() > MAX_ATTACH_HEADERS_PER_RULE {
+            return Err(RuntimeError(
+                "attach_headers has too many headers in a rule".into(),
+            ));
+        }
+        total = total
+            .checked_add(pattern.len())
+            .ok_or_else(|| RuntimeError("attach_headers size overflow".into()))?;
+        if total > MAX_ATTACH_HEADERS_TOTAL_BYTES {
+            return Err(RuntimeError("attach_headers exceeds size limit".into()));
+        }
+        let mut values = Vec::with_capacity(headers.len());
+        for (name, value) in headers {
+            total = total
+                .checked_add(name.len())
+                .and_then(|n| n.checked_add(value.len()))
+                .ok_or_else(|| RuntimeError("attach_headers size overflow".into()))?;
+            if total > MAX_ATTACH_HEADERS_TOTAL_BYTES {
+                return Err(RuntimeError("attach_headers exceeds size limit".into()));
+            }
+            let secret = SecretHeaderValue::new(value.as_bytes().to_vec())
+                .map_err(|_| RuntimeError("invalid attach_headers value".into()))?;
+            values.push((name.as_str(), secret));
+        }
+        let pattern = HostPattern::parse(pattern)
+            .map_err(|_| RuntimeError("invalid attach_headers host pattern".into()))?;
+        let rule = AttachHeaderRule::new(pattern, values)
+            .map_err(|_| RuntimeError("invalid attach_headers rule".into()))?;
+        rules.push(rule);
+    }
+    AttachHeaderRules::new(rules)
+        .map_err(|_| RuntimeError("invalid attach_headers rules".into()))?;
+    let key = SecretPrivateKeyDer::new(spec.ca_private_key_der.clone())
+        .map_err(|_| RuntimeError("invalid attach_headers CA private key".into()))?;
+    PerBoxCertificateAuthority::from_der(box_id, spec.ca_certificate_der.clone(), key)
+        .map_err(|_| RuntimeError("invalid attach_headers CA certificate or key".into()))?;
+    Ok(())
 }
 
 fn valid_dns_authority(value: &str) -> bool {
@@ -1247,6 +1390,8 @@ mod tests {
                 artifact_sha256: "0".repeat(64),
             },
             network_mode: NetworkMode::DenyAll,
+            custom_network_policy: None,
+            attach_headers: None,
             dns_servers: vec![],
             dns_over_https_name: None,
         };
@@ -1258,6 +1403,55 @@ mod tests {
         let wire = s.to_wire().unwrap();
         assert_eq!(WorkerSpec::from_wire(&wire).unwrap(), s);
         assert!(WorkerSpec::from_wire(&[0, 1, 0, 1]).is_err());
+    }
+
+    fn attach_spec(box_id: &str) -> AttachHeadersSpec {
+        let authority = PerBoxCertificateAuthority::generate(box_id).unwrap();
+        AttachHeadersSpec {
+            rules: BTreeMap::from([(
+                "*.example.com".into(),
+                BTreeMap::from([("X-Box-Secret".into(), "fixture-secret".into())]),
+            )]),
+            ca_certificate_der: authority.certificate_der().as_ref().to_vec(),
+            ca_private_key_der: authority.private_key_der().expose_secret().to_vec(),
+        }
+    }
+
+    #[test]
+    fn attach_headers_roundtrip_and_debug_redaction() {
+        let (_directory, mut worker) = spec();
+        worker.network_mode = NetworkMode::RestrictedDefault;
+        worker.dns_servers = vec![Ipv4Addr::new(1, 1, 1, 1)];
+        worker.attach_headers = Some(attach_spec(BOX_ID));
+        let wire = worker.to_wire().unwrap();
+        assert_eq!(WorkerSpec::from_wire(&wire).unwrap(), worker);
+        let debug = format!("{worker:?}");
+        assert!(!debug.contains("fixture-secret"));
+        assert!(!debug.contains("PRIVATE"));
+        assert!(debug.contains("rule_count"));
+        assert!(debug.contains("private_key_bytes"));
+    }
+
+    #[test]
+    fn attach_headers_rejects_unknown_invalid_and_deny_all() {
+        let (_directory, mut worker) = spec();
+        let mut value = serde_json::to_value(&worker).unwrap();
+        value["unexpected"] = serde_json::json!(true);
+        assert!(serde_json::from_value::<WorkerSpec>(value).is_err());
+
+        worker.attach_headers = Some(attach_spec(BOX_ID));
+        assert!(
+            worker.validate().is_err(),
+            "deny-all must reject attach_headers"
+        );
+
+        worker.network_mode = NetworkMode::RestrictedDefault;
+        worker.dns_servers = vec![Ipv4Addr::new(1, 1, 1, 1)];
+        worker.attach_headers.as_mut().unwrap().ca_private_key_der = vec![1, 2, 3];
+        assert!(
+            worker.validate().is_err(),
+            "invalid CA key must fail closed"
+        );
     }
     #[test]
     fn rejects_escape_and_wrong_version() {
@@ -1304,6 +1498,22 @@ mod tests {
         assert!(spec.validate().is_err(), "metadata resolver must fail");
         spec.dns_servers.clear();
         assert!(spec.validate().is_err(), "resolver list must be non-empty");
+
+        spec.network_mode = NetworkMode::Custom;
+        spec.dns_servers = vec![Ipv4Addr::new(1, 1, 1, 1)];
+        assert!(spec.validate().is_err(), "custom mode requires policy wire");
+        spec.custom_network_policy = Some(CustomNetworkPolicySpec {
+            allowed_domains: vec!["api.example.com".into()],
+            allowed_cidrs: vec!["93.184.216.0/24".into()],
+            denied_cidrs: vec!["10.0.0.0/8".into()],
+        });
+        assert!(spec.validate().is_ok());
+        assert_eq!(
+            WorkerSpec::from_wire(&spec.to_wire().unwrap()).unwrap(),
+            spec
+        );
+        spec.custom_network_policy.as_mut().unwrap().allowed_domains = vec!["bad domain".into()];
+        assert!(spec.validate().is_err());
     }
 
     #[test]

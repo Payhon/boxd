@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://boxd.invalid/schemas/upstash-box-0.6.3/differential-case-matrix.json",
+  "title": "boxd pinned SDK differential case matrix",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "sdk", "source_commit", "generated_from", "summary", "contracts", "cases"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "sdk": { "const": "@upstash/box@0.6.3" },
+    "source_commit": { "const": "677ca0827a6f54bc328b4b3e97d32a7cc5ac1934" },
+    "generated_from": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contracts", "public_cases", "uncovered_contracts"],
+      "properties": {
+        "contracts": { "const": 78 },
+        "public_cases": { "const": 82 },
+        "uncovered_contracts": { "const": 0 }
+      }
+    },
+    "contracts": {
+      "type": "array",
+      "minItems": 78,
+      "maxItems": 78,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_id", "method", "path", "relation", "case_ids"],
+        "properties": {
+          "contract_id": { "type": "string", "minLength": 1 },
+          "method": { "enum": ["DELETE", "GET", "PATCH", "POST", "PUT"] },
+          "path": { "type": "string", "pattern": "^/v2/box" },
+          "relation": { "enum": ["direct", "response_linked_capability"] },
+          "case_ids": { "type": "array", "minItems": 1, "items": { "type": "string" }, "uniqueItems": true }
+        }
+      }
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 82,
+      "maxItems": 82,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["case_id", "declared_contract", "setup", "risk", "credentials"],
+        "properties": {
+          "case_id": { "type": "string", "minLength": 1 },
+          "declared_contract": { "type": "string", "minLength": 1 },
+          "setup": { "type": ["string", "null"] },
+          "risk": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["classification", "destructive", "may_incur_cost"],
+            "properties": {
+              "classification": { "enum": ["read_only", "sandbox_mutating", "externally_mutating", "cost_incurring"] },
+              "destructive": { "type": "boolean" },
+              "may_incur_cost": { "type": "boolean" }
+            }
+          },
+          "credentials": { "const": ["official_api_key", "local_api_key"] }
+        }
+      }
+    }
+  }
+}

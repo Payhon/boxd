@@ -671,22 +671,6 @@ pub fn validate(config: &AppConfig) -> Result<Vec<String>, String> {
     {
         return Err("quotas 配置超出支持范围".into());
     }
-    let unsupported = [
-        (
-            "custom_network_policy",
-            config.features.custom_network_policy,
-        ),
-        ("attach_headers", config.features.attach_headers),
-    ]
-    .into_iter()
-    .filter_map(|(name, enabled)| enabled.then_some(name))
-    .collect::<Vec<_>>();
-    if !unsupported.is_empty() {
-        return Err(format!(
-            "feature_not_supported: 当前 Phase 不支持 features.{}，必须设为 false",
-            unsupported.join(", features.")
-        ));
-    }
     let mut warnings = Vec::new();
     if config.database.url.starts_with("sqlite:") {
         warnings.push("SQLite 模式仅支持一个 active control-plane 进程".into());
@@ -840,6 +824,16 @@ mod tests {
         let mut config = AppConfig::default();
         config.features.browser = true;
         validate(&config).expect("browser must be accepted in Phase 3");
+    }
+
+    #[test]
+    fn phase_four_accepts_custom_network_policy_and_attach_headers() {
+        let mut config = AppConfig::default();
+        config.features.custom_network_policy = true;
+        validate(&config).expect("custom network policy is wired in Phase 4");
+
+        config.features.attach_headers = true;
+        validate(&config).expect("attach_headers is wired in Phase 4");
     }
 
     #[test]

@@ -13,6 +13,7 @@ box-agent-proto = { path = "../box-agent-proto" }
 box-browser = { path = "../box-browser" }
 box-core = { path = "../box-core" }
 box-db = { path = "../box-db" }
+box-egress-http = { path = "../box-egress-http" }
 box-observability = { path = "../box-observability" }
 opentelemetry.workspace = true
 box-preview = { path = "../box-preview" }

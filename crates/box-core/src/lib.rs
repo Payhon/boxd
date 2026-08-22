@@ -331,12 +331,140 @@ impl EphemeralSpec {
     }
 }
 
+pub const MAX_NETWORK_POLICY_RULES: usize = 64;
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct NetworkDomain(String);
+
+impl NetworkDomain {
+    pub fn new(value: impl Into<String>) -> Result<Self> {
+        let mut value = value.into();
+        if value.ends_with('.') {
+            value.pop();
+        }
+        value.make_ascii_lowercase();
+        let hostname = value.strip_prefix("*.").unwrap_or(&value);
+        if hostname.is_empty()
+            || hostname.len() > 253
+            || !hostname.is_ascii()
+            || hostname.parse::<std::net::IpAddr>().is_ok()
+            || hostname.split('.').any(|label| {
+                label.is_empty()
+                    || label.len() > 63
+                    || label.starts_with('-')
+                    || label.ends_with('-')
+                    || !label
+                        .bytes()
+                        .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+            })
+        {
+            return Err(DomainError::validation(
+                "network domains must be ASCII hostnames or *.hostname patterns",
+            ));
+        }
+        Ok(Self(value))
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CustomNetworkPolicy {
+    allowed_domains: Vec<NetworkDomain>,
+    allowed_cidrs: Vec<ipnet::IpNet>,
+    denied_cidrs: Vec<ipnet::IpNet>,
+}
+
+impl CustomNetworkPolicy {
+    pub fn new(
+        allowed_domains: Vec<String>,
+        allowed_cidrs: Vec<String>,
+        denied_cidrs: Vec<String>,
+    ) -> Result<Self> {
+        if allowed_domains
+            .len()
+            .saturating_add(allowed_cidrs.len())
+            .saturating_add(denied_cidrs.len())
+            > MAX_NETWORK_POLICY_RULES
+        {
+            return Err(DomainError::validation(format!(
+                "network policy may contain at most {MAX_NETWORK_POLICY_RULES} rules"
+            )));
+        }
+        let allowed_domains = allowed_domains
+            .into_iter()
+            .map(NetworkDomain::new)
+            .collect::<Result<Vec<_>>>()?;
+        let allowed_cidrs = parse_network_cidrs(allowed_cidrs)?;
+        let denied_cidrs = parse_network_cidrs(denied_cidrs)?;
+        if has_duplicates(&allowed_domains)
+            || has_duplicates(&allowed_cidrs)
+            || has_duplicates(&denied_cidrs)
+        {
+            return Err(DomainError::validation(
+                "network policy rules must be unique after canonicalization",
+            ));
+        }
+        Ok(Self {
+            allowed_domains,
+            allowed_cidrs,
+            denied_cidrs,
+        })
+    }
+
+    pub fn allowed_domains(&self) -> &[NetworkDomain] {
+        &self.allowed_domains
+    }
+
+    pub fn allowed_cidrs(&self) -> &[ipnet::IpNet] {
+        &self.allowed_cidrs
+    }
+
+    pub fn denied_cidrs(&self) -> &[ipnet::IpNet] {
+        &self.denied_cidrs
+    }
+}
+
+fn parse_network_cidrs(values: Vec<String>) -> Result<Vec<ipnet::IpNet>> {
+    values
+        .into_iter()
+        .map(|value| {
+            let parsed = value
+                .parse::<ipnet::IpNet>()
+                .map_err(|_| DomainError::validation("invalid network policy CIDR"))?;
+            if matches!(parsed, ipnet::IpNet::V6(_)) {
+                return Err(DomainError::validation(
+                    "IPv6 network policy CIDRs are not supported by the current data plane",
+                ));
+            }
+            if parsed.addr() != parsed.network() || parsed.to_string() != value {
+                return Err(DomainError::validation(
+                    "network policy CIDRs must use canonical network addresses",
+                ));
+            }
+            Ok(parsed)
+        })
+        .collect()
+}
+
+fn has_duplicates<T: Ord + Clone>(values: &[T]) -> bool {
+    values
+        .iter()
+        .cloned()
+        .collect::<std::collections::BTreeSet<_>>()
+        .len()
+        != values.len()
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum NetworkPolicy {
     DenyAll,
     RestrictedDefault,
-    Custom,
+    Custom(CustomNetworkPolicy),
 }
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RuntimeBundleBinding {
@@ -386,9 +514,6 @@ impl BoxCreateSpec {
         }
         if self.attach_headers_requested {
             return Err(DomainError::feature_not_supported("attach_headers"));
-        }
-        if self.network_policy == NetworkPolicy::Custom {
-            return Err(DomainError::feature_not_supported("custom network_policy"));
         }
         Ok(())
     }
@@ -467,6 +592,21 @@ impl Box {
     }
     pub fn transition(&mut self, next: BoxStatus, now: UtcEpochMillis) -> Result<()> {
         self.status = self.status.transition(next, self.spec.keep_alive)?;
+        self.version = self
+            .version
+            .checked_add(1)
+            .ok_or_else(DomainError::version_conflict)?;
+        self.updated_at = now;
+        Ok(())
+    }
+
+    pub fn set_network_policy(&mut self, policy: NetworkPolicy, now: UtcEpochMillis) -> Result<()> {
+        if !matches!(self.status, BoxStatus::Idle | BoxStatus::Paused) {
+            return Err(DomainError::state_conflict(
+                "network policy can only be changed for an idle or paused box",
+            ));
+        }
+        self.spec.network_policy = policy;
         self.version = self
             .version
             .checked_add(1)
@@ -1237,8 +1377,22 @@ mod tests {
         };
         assert_eq!(spec.validate().unwrap_err().code, "feature_not_supported");
         spec.attach_headers_requested = false;
-        spec.network_policy = NetworkPolicy::Custom;
-        assert_eq!(spec.validate().unwrap_err().code, "feature_not_supported");
+        spec.network_policy = NetworkPolicy::Custom(
+            CustomNetworkPolicy::new(
+                vec!["API.Example.com.".into()],
+                vec!["203.0.113.0/24".into()],
+                vec!["10.0.0.0/8".into()],
+            )
+            .unwrap(),
+        );
+        assert!(spec.validate().is_ok());
+        let NetworkPolicy::Custom(policy) = &spec.network_policy else {
+            panic!("expected custom policy")
+        };
+        assert_eq!(policy.allowed_domains()[0].as_str(), "api.example.com");
+        assert!(CustomNetworkPolicy::new(vec!["bad domain".into()], vec![], vec![]).is_err());
+        assert!(CustomNetworkPolicy::new(vec![], vec!["192.0.2.1/24".into()], vec![]).is_err());
+        assert!(CustomNetworkPolicy::new(vec![], vec!["2001:db8::/32".into()], vec![]).is_err());
     }
 
     #[test]
