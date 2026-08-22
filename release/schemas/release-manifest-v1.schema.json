@@ -31,9 +31,10 @@
     "provenance": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["uri", "sha256"],
+      "required": ["uri", "path", "sha256"],
       "properties": {
         "uri": {"type": "string", "pattern": "^(https://|urn:)[^ ]+$", "maxLength": 1024},
+        "path": {"$ref": "#/$defs/relativePath"},
         "sha256": {"$ref": "#/$defs/sha256"}
       }
     },

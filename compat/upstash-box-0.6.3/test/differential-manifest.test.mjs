@@ -10,7 +10,7 @@ const matrix = JSON.parse(await readFile(new URL("../differential/case-matrix.js
 
 test("generated differential matrix, adapter registry and schemas pass the machine gate", () => {
   const output = execFileSync(process.execPath, [check], { encoding: "utf8" });
-  assert.deepEqual(JSON.parse(output), { contracts: 78, public_cases: 82, uncovered_contracts: 0, schemas: 2, executable_cases: 3, blocked_without_adapter: 79 });
+  assert.deepEqual(JSON.parse(output), { contracts: 78, public_cases: 82, uncovered_contracts: 0, schemas: 2, executable_cases: 82, blocked_without_adapter: 0 });
 });
 
 test("preflight without credentials is blocked before the SDK loader can execute", async () => {
@@ -32,11 +32,11 @@ test("preflight without credentials is blocked before the SDK loader can execute
   assert.ok(evidence.gates.blockers.some((item) => item.gate === "credential"));
 });
 
-test("a selected case without an adapter is explicitly blocked before SDK loading", async () => {
+test("every pinned public case has an adapter and preflight still runs before SDK loading", async () => {
   let loaded = false;
   const evidence = await runDifferential({
     matrix,
-    selectedCases: [matrix.cases.find((item) => item.case_id === "DELETE /v2/box")],
+    selectedCases: [matrix.cases.find((item) => item.case_id === "GET /v2/box/{box_id}")],
     config: differentialConfig({
       BOXD_DIFF_OFFICIAL_BASE_URL: "https://official.example.test",
       BOXD_DIFF_LOCAL_BASE_URL: "http://127.0.0.1:7331",
@@ -54,5 +54,5 @@ test("a selected case without an adapter is explicitly blocked before SDK loadin
   assert.equal(evidence.status, "blocked");
   assert.equal(evidence.results.executed_cases, 0);
   assert.equal(evidence.results.blocked_cases, 1);
-  assert.deepEqual(evidence.gates.blockers.map((item) => item.gate), ["adapter"]);
+  assert.ok(evidence.gates.blockers.some((item) => item.gate === "runtime"));
 });

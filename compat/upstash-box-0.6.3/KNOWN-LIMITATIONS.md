@@ -20,7 +20,10 @@ imports the hash-verified vendored source before reproducing the upstream
 
 The Phase 4 executor defines and validates the 78-contract/82-case matrix,
 normalizers, independent credential/external-mutation/cost/budget gates, and
-redacted hash-only run evidence. Three cases currently have real pinned-SDK
-adapters; `Box.setEnv` includes `finally` cleanup. The other 79 cases explicitly
-report `blocked: adapter_missing`. Consequently this is not full authenticated
-differential evidence and cannot satisfy the Phase 4 release gate yet.
+redacted hash-only run evidence. All 82 public cases now have executable
+pinned-SDK adapters with resource cleanup. This is executor coverage, not
+authenticated compatibility evidence: the current environment has no
+official/local credentials, runtime, provider key, disposable Git fixture or
+cost budget, so the full run remains blocked before sending requests. Phase 4
+still requires a passing authenticated official/local run with successful
+cleanup for every case.

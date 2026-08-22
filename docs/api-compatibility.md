@@ -120,7 +120,8 @@ rg -n '677ca0827a6f54bc328b4b3e97d32a7cc5ac1934|86|80|78|feature_not_supported' 
 ```
 
 这些命令现已可执行；每次变更都必须重新执行。Phase 4 differential executor 已能用
-隔离 credential 对 official/local 发起真实双端请求，并实现 3 个安全 adapter；其余
-79 cases 会明确 `blocked: adapter_missing`。当前环境没有 official credential/runtime/
-provider，因此 authenticated/success differential 尚未执行，不能由双 fixture server
+隔离 credential 对 official/local 发起真实双端请求，82/82 public cases 均有 pinned-SDK
+adapter 和资源清理；全量 env、远端 Git 与成本型 case 另有 fail-closed opt-in/预算门禁。
+当前环境没有 official credential/runtime/provider/disposable Git fixture/budget，因此
+authenticated/success differential 尚未执行，不能由双 fixture server
 代替。状态边界见 [implementation status](implementation-status.md)。

@@ -1616,7 +1616,10 @@ mod tests {
         supervisor: &Supervisor<CurrentExeWorkerLauncher>,
         id: &str,
     ) -> WorkerExit {
-        timeout(Duration::from_secs(10), async {
+        // Workspace-wide all-features tests run several child-process suites in
+        // parallel. Keep the assertion bounded while allowing a saturated CI
+        // runner enough time to schedule the watcher and reap the helper.
+        timeout(Duration::from_secs(30), async {
             loop {
                 if let RuntimeState::Exited(exit) = supervisor.inspect(id).await.unwrap() {
                     return exit;

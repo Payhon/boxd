@@ -12,9 +12,13 @@ Prepare one target-specific directory containing exactly the paths declared by
 `libkrunfw`, `runtime_bundle`, `sbom`, and `licenses`. Artifact paths must be
 normalized relative paths and no component may be a symlink.
 
-The SPDX 2.3 document must describe `boxd`, `boxd-console`, `libkrun`,
-`libkrunfw`, and `runtime-bundle`. Its SHA-256 package checksums for all but the
-embedded console must match the payload bytes. The license index must bind
+The provenance object must include a local relative `path` in addition to its
+URI and SHA-256. The gate hashes that file from the release directory; a URI
+and claimed digest alone is rejected. The SPDX 2.3 document must describe
+`boxd`, `boxd-console`, `libkrun`, `libkrunfw`, and `runtime-bundle`. Its
+SHA-256 package checksums must match the payload bytes; because the console is
+embedded in `boxd` and has no independent artifact path, its checksum must
+match the exact `boxd` payload hash as well. The license index must bind
 license evidence for the same five components.
 
 ```bash
@@ -28,10 +32,12 @@ python3 scripts/phase4-release-integrity.py verify \
 
 Generation writes canonical `SHA256SUMS` and `release-manifest.json` bytes. A
 second generation from unchanged inputs must be byte-identical. Verification
-re-hashes every payload, checks file sizes, revalidates SPDX and licenses, and
-requires `SHA256SUMS` to be the exact sorted projection. The manifest itself is
-not listed in `SHA256SUMS`, avoiding a circular hash; release signing/provenance
-must bind the manifest separately.
+re-hashes every payload, checks file sizes, revalidates SPDX, provenance and
+licenses, and requires `SHA256SUMS` to be the exact sorted projection. The
+manifest itself is not listed in `SHA256SUMS`, avoiding a circular hash; the
+manifest binds the local provenance file path and digest separately. Generated
+outputs, payloads, provenance, service definitions, `SHA256SUMS`, and the
+manifest must all be unique regular files: symlinks and hardlinks are rejected.
 
 ## Service definitions
 

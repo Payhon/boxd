@@ -7,11 +7,12 @@ import { basename, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { differentialAdapters } from "./adapters.mjs";
 import { evaluateDifferentialGates, redactEvidence, redactUrl } from "./gates.mjs";
-import { normalizeHeaders, normalizeJson, normalizeSse } from "./normalizers.mjs";
+import { normalizeBinary, normalizeHeaders, normalizeJson, normalizeSse } from "./normalizers.mjs";
 
 const captureStorage = new AsyncLocalStorage();
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 const canonical = (value) => JSON.stringify(value);
+const PINNED_SDK_COMMIT = "677ca0827a6f54bc328b4b3e97d32a7cc5ac1934";
 
 async function loadPinnedSdk() {
   const output = await new Promise((resolve, reject) => {
@@ -25,7 +26,13 @@ async function loadPinnedSdk() {
     child.on("close", (code) => code === 0 ? resolve(stdout) : reject(new Error(stderr || `SDK build exited ${code}`)));
   });
   const built = JSON.parse(output);
-  return { sdk: await import(built.entry), cleanup: built.cleanup };
+  try {
+    if (built.source_commit !== PINNED_SDK_COMMIT) throw new Error("pinned SDK commit mismatch");
+    return { sdk: await import(built.entry), cleanup: built.cleanup, sourceCommit: built.source_commit };
+  } catch (error) {
+    await cleanupPinned(built.cleanup);
+    throw error;
+  }
 }
 
 async function cleanupPinned(cleanup) {
@@ -50,7 +57,8 @@ async function normalizedCapture(response) {
     } catch {
       body = { kind: "invalid_json", sha256: sha256(bytes), bytes: bytes.length };
     }
-  } else body = { kind: "bytes", sha256: sha256(bytes), bytes: bytes.length };
+  } else if (captureStorage.getStore()?.adapter?.binaryBodyKind === "media") body = normalizeBinary(bytes, contentType);
+  else body = { kind: "bytes", sha256: sha256(bytes), bytes: bytes.length };
   return { status: clone.status, headers: normalizeHeaders(clone.headers), body };
 }
 
@@ -90,21 +98,23 @@ function artifact(records, phase) {
 }
 
 async function executeTarget(adapter, sdk, target, config, runSignal) {
-  const context = { records: [], phase: "execute", signal: runSignal };
-  const state = adapter.prepare({ target });
+  const execution = new AbortController();
+  const context = { records: [], phase: "execute", signal: AbortSignal.any([runSignal, execution.signal]), adapter };
+  const state = await adapter.prepare({ target, config });
   let executionError = false;
   let cleanupError = false;
   await captureStorage.run(context, async () => {
     try {
-      await withDeadline(adapter.execute({ sdk, target, state }), config.globalTimeoutMs);
+      await withDeadline(adapter.execute({ sdk, target, state, config }), config.globalTimeoutMs);
     } catch {
       executionError = true;
+      execution.abort(new Error("differential target execution ended"));
     } finally {
       if (adapter.cleanup) {
         context.phase = "cleanup";
         context.signal = AbortSignal.timeout(Math.max(config.requestTimeoutMs * 2, 1000));
         try {
-          await withDeadline(adapter.cleanup({ sdk, target, state }), Math.max(config.requestTimeoutMs * 2, 1000));
+          await withDeadline(adapter.cleanup({ sdk, target, state, config }), Math.max(config.requestTimeoutMs * 2, 1000));
         } catch {
           cleanupError = true;
         }
@@ -155,7 +165,16 @@ export async function runDifferential({ matrix, selectedCases, config, sdkLoader
     limits: { request_timeout_ms: config.requestTimeoutMs, global_timeout_ms: config.globalTimeoutMs, concurrency: config.concurrency, budget_usd: config.budgetUsd },
     executor: { adapter_cases: differentialAdapters.size, blocked_without_adapter: matrix.cases.length - differentialAdapters.size },
   };
-  const gates = evaluateDifferentialGates(selectedCases, config);
+  const gateCases = selectedCases.map((item) => {
+    const adapter = differentialAdapters.get(item.case_id);
+    if (!adapter) return item;
+    return {
+      ...item,
+      setup: adapter.requiresRuntime ? "Box.create" : item.setup,
+      risk: { ...item.risk, may_incur_cost: item.risk.may_incur_cost || adapter.mayIncurCost === true },
+    };
+  });
+  const gates = evaluateDifferentialGates(gateCases, config);
   if (!gates.allowed) return redactEvidence({ ...base, status: "blocked", gates, results: emptyResults(selectedCases.length) });
 
   const runnable = selectedCases.filter((item) => differentialAdapters.has(item.case_id));

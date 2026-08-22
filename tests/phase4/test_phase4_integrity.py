@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
 import subprocess
@@ -113,6 +114,49 @@ class ReleaseTests(unittest.TestCase):
             )
             self.assertIn("symlink", result.stderr)
 
+    def test_provenance_must_be_a_local_hashed_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            destination = self.staged_release(Path(temporary))
+            input_value = json.loads((FIXTURES / "release" / "release-input.json").read_text())
+            input_value["provenance"]["sha256"] = "0" * 64
+            input_path = Path(temporary) / "input.json"
+            input_path.write_text(json.dumps(input_value), encoding="utf-8")
+            result = run(RELEASE, "generate", "--release-dir", destination, "--input", input_path, expect=1)
+            self.assertIn("provenance file hash mismatch", result.stderr)
+
+    def test_provenance_path_cannot_alias_a_payload_role(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            destination = self.staged_release(Path(temporary))
+            input_value = json.loads((FIXTURES / "release" / "release-input.json").read_text())
+            boxd_path = input_value["artifacts"]["boxd"]
+            input_value["provenance"]["path"] = boxd_path
+            input_value["provenance"]["sha256"] = hashlib.sha256((destination / boxd_path).read_bytes()).hexdigest()
+            input_path = Path(temporary) / "input.json"
+            input_path.write_text(json.dumps(input_value), encoding="utf-8")
+            result = run(RELEASE, "generate", "--release-dir", destination, "--input", input_path, expect=1)
+            self.assertIn("distinct from release artifact", result.stderr)
+
+    def test_embedded_console_sbom_checksum_is_bound(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            destination = self.staged_release(Path(temporary))
+            sbom_path = destination / "sbom.spdx.json"
+            sbom = json.loads(sbom_path.read_text())
+            next(package for package in sbom["packages"] if package["name"] == "boxd-console")["checksums"][0]["checksumValue"] = "1" * 64
+            sbom_path.write_text(json.dumps(sbom), encoding="utf-8")
+            result = run(RELEASE, "generate", "--release-dir", destination, "--input", FIXTURES / "release" / "release-input.json", expect=1)
+            self.assertIn("embedded boxd-console", result.stderr)
+
+    def test_generated_outputs_reject_hardlinks(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            destination = self.staged_release(Path(temporary))
+            self.generate(destination)
+            linked = Path(temporary) / "linked-sums"
+            linked.hardlink_to(destination / "SHA256SUMS")
+            (destination / "SHA256SUMS").unlink()
+            (destination / "SHA256SUMS").hardlink_to(linked)
+            result = run(RELEASE, "generate", "--release-dir", destination, "--input", FIXTURES / "release" / "release-input.json", expect=1)
+            self.assertIn("unique regular files", result.stderr)
+
     def test_incomplete_sbom_fails(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             destination = self.staged_release(Path(temporary))
@@ -145,6 +189,20 @@ class ServiceAndDrillTests(unittest.TestCase):
                 "--launchd", ROOT / "release" / "services" / "com.payhon.boxd.plist", expect=1,
             )
             self.assertIn("ProtectSystem", result.stderr)
+
+    def test_service_symlink_and_hardlink_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            systemd = root / "boxd.service"
+            launchd = root / "com.payhon.boxd.plist"
+            systemd.symlink_to(ROOT / "release/services/boxd.service")
+            launchd.write_bytes((ROOT / "release/services/com.payhon.boxd.plist").read_bytes())
+            linked = root / "launchd-link"
+            linked.hardlink_to(launchd)
+            launchd.unlink()
+            launchd.hardlink_to(linked)
+            result = run(SERVICES, "--systemd", systemd, "--launchd", launchd, expect=1)
+            self.assertIn("unique regular file", result.stderr)
 
     def test_hermetic_drill_emits_valid_blocked_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

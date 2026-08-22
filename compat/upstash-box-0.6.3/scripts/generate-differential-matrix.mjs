@@ -23,9 +23,9 @@ const isCostBearing = (item) =>
   item.setup === "Box.create" ||
   ["POST /v2/box", "POST /v2/box/from-snapshot"].includes(declaredContract(item.id));
 const riskClassification = (item) => {
+  if (/^(?:PUT|DELETE) \/v2\/box\/settings\/env/.test(item.id) || /\/git\/(?:push|create-pr)/.test(item.id)) return "externally_mutating";
   if (isCostBearing(item)) return "cost_incurring";
   if (!item.destructive) return "read_only";
-  if (/\/settings\/env|\/git\/(?:push|create-pr)/.test(item.id)) return "externally_mutating";
   return "sandbox_mutating";
 };
 

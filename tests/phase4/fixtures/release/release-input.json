@@ -8,7 +8,8 @@
   "builder": {"id": "fixture-builder", "kind": "local-hermetic"},
   "provenance": {
     "uri": "urn:boxd:provenance:fixture",
-    "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+    "path": "provenance.json",
+    "sha256": "eb991c140a42a3818b446ef37cc7f914097038841cde5528125f357948a8d3e8"
   },
   "artifacts": {
     "boxd": "boxd-linux-x86_64",

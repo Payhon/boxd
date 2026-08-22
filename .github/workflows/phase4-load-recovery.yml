@@ -1,17 +1,20 @@
 name: phase4-load-recovery
 on:
   push:
-    paths: ["scripts/phase4-load-*.py", "scripts/phase4-recovery-*.py", "tests/load/**", "tests/recovery/**"]
+    paths: ["scripts/phase4-load-*.py", "scripts/phase4-load-runner.mjs", "scripts/phase4-recovery-*.py", "tests/load/**", "tests/recovery/**"]
   pull_request:
-    paths: ["scripts/phase4-load-*.py", "scripts/phase4-recovery-*.py", "tests/load/**", "tests/recovery/**"]
+    paths: ["scripts/phase4-load-*.py", "scripts/phase4-load-runner.mjs", "scripts/phase4-recovery-*.py", "tests/load/**", "tests/recovery/**"]
 jobs:
   hermetic:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: {node-version: "22"}
       - uses: actions/setup-python@v6
         with: {python-version: "3.12"}
       - run: python3 -m unittest discover -s tests/load -p 'test_*.py' -v
+      - run: node --check scripts/phase4-load-runner.mjs
       - run: python3 -m unittest discover -s tests/recovery -p 'test_*.py' -v
       - run: python3 scripts/phase4-load-harness.py --fixture tests/load/fixture.json
       - run: python3 scripts/phase4-recovery-harness.py --fixture tests/recovery/fixture.json

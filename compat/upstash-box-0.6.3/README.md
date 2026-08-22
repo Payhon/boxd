@@ -44,16 +44,26 @@ Required target isolation:
 create a Box require `BOXD_DIFF_RUNTIME`; agent/provider cases additionally
 require `BOXD_DIFF_PROVIDER_API_KEY`.
 
+Full environment replacement additionally requires
+`BOXD_DIFF_DEDICATED_ACCOUNTS_OPT_IN=1`, because the pinned SDK operation
+replaces the entire account-level environment. Remote Git cases use target-
+specific `BOXD_DIFF_OFFICIAL_GIT_*` and `BOXD_DIFF_LOCAL_GIT_*` variables
+(`REPO`, `BRANCH`, `BASE_BRANCH`, `TOKEN`); the unscoped `BOXD_DIFF_GIT_*`
+names are only shared fallbacks. Create-PR requires distinct disposable head
+branches, and the executor closes each created GitHub PR during cleanup. These
+must point at disposable differential fixtures, not a production repository.
+
 Timeout and concurrency bounds are controlled with
 `BOXD_DIFF_REQUEST_TIMEOUT_MS`, `BOXD_DIFF_GLOBAL_TIMEOUT_MS`, and
 `BOXD_DIFF_CONCURRENCY` (hard-capped at 8).
 
-This slice has executable adapters for 3 of 82 cases: `Box.list`, `Box.listEnv`,
-and `Box.setEnv` with `Box.deleteEnv` in `finally` cleanup. The remaining 79
-cases are frozen in the registry but report `blocked: adapter_missing`; they are
-not planner passes. Cleanup failure fails the whole case. Evidence contains only
-normalized response hashes and counts, never response bodies, API keys or
-resource values.
+All 82 public cases now have pinned-SDK adapters. Stateful adapters create their
+own Box, tab, recording, schedule, snapshot, file or Git fixture and run cleanup
+in `finally`; a cleanup failure fails the whole case. Adapter coverage proves
+only that the executor is ready: without distinct official/local credentials,
+runtime/provider inputs, explicit mutation/cost opt-ins and sufficient budget,
+the authenticated run remains `blocked`. Evidence contains only normalized
+response hashes and counts, never response bodies, API keys or resource values.
 
 Response comparison helpers live in `differential/normalizers.mjs`. They
 normalize volatile JSON fields, selected response headers, and SSE frames while

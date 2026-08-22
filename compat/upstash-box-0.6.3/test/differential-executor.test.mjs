@@ -14,11 +14,11 @@ async function fixtureServer({ key, boxes = [], cleanupStatus = 204, delayMs = 0
     const chunks = [];
     for await (const chunk of request) chunks.push(chunk);
     requests.push({ method: request.method, url: request.url, apiKey: request.headers["x-box-api-key"], body: Buffer.concat(chunks).toString("utf8") });
-    if (delayMs > 0 && request.method === "GET" && request.url === "/v2/box") await new Promise((resolve) => setTimeout(resolve, delayMs));
+    if (delayMs > 0 && request.method === "GET" && request.url.startsWith("/v2/box?")) await new Promise((resolve) => setTimeout(resolve, delayMs));
     if (request.headers["x-box-api-key"] !== key) {
       response.writeHead(401, { "content-type": "application/json" });
       response.end('{"error":"wrong credential"}');
-    } else if (request.method === "GET" && request.url === "/v2/box") {
+    } else if (request.method === "GET" && request.url.startsWith("/v2/box?")) {
       response.writeHead(200, { "content-type": "application/json", "cache-control": "no-cache" });
       response.end(JSON.stringify(boxes));
     } else if (request.method === "GET" && request.url === "/v2/box/settings/env") {

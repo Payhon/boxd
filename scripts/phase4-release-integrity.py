@@ -189,6 +189,11 @@ def validate_sbom(root: Path, relative: str, role_hashes: dict[str, str]) -> Non
     for role, component in COMPONENT_FOR_ROLE.items():
         if package_checksum(by_name[component], f"SBOM package {component}") != role_hashes[role]:
             raise IntegrityError(f"SBOM checksum does not bind {role}")
+    # The console is embedded in the boxd payload in this release layout.  It
+    # has no independent artifact path, so its SPDX checksum must bind the
+    # exact boxd payload hash rather than an unverified placeholder.
+    if package_checksum(by_name["boxd-console"], "SBOM package boxd-console") != role_hashes["boxd"]:
+        raise IntegrityError("SBOM checksum does not bind embedded boxd-console")
     relationships = document.get("relationships")
     described = {
         item.get("relatedSpdxElement")
@@ -226,15 +231,20 @@ def validate_metadata(value: Any) -> dict[str, Any]:
     text(builder["id"], "builder.id", 256)
     if builder["kind"] not in ("github-actions", "local-hermetic", "release-builder"):
         raise IntegrityError("unsupported builder kind")
-    provenance = closed_object(metadata["provenance"], "provenance", {"uri", "sha256"})
+    provenance = closed_object(metadata["provenance"], "provenance", {"uri", "path", "sha256"})
     uri = text(provenance["uri"], "provenance.uri")
     if not (uri.startswith("https://") or uri.startswith("urn:")) or " " in uri:
         raise IntegrityError("provenance.uri must use https or urn")
+    provenance_path = relative_path(provenance["path"], "provenance.path")
+    if provenance_path in ("SHA256SUMS", "release-manifest.json"):
+        raise IntegrityError("provenance.path must not reserve generated output names")
     sha(provenance["sha256"], "provenance.sha256")
     artifacts = closed_object(metadata["artifacts"], "artifacts", set(ROLES))
     paths = [relative_path(artifacts[role], f"artifacts.{role}") for role in ROLES]
     if len(paths) != len(set(paths)) or "SHA256SUMS" in paths or "release-manifest.json" in paths:
         raise IntegrityError("artifact paths must be unique and must not reserve generated output names")
+    if provenance_path in paths:
+        raise IntegrityError("provenance.path must be distinct from release artifact paths")
     expected_names = {
         "darwin-arm64": ("boxd-darwin-arm64", "libkrun.1.dylib", "libkrunfw.5.dylib", "arm64"),
         "linux-x86_64": ("boxd-linux-x86_64", "libkrun.so.1", "libkrunfw.so.5", "x86_64"),
@@ -260,6 +270,13 @@ def artifact_records(root: Path, paths: dict[str, str]) -> tuple[list[dict[str, 
     return records, hashes
 
 
+def validate_provenance(root: Path, provenance: dict[str, Any]) -> None:
+    path = secure_file(root, relative_path(provenance["path"], "provenance.path"))
+    actual = file_sha256(path)
+    if actual != provenance["sha256"]:
+        raise IntegrityError("provenance file hash mismatch")
+
+
 def checksum_bytes(records: list[dict[str, Any]]) -> bytes:
     return "".join(f"{item['sha256']}  {item['path']}\n" for item in sorted(records, key=lambda item: item["path"])).encode()
 
@@ -268,13 +285,17 @@ def generate(root: Path, input_path: Path) -> None:
     metadata = validate_metadata(read_json(input_path, "release input"))
     paths = {role: metadata["artifacts"][role] for role in ROLES}
     records, hashes = artifact_records(root, paths)
+    validate_provenance(root, metadata["provenance"])
     validate_license_index(root, paths["licenses"])
     validate_sbom(root, paths["sbom"], hashes)
     checksums = checksum_bytes(records)
     checksum_path = root / "SHA256SUMS"
     manifest_path = root / "release-manifest.json"
-    if (checksum_path.exists() and checksum_path.is_symlink()) or (manifest_path.exists() and manifest_path.is_symlink()):
-        raise IntegrityError("generated outputs must not be symlinks")
+    for output in (checksum_path, manifest_path):
+        if output.exists():
+            mode = output.lstat().st_mode
+            if stat.S_ISLNK(mode) or not stat.S_ISREG(mode) or output.stat().st_nlink != 1:
+                raise IntegrityError("generated outputs must be unique regular files")
     atomic_write(checksum_path, checksums)
     records.append({"role": "checksums", "path": "SHA256SUMS", "sha256": hashlib.sha256(checksums).hexdigest(), "size": len(checksums)})
     manifest = {
@@ -314,16 +335,21 @@ def validate_manifest(value: Any) -> dict[str, Any]:
         by_role[role] = record
     if set(by_role) != set(ALL_ROLES):
         raise IntegrityError("release manifest must bind each required artifact role exactly once")
+    if by_role["checksums"]["path"] != "SHA256SUMS":
+        raise IntegrityError("checksums role must bind SHA256SUMS")
     metadata["artifacts"] = {role: by_role[role]["path"] for role in ROLES}
     validate_metadata(metadata)
     return manifest
 
 
 def verify(root: Path, manifest_path: Path) -> None:
-    manifest = validate_manifest(read_json(manifest_path, "release manifest"))
+    if manifest_path != root / "release-manifest.json":
+        raise IntegrityError("manifest must be the release root release-manifest.json")
+    manifest = validate_manifest(read_json(secure_file(root, "release-manifest.json"), "release manifest"))
     by_role = {item["role"]: item for item in manifest["artifacts"]}
     paths = {role: by_role[role]["path"] for role in ROLES}
     records, hashes = artifact_records(root, paths)
+    validate_provenance(root, manifest["provenance"])
     for record in records:
         expected = by_role[record["role"]]
         if record["sha256"] != expected["sha256"] or record["size"] != expected["size"]:

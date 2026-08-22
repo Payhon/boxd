@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import configparser
 import plistlib
+import stat
 import sys
 from pathlib import Path
 from typing import Any
@@ -15,7 +16,18 @@ class ServiceError(ValueError):
     pass
 
 
+def service_file(path: Path) -> Path:
+    try:
+        mode = path.lstat().st_mode
+        if stat.S_ISLNK(mode) or not stat.S_ISREG(mode) or path.stat().st_nlink != 1:
+            raise ServiceError("service definition must be a unique regular file")
+    except OSError as error:
+        raise ServiceError(f"service definition is inaccessible: {error}") from error
+    return path
+
+
 def validate_systemd(path: Path) -> None:
+    path = service_file(path)
     try:
         raw_unit = path.read_text(encoding="utf-8")
     except OSError as error:
@@ -84,6 +96,7 @@ def exact_type(value: Any, expected: type, where: str) -> Any:
 
 
 def validate_launchd(path: Path) -> None:
+    path = service_file(path)
     try:
         with path.open("rb") as source:
             document = plistlib.load(source)

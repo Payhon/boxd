@@ -7,5 +7,45 @@ restart, disk full, interrupted runtime pull, SQLite backup/restore, and the
 migration journal. Both are Python-stdlib only and reject secret-like values.
 
 Fixture mode is explicitly `blocked`: it proves only matrix and schema shape.
-Real evidence requires boxd, a signed runtime, and native HVF or KVM; fixtures
-must never be promoted to performance or recovery passes.
+It emits `boxd-phase4-evidence-v1` with eight blocked cases and must never be
+promoted to a recovery pass. A live input is a closed `boxd-phase4-recovery-v1`
+document: it must bind the full commit plus SHA-256 values for `boxd`,
+`runtime`, `db`, and `artifact`, each with a normalized relative path, and be
+run with a mandatory `--artifact-root`. The harness uses `lstat`, rejects
+symlinks, non-regular files, hardlinks, and root escapes, and recomputes every
+SHA-256 before accepting it. Live input must identify native Linux KVM or macOS
+aarch64 HVF, and provide one `pass`/`fail` result, observed text, and artifact
+path/hash for each scenario. Missing bindings, `none` virtualization,
+secret-like values, and fixture/mock/model wording are rejected fail-closed.
+The emitted evidence is then checked with `scripts/phase4-evidence.py`.
+
+## Live load collection
+
+Use the hash-verified SDK collector only against an explicitly running local
+boxd. API keys are environment-only and are never written to evidence:
+
+```sh
+BOXD_LOAD_MODE=live \
+BOXD_BASE_URL=http://127.0.0.1:8787 \
+BOXD_API_KEY='(environment only)' \
+BOXD_BINARY=/absolute/path/to/boxd \
+BOXD_RUNTIME_BUNDLE=/absolute/path/to/runtime.bundle \
+BOXD_LOAD_ARTIFACT_ROOT=/absolute/path/containing/release-artifacts \
+BOXD_RUNTIME=node \
+BOXD_DATA_DIR=/absolute/path/to/data \
+BOXD_DAEMON_PID=12345 \
+BOXD_LOAD_RESULT=/tmp/boxd-load.json \
+node scripts/phase4-load-runner.mjs
+python3 scripts/phase4-load-harness.py --result /tmp/boxd-load.json --artifact-root /absolute/path/containing/release-artifacts --emit-evidence /tmp/boxd-load-evidence.json
+```
+
+The runner rejects symlinks/hardlinks and records normalized artifact-relative
+paths plus recomputed SHA-256 values. The harness independently reopens those
+files under the mandatory artifact root and recomputes the hashes before it can
+emit live evidence. `BOXD_LOAD_RESULT` must not already exist; the collector
+creates it mode `0600` and never follows an existing output path. The runner
+deletes every successfully created Box in `finally` and exercises
+all 16 cells (1/4/16/64 × exec/SSE/browser/preview). Live evidence is `pass`
+only with zero errors, complete commit/binary/runtime/SDK hashes, daemon
+CPU/RSS/FD/disk metrics, and native HVF/KVM identification. Hosted Actions
+checks only the harness and schema; it cannot claim native load evidence.

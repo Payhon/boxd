@@ -1563,7 +1563,7 @@ mod tests {
                 Http1AttachHeadersProxy::new(Arc::new(rules()), RequestHeadLimits::default());
             let (mut guest_client, guest_proxy) = tokio::io::duplex(4096);
             let (upstream_proxy, mut upstream_server) = tokio::io::duplex(4096);
-            let mut proxy_task = tokio::spawn(async move {
+            let proxy_task = tokio::spawn(async move {
                 proxy
                     .proxy_single_http1_connection(guest_proxy, upstream_proxy, &allowed)
                     .await
@@ -1576,45 +1576,31 @@ mod tests {
                 .await
                 .expect("guest request");
 
-            let mut upstream_task = tokio::spawn(async move {
-                let mut request_buffer = vec![0u8; 4096];
-                let read = upstream_server
-                    .read(&mut request_buffer)
+            let mut request_buffer = vec![0u8; 4096];
+            let read = upstream_server
+                .read(&mut request_buffer)
+                .await
+                .expect("upstream read");
+            if read == 0 {
+                return proxy_task
                     .await
-                    .expect("upstream read");
-                let request = String::from_utf8_lossy(&request_buffer[..read]).into_owned();
-                upstream_server
-                    .write_all(b"HTTP/1.1 204 No Content\r\nConnection: close\r\n\r\n")
-                    .await
-                    .expect("response");
-                upstream_server.shutdown().await.expect("upstream close");
-                request
-            });
-            tokio::select! {
-                result = &mut upstream_task => {
-                    let request = result.expect("upstream task");
-                    let mut response = Vec::new();
-                    guest_client.read_to_end(&mut response).await.expect("guest response");
-                    assert!(String::from_utf8_lossy(&response).starts_with("HTTP/1.1 204"));
-                    proxy_task.await.expect("proxy task")?;
-                    Ok(request)
-                }
-                result = &mut proxy_task => {
-                    match result.expect("proxy task") {
-                        Ok(()) => {
-                            let request = upstream_task.await.expect("upstream task");
-                            let mut response = Vec::new();
-                            guest_client.read_to_end(&mut response).await.expect("guest response");
-                            assert!(String::from_utf8_lossy(&response).starts_with("HTTP/1.1 204"));
-                            Ok(request)
-                        }
-                        Err(error) => {
-                            upstream_task.abort();
-                            Err(error)
-                        }
-                    }
-                }
+                    .expect("proxy task")
+                    .map(|()| String::new());
             }
+            let request = String::from_utf8_lossy(&request_buffer[..read]).into_owned();
+            upstream_server
+                .write_all(b"HTTP/1.1 204 No Content\r\nConnection: close\r\n\r\n")
+                .await
+                .expect("response");
+            upstream_server.shutdown().await.expect("upstream close");
+            let mut response = Vec::new();
+            guest_client
+                .read_to_end(&mut response)
+                .await
+                .expect("guest response");
+            assert!(String::from_utf8_lossy(&response).starts_with("HTTP/1.1 204"));
+            proxy_task.await.expect("proxy task")?;
+            Ok(request)
         })
         .await
         .expect("plain HTTP proxy test timed out")

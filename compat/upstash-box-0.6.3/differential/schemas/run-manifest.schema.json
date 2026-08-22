@@ -61,7 +61,7 @@
             "additionalProperties": false,
             "required": ["gate", "reason"],
             "properties": {
-              "gate": { "enum": ["credential", "base_url", "resource_prefix", "runtime", "provider", "externally_mutating_opt_in", "cost_opt_in", "budget", "adapter"] },
+              "gate": { "enum": ["credential", "base_url", "resource_prefix", "runtime", "provider", "dedicated_accounts", "git_fixture", "git_credential", "externally_mutating_opt_in", "cost_opt_in", "budget", "adapter"] },
               "reason": { "type": "string", "minLength": 1 }
             }
           }
