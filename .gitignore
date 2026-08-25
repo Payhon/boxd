@@ -11,6 +11,8 @@ dist/
 coverage/
 playwright-report/
 test-results/
+docs/doc_build/
+output/
 *.log
 examples/boxd-browser-example.png
 __pycache__/

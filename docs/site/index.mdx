@@ -1,0 +1,29 @@
+---
+pageType: home
+title: boxd
+titleSuffix: Local sandbox for macOS
+hero:
+  name: boxd
+  text: 把云端沙盒带回你的 Mac
+  tagline: 面向 macOS 开发者、与 @upstash/box@0.6.3 按可执行契约对齐的轻量级本地 Sandbox-as-a-Service。
+  image:
+    src: ./boxd-hero.png
+    alt: boxd 本地 microVM 沙盒抽象图
+  actions:
+    - theme: brand
+      text: 从源码开始
+      link: /guide/quick-start
+    - theme: alt
+      text: 查看 API
+      link: /api/overview
+features:
+  - title: 本地优先
+    details: 在 Apple Silicon Mac 上使用 Hypervisor.framework 与 libkrun 运行隔离的 Linux microVM。
+    icon: ⌘
+  - title: 契约兼容
+    details: 固定 @upstash/box 0.6.3 与指定 commit，以真实 SDK fixture 和差分门禁约束接口。
+    icon: ◫
+  - title: 单节点、轻运维
+    details: Rust 控制面、SQLite 默认存储、嵌入式 Console；运行时按需导入，不依赖 Docker 守护进程。
+    icon: ◇
+---

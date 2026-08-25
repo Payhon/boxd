@@ -1,0 +1,11 @@
+<svg width="132" height="36" viewBox="0 0 132 36" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="boxd">
+  <defs>
+    <linearGradient id="boxd-mark" x1="2" y1="2" x2="32" y2="34" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#46E6CE"/>
+      <stop offset="1" stop-color="#5887FF"/>
+    </linearGradient>
+  </defs>
+  <path d="M18 2.75 31.2 10.4v15.2L18 33.25 4.8 25.6V10.4L18 2.75Z" stroke="url(#boxd-mark)" stroke-width="2.5"/>
+  <path d="m8.6 12.5 9.4 5.4 9.4-5.4M18 17.9v10.8" stroke="url(#boxd-mark)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="42" y="25" fill="currentColor" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22" font-weight="700" letter-spacing="-1">boxd</text>
+</svg>

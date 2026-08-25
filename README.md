@@ -1,5 +1,10 @@
 # boxd
 
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-087f73)](https://payhon.github.io/boxd/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-46b59f.svg)](LICENSE)
+
+**Website & documentation:** [https://payhon.github.io/boxd/](https://payhon.github.io/boxd/)
+
 `boxd` is a local Sandbox-as-a-Service control plane whose compatibility target is
 the public API of `@upstash/box@0.6.3` at upstream commit
 `677ca0827a6f54bc328b4b3e97d32a7cc5ac1934`.
@@ -119,3 +124,20 @@ artifact boundary, and the exact Linux KVM gate that is still outstanding.
 Any unsupported compatibility endpoint must eventually return HTTP 501 with the
 stable error code `feature_not_supported`. Accepting and silently ignoring an
 unsupported parameter is forbidden.
+
+## Documentation website
+
+The Rspress website lives in [`docs/`](docs/) and is published to GitHub Pages
+from `main` by [the Pages workflow](.github/workflows/docs-pages.yml).
+
+```sh
+npm ci --prefix docs
+npm run dev --prefix docs
+npm run check --prefix docs
+```
+
+## License
+
+boxd is available under the permissive [MIT License](LICENSE). Third-party
+runtime assets and dependencies retain their own licenses and must ship with
+their corresponding license inventory and SBOM.

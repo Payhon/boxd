@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://payhon.github.io/boxd/
+    about: Read the guides, API reference, and current compatibility boundary.
+  - name: Security reporting
+    url: https://github.com/Payhon/boxd/blob/main/SECURITY.md
+    about: Do not report vulnerabilities in a public issue.

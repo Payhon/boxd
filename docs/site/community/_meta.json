@@ -1,0 +1,5 @@
+[
+  { "type": "file", "name": "contributing", "label": "参与贡献" },
+  { "type": "file", "name": "roadmap", "label": "路线图" },
+  { "type": "file", "name": "license", "label": "MIT 许可证" }
+]

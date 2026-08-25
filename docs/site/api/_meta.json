@@ -1,0 +1,9 @@
+[
+  { "type": "file", "name": "overview", "label": "API 总览" },
+  { "type": "file", "name": "boxes", "label": "Box 与生命周期" },
+  { "type": "file", "name": "execution", "label": "执行与事件流" },
+  { "type": "file", "name": "files-git", "label": "文件、Git 与快照" },
+  { "type": "file", "name": "automation-browser", "label": "调度、预览与 Browser" },
+  { "type": "file", "name": "admin", "label": "管理 API" },
+  { "type": "file", "name": "errors", "label": "错误与兼容边界" }
+]

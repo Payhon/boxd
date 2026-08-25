@@ -1,0 +1,19 @@
+{
+  "name": "boxd-docs",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22 <23"
+  },
+  "scripts": {
+    "dev": "DOCS_BASE=/ rspress dev",
+    "build": "rspress build",
+    "preview": "rspress preview",
+    "check": "node scripts/check-docs.mjs && rspress build"
+  },
+  "devDependencies": {
+    "@rspress/core": "2.0.20",
+    "typescript": "5.9.2"
+  }
+}

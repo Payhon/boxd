@@ -1,0 +1,47 @@
+name: Bug report
+description: Report a reproducible boxd defect
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: Security vulnerabilities must follow SECURITY.md and must not be filed publicly.
+  - type: input
+    id: commit
+    attributes:
+      label: Commit or version
+      placeholder: git rev-parse HEAD
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - macOS Apple Silicon (HVF)
+        - Linux x86_64 (KVM)
+        - Linux aarch64 (KVM)
+        - Source/contract tests only
+        - Documentation website
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Provide minimal commands or SDK calls, with all secrets removed.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and validation boundary
+      description: State whether this is source, hosted CI, real HVF/KVM, or release evidence.
+    validations:
+      required: true

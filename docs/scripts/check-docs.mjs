@@ -1,0 +1,128 @@
+import { access, readFile, readdir, stat } from 'node:fs/promises';
+import { resolve } from 'node:path';
+
+const docsRoot = resolve(import.meta.dirname, '..');
+const repoRoot = resolve(docsRoot, '..');
+const required = [
+  'site/index.mdx',
+  'site/guide/source-build.md',
+  'site/api/overview.md',
+  'site/api/errors.md',
+  'site/mobile/components.md',
+  'site/community/license.md',
+  'site/public/logo.svg',
+  'site/public/favicon.svg',
+  'site/public/boxd-hero.png',
+  'rspress.config.ts',
+  '../.github/workflows/docs-pages.yml',
+];
+
+for (const file of required) await access(resolve(docsRoot, file));
+
+const [
+  readme,
+  license,
+  cargo,
+  packageJson,
+  packageLock,
+  rspressConfig,
+  workflow,
+  home,
+  sourceBuild,
+  apiOverview,
+  apiErrors,
+  compatibility,
+  mobileComponents,
+  routeManifest,
+  coverageTable,
+  hero,
+] = await Promise.all([
+  readFile(resolve(repoRoot, 'README.md'), 'utf8'),
+  readFile(resolve(repoRoot, 'LICENSE'), 'utf8'),
+  readFile(resolve(repoRoot, 'Cargo.toml'), 'utf8'),
+  readFile(resolve(docsRoot, 'package.json'), 'utf8').then(JSON.parse),
+  readFile(resolve(docsRoot, 'package-lock.json'), 'utf8').then(JSON.parse),
+  readFile(resolve(docsRoot, 'rspress.config.ts'), 'utf8'),
+  readFile(resolve(repoRoot, '.github/workflows/docs-pages.yml'), 'utf8'),
+  readFile(resolve(docsRoot, 'site/index.mdx'), 'utf8'),
+  readFile(resolve(docsRoot, 'site/guide/source-build.md'), 'utf8'),
+  readFile(resolve(docsRoot, 'site/api/overview.md'), 'utf8'),
+  readFile(resolve(docsRoot, 'site/api/errors.md'), 'utf8'),
+  readFile(resolve(docsRoot, 'site/concepts/compatibility.md'), 'utf8'),
+  readFile(resolve(docsRoot, 'site/mobile/components.md'), 'utf8'),
+  readFile(resolve(repoRoot, 'compat/upstash-box-0.6.3/route-manifest.json'), 'utf8').then(JSON.parse),
+  readFile(resolve(repoRoot, 'compat/upstash-box-0.6.3/coverage-table.json'), 'utf8').then(JSON.parse),
+  stat(resolve(docsRoot, 'site/public/boxd-hero.png')),
+]);
+
+const extraction = routeManifest.extraction;
+const expectedContractSummary =
+  `${extraction.raw_call_sites} callsites / ` +
+  `${extraction.normalized_operation_dispatches} operations / ` +
+  `${extraction.direct_method_path_contracts} direct + ` +
+  `${extraction.response_linked_contracts} response-linked contracts`;
+
+const assertions = [
+  [readme.includes('https://payhon.github.io/boxd/'), 'README must link to GitHub Pages'],
+  [license.startsWith('MIT License\n'), 'root LICENSE must contain the MIT License'],
+  [/license = "MIT"/.test(cargo), 'Cargo workspace license must be MIT'],
+  [packageJson.engines.node === '>=22 <23', 'documentation must retain the verified Node 22 engine'],
+  [packageJson.devDependencies['@rspress/core'] === '2.0.20', 'Rspress version must stay explicitly pinned'],
+  [packageLock.packages[''].devDependencies['@rspress/core'] === '2.0.20', 'package lock must pin Rspress 2.0.20'],
+  [rspressConfig.includes("root: 'site'"), 'Rspress root must remain docs/site'],
+  [rspressConfig.includes("'/boxd/'"), 'Rspress production base must remain /boxd/'],
+  [rspressConfig.includes('checkDeadLinks: true'), 'Rspress dead-link checking must remain enabled'],
+  [home.includes('src: ./boxd-hero.png'), 'homepage hero must use a base-safe relative URL'],
+  [home.includes('@upstash/box@0.6.3'), 'homepage must name the pinned SDK baseline'],
+  [workflow.includes('branches: [main]'), 'Pages workflow must deploy the default main branch'],
+  [workflow.includes('npm ci --prefix docs'), 'Pages workflow must use the documentation lockfile'],
+  [workflow.includes('npm run check --prefix docs'), 'Pages workflow must run the full documentation gate'],
+  [workflow.includes('path: docs/doc_build'), 'Pages artifact must upload the Rspress output directory'],
+  [workflow.includes('actions/deploy-pages@v5'), 'Pages workflow must use the reviewed deploy action major'],
+  [sourceBuild.includes('git clone https://github.com/Payhon/boxd.git'), 'source guide must start from repository clone'],
+  [sourceBuild.includes('BOXD_EMBEDDED_LIBKRUN_PATH'), 'source guide must include release asset build'],
+  [sourceBuild.includes('doctor --json'), 'source guide must include doctor gate'],
+  [sourceBuild.includes('/health/ready'), 'source guide must verify service readiness'],
+  [sourceBuild.includes('npm run lifecycle'), 'source guide must finish with a real public-SDK lifecycle'],
+  [apiOverview.includes('/openapi.json'), 'API overview must document generated OpenAPI'],
+  [apiOverview.includes('X-Box-Api-Key'), 'API overview must document compatibility authentication'],
+  [apiErrors.includes(expectedContractSummary), 'API compatibility counts must match the pinned manifest'],
+  [compatibility.includes(`${coverageTable.public_cases} cases / ${coverageTable.captured_dispatches} captures`), 'compatibility page counts must match coverage evidence'],
+  [mobileComponents.includes('文档级 React Native 参考实现'), 'mobile components must retain reference-only boundary'],
+  [mobileComponents.includes('BoxStatusCardProps'), 'mobile docs must include BoxStatusCard API'],
+  [mobileComponents.includes('RunEventListProps'), 'mobile docs must include RunEventList API'],
+  [mobileComponents.includes('SandboxActionsProps'), 'mobile docs must include SandboxActions API'],
+  [hero.size > 100_000, 'hero artwork is unexpectedly small'],
+];
+
+for (const [condition, message] of assertions) {
+  if (!condition) throw new Error(message);
+}
+
+async function sourceFiles(directory) {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const files = await Promise.all(
+    entries.map((entry) => {
+      const path = resolve(directory, entry.name);
+      return entry.isDirectory() ? sourceFiles(path) : [path];
+    }),
+  );
+  return files.flat();
+}
+
+const textualSources = (await sourceFiles(resolve(docsRoot, 'site'))).filter((file) =>
+  /\.(?:md|mdx|json|ts|tsx|svg)$/.test(file),
+);
+
+for (const file of textualSources) {
+  const content = await readFile(file, 'utf8');
+  if (content.includes('@upslash/box')) {
+    throw new Error(`${file.slice(docsRoot.length + 1)} contains the misspelled package name @upslash/box`);
+  }
+}
+
+console.log(
+  `docs integrity OK: ${required.length} required files, ` +
+    `${routeManifest.routes.length} pinned contracts, ` +
+    `${coverageTable.public_cases} SDK cases, hero ${hero.size} bytes`,
+);

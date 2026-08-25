@@ -1,0 +1,31 @@
+[
+  {
+    "text": "开始使用",
+    "link": "/guide/introduction",
+    "activeMatch": "^/guide/"
+  },
+  {
+    "text": "API",
+    "link": "/api/overview",
+    "activeMatch": "^/api/"
+  },
+  {
+    "text": "移动端",
+    "link": "/mobile/overview",
+    "activeMatch": "^/mobile/"
+  },
+  {
+    "text": "架构",
+    "link": "/concepts/architecture",
+    "activeMatch": "^/concepts/"
+  },
+  {
+    "text": "社区",
+    "link": "/community/contributing",
+    "activeMatch": "^/community/"
+  },
+  {
+    "text": "GitHub",
+    "link": "https://github.com/Payhon/boxd"
+  }
+]
