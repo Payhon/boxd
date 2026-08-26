@@ -1,7 +1,8 @@
 [
   { "type": "file", "name": "introduction", "label": "认识 boxd" },
+  { "type": "file", "name": "download", "label": "下载二进制" },
   { "type": "file", "name": "quick-start", "label": "5 分钟开始" },
-  { "type": "file", "name": "source-build", "label": "从源码运行" },
+  { "type": "file", "name": "source-build", "label": "从源码构建" },
   { "type": "file", "name": "configuration", "label": "配置参考" },
   { "type": "file", "name": "troubleshooting", "label": "故障排查" }
 ]

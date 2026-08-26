@@ -129,7 +129,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Compile Phase 4 tooling
-        run: python3 -m py_compile scripts/phase4-*.py tests/*/test_*.py
+        run: python3 -m py_compile scripts/phase4-*.py scripts/package-release.py tests/*/test_*.py
       - name: Run hermetic security, load, recovery, and release tests
         run: |
           python3 -m unittest discover -s tests/security -p 'test_*.py' -v

@@ -9,6 +9,7 @@ on:
       - "LICENSE"
       - "Cargo.toml"
       - ".github/workflows/docs-pages.yml"
+      - ".github/workflows/release-binaries.yml"
   pull_request:
     paths:
       - "docs/**"
@@ -16,6 +17,7 @@ on:
       - "LICENSE"
       - "Cargo.toml"
       - ".github/workflows/docs-pages.yml"
+      - ".github/workflows/release-binaries.yml"
   workflow_dispatch:
 
 permissions:

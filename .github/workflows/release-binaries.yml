@@ -1,0 +1,371 @@
+name: release-binaries
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: SemVer without the leading v; manual runs upload Actions artifacts only
+        required: true
+        default: 0.0.0-preview.1
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-binaries-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_INCREMENTAL: "0"
+  CARGO_TERM_COLOR: always
+
+jobs:
+  metadata:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      source_date_epoch: ${{ steps.release.outputs.source_date_epoch }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - id: release
+        name: Validate release identity
+        shell: bash
+        env:
+          MANUAL_VERSION: ${{ inputs.version }}
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then
+            version=${GITHUB_REF_NAME#v}
+          else
+            version=$MANUAL_VERSION
+          fi
+          [[ $version =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+          printf 'source_date_epoch=%s\n' "$(git show -s --format=%ct HEAD)" >> "$GITHUB_OUTPUT"
+
+  source-gates:
+    needs: metadata
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      BOXD_BUILD_VERSION: ${{ needs.metadata.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@1.94.0
+        with:
+          components: clippy,rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            compat/upstash-box-0.6.3/package-lock.json
+            web/console/package-lock.json
+            docs/package-lock.json
+      - name: Validate release tooling
+        run: |
+          python3 -m py_compile scripts/package-release.py tests/phase4/test_package_release.py
+          python3 -m unittest tests.phase4.test_package_release -v
+          python3 scripts/phase4-validate-services.py \
+            --systemd release/services/boxd.service \
+            --launchd release/services/com.payhon.boxd.plist
+      - run: git diff --check
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+      - run: cargo test --workspace --all-features
+      - name: Validate pinned SDK contract
+        run: |
+          npm ci --prefix compat/upstash-box-0.6.3
+          npm run check:manifest --prefix compat/upstash-box-0.6.3
+          npm run check:coverage --prefix compat/upstash-box-0.6.3
+          npm run check:differential --prefix compat/upstash-box-0.6.3
+          npm test --prefix compat/upstash-box-0.6.3
+          git diff --exit-code -- compat/upstash-box-0.6.3/coverage-table.json compat/upstash-box-0.6.3/fixtures/public-captures.json
+      - name: Validate embedded Console
+        run: |
+          npm ci --prefix web/console
+          npm run lint --prefix web/console
+          npm run typecheck --prefix web/console
+          npm test --prefix web/console -- --run
+          npm run build --prefix web/console
+          npm run test:e2e --prefix web/console
+          git diff --exit-code -- web/console/dist
+      - name: Validate documentation
+        run: |
+          npm ci --prefix docs
+          npm run check --prefix docs
+
+  native-build:
+    needs: [metadata, source-gates]
+    name: Build and verify ${{ matrix.target }}
+    timeout-minutes: 120
+    environment: release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: darwin-arm64
+            runner: [self-hosted, macOS, ARM64, boxd-release]
+            libkrun_path_var: BOXD_RELEASE_DARWIN_ARM64_LIBKRUN_PATH
+            libkrun_sha_var: BOXD_RELEASE_DARWIN_ARM64_LIBKRUN_SHA256
+            libkrun_license_var: BOXD_RELEASE_DARWIN_ARM64_LIBKRUN_LICENSE_PATH
+            libkrunfw_path_var: BOXD_RELEASE_DARWIN_ARM64_LIBKRUNFW_PATH
+            libkrunfw_sha_var: BOXD_RELEASE_DARWIN_ARM64_LIBKRUNFW_SHA256
+            libkrunfw_license_var: BOXD_RELEASE_DARWIN_ARM64_LIBKRUNFW_LICENSE_PATH
+            config_var: BOXD_RELEASE_DARWIN_ARM64_UNUSED_CONFIG
+            runtime_var: BOXD_RELEASE_DARWIN_ARM64_UNUSED_RUNTIME
+          - target: linux-x86_64
+            runner: [self-hosted, linux, x64, boxd-kvm, boxd-release]
+            libkrun_path_var: BOXD_RELEASE_LINUX_X86_64_LIBKRUN_PATH
+            libkrun_sha_var: BOXD_RELEASE_LINUX_X86_64_LIBKRUN_SHA256
+            libkrun_license_var: BOXD_RELEASE_LINUX_X86_64_LIBKRUN_LICENSE_PATH
+            libkrunfw_path_var: BOXD_RELEASE_LINUX_X86_64_LIBKRUNFW_PATH
+            libkrunfw_sha_var: BOXD_RELEASE_LINUX_X86_64_LIBKRUNFW_SHA256
+            libkrunfw_license_var: BOXD_RELEASE_LINUX_X86_64_LIBKRUNFW_LICENSE_PATH
+            config_var: BOXD_RELEASE_LINUX_X86_64_CONFIG
+            runtime_var: BOXD_RELEASE_LINUX_X86_64_RUNTIME_BUNDLE
+          - target: linux-aarch64
+            runner: [self-hosted, linux, ARM64, boxd-kvm, boxd-release]
+            libkrun_path_var: BOXD_RELEASE_LINUX_AARCH64_LIBKRUN_PATH
+            libkrun_sha_var: BOXD_RELEASE_LINUX_AARCH64_LIBKRUN_SHA256
+            libkrun_license_var: BOXD_RELEASE_LINUX_AARCH64_LIBKRUN_LICENSE_PATH
+            libkrunfw_path_var: BOXD_RELEASE_LINUX_AARCH64_LIBKRUNFW_PATH
+            libkrunfw_sha_var: BOXD_RELEASE_LINUX_AARCH64_LIBKRUNFW_SHA256
+            libkrunfw_license_var: BOXD_RELEASE_LINUX_AARCH64_LIBKRUNFW_LICENSE_PATH
+            config_var: BOXD_RELEASE_LINUX_AARCH64_CONFIG
+            runtime_var: BOXD_RELEASE_LINUX_AARCH64_RUNTIME_BUNDLE
+    runs-on: ${{ matrix.runner }}
+    env:
+      BOXD_BUILD_VERSION: ${{ needs.metadata.outputs.version }}
+      BOXD_EMBEDDED_LIBKRUN_PATH: ${{ vars[matrix.libkrun_path_var] }}
+      BOXD_EMBEDDED_LIBKRUN_SHA256: ${{ vars[matrix.libkrun_sha_var] }}
+      BOXD_EMBEDDED_LIBKRUN_LICENSE_PATH: ${{ vars[matrix.libkrun_license_var] }}
+      BOXD_EMBEDDED_LIBKRUNFW_PATH: ${{ vars[matrix.libkrunfw_path_var] }}
+      BOXD_EMBEDDED_LIBKRUNFW_SHA256: ${{ vars[matrix.libkrunfw_sha_var] }}
+      BOXD_EMBEDDED_LIBKRUNFW_LICENSE_PATH: ${{ vars[matrix.libkrunfw_license_var] }}
+      BOXD_SMOKE_CONFIG: ${{ vars[matrix.config_var] }}
+      BOXD_RUNTIME_BUNDLE: ${{ vars[matrix.runtime_var] }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@1.94.0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: compat/upstash-box-0.6.3/package-lock.json
+      - name: Set isolated output paths
+        shell: bash
+        run: |
+          release_output="$RUNNER_TEMP/boxd-release-output-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-${{ matrix.target }}"
+          printf 'BOXD_RELEASE_TARGET_DIR=%s/boxd-release-target-%s-%s-%s\n' "$RUNNER_TEMP" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "${{ matrix.target }}" >> "$GITHUB_ENV"
+          printf 'BOXD_RELEASE_OUTPUT_DIR=%s\n' "$release_output" >> "$GITHUB_ENV"
+          printf 'BOXD_RELEASE_SUMMARY=%s/boxd-release-summary-%s.json\n' "$release_output" "${{ matrix.target }}" >> "$GITHUB_ENV"
+          printf 'BOXD_EVIDENCE_DIR=%s/boxd-release-evidence-%s-%s-%s\n' "$RUNNER_TEMP" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "${{ matrix.target }}" >> "$GITHUB_ENV"
+      - name: Verify native target
+        shell: bash
+        run: |
+          case "${{ matrix.target }}" in
+            darwin-arm64) test "$(uname -s):$(uname -m)" = Darwin:arm64 ;;
+            linux-x86_64) test "$(uname -s):$(uname -m)" = Linux:x86_64 ;;
+            linux-aarch64) test "$(uname -s):$(uname -m)" = Linux:aarch64 ;;
+            *) exit 64 ;;
+          esac
+      - name: Verify pinned build assets
+        shell: bash
+        run: |
+          python3 - "$BOXD_EMBEDDED_LIBKRUN_PATH" "$BOXD_EMBEDDED_LIBKRUN_SHA256" \
+            "$BOXD_EMBEDDED_LIBKRUN_LICENSE_PATH" "$BOXD_EMBEDDED_LIBKRUNFW_PATH" \
+            "$BOXD_EMBEDDED_LIBKRUNFW_SHA256" "$BOXD_EMBEDDED_LIBKRUNFW_LICENSE_PATH" <<'PY'
+          import hashlib, pathlib, stat, sys
+          for path_value, expected in ((sys.argv[1], sys.argv[2]), (sys.argv[4], sys.argv[5])):
+              path = pathlib.Path(path_value)
+              mode = path.lstat().st_mode
+              if path.is_symlink() or not stat.S_ISREG(mode):
+                  raise SystemExit(f"release asset is not a regular non-symlink file: {path}")
+              if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+                  raise SystemExit(f"release asset SHA-256 mismatch: {path}")
+          for value in (sys.argv[3], sys.argv[6]):
+              path = pathlib.Path(value)
+              if path.is_symlink() or not path.is_file() or path.stat().st_size == 0:
+                  raise SystemExit(f"release license is invalid: {path}")
+          PY
+      - name: Run native Linux KVM release gate
+        if: startsWith(matrix.target, 'linux-')
+        shell: bash
+        env:
+          BOXD_KVM_TARGET_DIR: ${{ env.BOXD_RELEASE_TARGET_DIR }}
+          BOXD_SKIP_SOURCE_GATES: "1"
+          BOXD_MASTER_KEY: ${{ secrets.BOXD_RELEASE_MASTER_KEY }}
+          BOXD_ADMIN_PASSWORD: ${{ secrets.BOXD_RELEASE_ADMIN_PASSWORD }}
+          UPSTASH_BOX_API_KEY: ${{ secrets.BOXD_RELEASE_API_KEY }}
+          UPSTASH_BOX_BASE_URL: http://127.0.0.1:7331
+        run: scripts/phase1-linux-kvm-smoke.sh
+      - name: Build macOS ARM64 binary
+        if: matrix.target == 'darwin-arm64'
+        shell: bash
+        env:
+          CARGO_TARGET_DIR: ${{ env.BOXD_RELEASE_TARGET_DIR }}
+          MACOSX_DEPLOYMENT_TARGET: "14.0"
+        run: cargo build --locked --release -p boxd
+      - name: Developer ID sign macOS binary
+        if: matrix.target == 'darwin-arm64'
+        shell: bash
+        env:
+          APPLE_CERTIFICATE_P12_BASE64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          CERTIFICATE: ${{ runner.temp }}/boxd-release-certificate.p12
+        run: |
+          test -n "$APPLE_CERTIFICATE_P12_BASE64"
+          test -n "$APPLE_CERTIFICATE_PASSWORD"
+          test -n "$APPLE_SIGNING_IDENTITY"
+          certificate="$RUNNER_TEMP/boxd-release-certificate.p12"
+          keychain="$RUNNER_TEMP/boxd-release.keychain-db"
+          keychain_password=$(openssl rand -hex 24)
+          cleanup() { security delete-keychain "$keychain" >/dev/null 2>&1 || true; rm -f "$certificate"; }
+          trap cleanup EXIT
+          python3 -c 'import base64,os,pathlib; pathlib.Path(os.environ["CERTIFICATE"]).write_bytes(base64.b64decode(os.environ["APPLE_CERTIFICATE_P12_BASE64"], validate=True))'
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$certificate" -k "$keychain" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$keychain_password" "$keychain"
+          codesign --force --timestamp --options runtime \
+            --keychain "$keychain" \
+            --entitlements release/macos/boxd.entitlements.plist \
+            --sign "$APPLE_SIGNING_IDENTITY" "$BOXD_RELEASE_TARGET_DIR/release/boxd"
+          codesign --verify --deep --strict --verbose=2 "$BOXD_RELEASE_TARGET_DIR/release/boxd"
+          codesign --verify --strict --verbose=2 "$BOXD_EMBEDDED_LIBKRUN_PATH"
+          codesign --verify --strict --verbose=2 "$BOXD_EMBEDDED_LIBKRUNFW_PATH"
+          binary_team=$(codesign -dv --verbose=4 "$BOXD_RELEASE_TARGET_DIR/release/boxd" 2>&1 | sed -n 's/^TeamIdentifier=//p')
+          libkrun_team=$(codesign -dv --verbose=4 "$BOXD_EMBEDDED_LIBKRUN_PATH" 2>&1 | sed -n 's/^TeamIdentifier=//p')
+          firmware_team=$(codesign -dv --verbose=4 "$BOXD_EMBEDDED_LIBKRUNFW_PATH" 2>&1 | sed -n 's/^TeamIdentifier=//p')
+          test -n "$binary_team"
+          test "$binary_team" = "$libkrun_team"
+          test "$binary_team" = "$firmware_team"
+      - name: Verify binary identity
+        shell: bash
+        run: |
+          binary="$BOXD_RELEASE_TARGET_DIR/release/boxd"
+          test -x "$binary"
+          test "$("$binary" --version)" = "boxd $BOXD_BUILD_VERSION"
+      - name: Package download archive
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ needs.metadata.outputs.version }}
+          SOURCE_DATE_EPOCH: ${{ needs.metadata.outputs.source_date_epoch }}
+        run: |
+          python3 scripts/package-release.py \
+            --binary "$BOXD_RELEASE_TARGET_DIR/release/boxd" \
+            --target "${{ matrix.target }}" \
+            --version "$RELEASE_VERSION" \
+            --commit "$GITHUB_SHA" \
+            --source-date-epoch "$SOURCE_DATE_EPOCH" \
+            --libkrun-sha256 "$BOXD_EMBEDDED_LIBKRUN_SHA256" \
+            --libkrunfw-sha256 "$BOXD_EMBEDDED_LIBKRUNFW_SHA256" \
+            --libkrun-license "$BOXD_EMBEDDED_LIBKRUN_LICENSE_PATH" \
+            --libkrunfw-license "$BOXD_EMBEDDED_LIBKRUNFW_LICENSE_PATH" \
+            --output-dir "$BOXD_RELEASE_OUTPUT_DIR" \
+            --summary "$BOXD_RELEASE_SUMMARY"
+      - name: Notarize macOS download archive
+        if: matrix.target == 'darwin-arm64'
+        shell: bash
+        env:
+          APPLE_NOTARY_KEY_P8_BASE64: ${{ secrets.APPLE_NOTARY_KEY_P8_BASE64 }}
+          APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
+          APPLE_NOTARY_ISSUER_ID: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
+        run: |
+          test -n "$APPLE_NOTARY_KEY_P8_BASE64"
+          test -n "$APPLE_NOTARY_KEY_ID"
+          test -n "$APPLE_NOTARY_ISSUER_ID"
+          key="$RUNNER_TEMP/AuthKey_${APPLE_NOTARY_KEY_ID}.p8"
+          export NOTARY_KEY="$key"
+          trap 'rm -f "$NOTARY_KEY"' EXIT
+          python3 -c 'import base64,os,pathlib; pathlib.Path(os.environ["NOTARY_KEY"]).write_bytes(base64.b64decode(os.environ["APPLE_NOTARY_KEY_P8_BASE64"], validate=True))'
+          archive=$(python3 -c 'import json,os; print(os.path.join(os.environ["BOXD_RELEASE_OUTPUT_DIR"], json.load(open(os.environ["BOXD_RELEASE_SUMMARY"]))["archive"]))')
+          xcrun notarytool submit "$archive" \
+            --key "$key" --key-id "$APPLE_NOTARY_KEY_ID" --issuer "$APPLE_NOTARY_ISSUER_ID" --wait
+      - name: Upload native validation evidence
+        if: always() && startsWith(matrix.target, 'linux-')
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-evidence-${{ matrix.target }}-${{ github.run_id }}
+          path: ${{ env.BOXD_EVIDENCE_DIR }}
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Upload downloadable archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: boxd-${{ needs.metadata.outputs.version }}-${{ matrix.target }}
+          path: ${{ env.BOXD_RELEASE_OUTPUT_DIR }}
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    if: github.ref_type == 'tag'
+    needs: [metadata, native-build]
+    runs-on: ubuntu-24.04
+    environment: release
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          pattern: boxd-${{ needs.metadata.outputs.version }}-*
+          path: release-assets
+          merge-multiple: true
+      - name: Verify summaries and write aggregate checksums
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, pathlib
+          root = pathlib.Path("release-assets")
+          summaries = sorted(root.glob("boxd-release-summary-*.json"))
+          if len(summaries) != 3:
+              raise SystemExit(f"expected three release summaries, found {len(summaries)}")
+          targets = set()
+          lines = []
+          for path in summaries:
+              summary = json.loads(path.read_text())
+              archive = root / summary["archive"]
+              actual = hashlib.sha256(archive.read_bytes()).hexdigest()
+              if actual != summary["sha256"]:
+                  raise SystemExit(f"archive digest mismatch: {archive}")
+              targets.add(summary["target"])
+              lines.append(f"{actual}  {archive.name}")
+          if targets != {"darwin-arm64", "linux-x86_64", "linux-aarch64"}:
+              raise SystemExit(f"unexpected release targets: {sorted(targets)}")
+          (root / "SHA256SUMS").write_text("\n".join(sorted(lines)) + "\n")
+          for summary in summaries:
+              summary.unlink()
+          PY
+      - name: Attest release archives
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: |
+            release-assets/*.tar.gz
+            release-assets/*.zip
+            release-assets/SHA256SUMS
+      - name: Create GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ needs.metadata.outputs.version }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" release-assets/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --prerelease \
+            --title "boxd ${RELEASE_VERSION} preview" \
+            --generate-notes \
+            --notes "Native archives for macOS ARM64, Linux x86_64, and Linux aarch64. Linux archives passed the real KVM lifecycle gate for this commit; macOS was Developer ID signed and notarized. This is a compatibility-subset preview, not boxd 1.0. A separately signed runtime bundle is still required."

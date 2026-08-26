@@ -6,7 +6,7 @@ export default defineConfig({
   root: 'site',
   base: process.env.DOCS_BASE ?? '/boxd/',
   title: 'boxd',
-  description: '面向 macOS 开发者的本地 Upstash Box 兼容轻量级沙盒',
+  description: '面向 macOS Apple Silicon 与原生 Linux KVM 的本地 Upstash Box 兼容轻量级沙盒',
   icon: '/favicon.svg',
   logo: {
     light: '/logo.svg',

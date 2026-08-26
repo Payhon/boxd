@@ -4236,7 +4236,10 @@ pub fn phase_one_openapi() -> Value {
     .expect("pinned route manifest is valid JSON");
     let mut document = OpenApi::new(
         "boxd Phase 3 partial compatibility API",
-        env!("CARGO_PKG_VERSION"),
+        match option_env!("BOXD_BUILD_VERSION") {
+            Some(version) => version,
+            None => env!("CARGO_PKG_VERSION"),
+        },
     );
     for route in manifest["routes"].as_array().expect("manifest routes") {
         let path = route["path"].as_str().expect("manifest path");

@@ -5,6 +5,7 @@ const docsRoot = resolve(import.meta.dirname, '..');
 const repoRoot = resolve(docsRoot, '..');
 const required = [
   'site/index.mdx',
+  'site/guide/download.md',
   'site/guide/source-build.md',
   'site/api/overview.md',
   'site/api/errors.md',
@@ -15,6 +16,7 @@ const required = [
   'site/public/boxd-hero.png',
   'rspress.config.ts',
   '../.github/workflows/docs-pages.yml',
+  '../.github/workflows/release-binaries.yml',
 ];
 
 for (const file of required) await access(resolve(docsRoot, file));
@@ -27,7 +29,9 @@ const [
   packageLock,
   rspressConfig,
   workflow,
+  releaseWorkflow,
   home,
+  download,
   sourceBuild,
   apiOverview,
   apiErrors,
@@ -44,7 +48,9 @@ const [
   readFile(resolve(docsRoot, 'package-lock.json'), 'utf8').then(JSON.parse),
   readFile(resolve(docsRoot, 'rspress.config.ts'), 'utf8'),
   readFile(resolve(repoRoot, '.github/workflows/docs-pages.yml'), 'utf8'),
+  readFile(resolve(repoRoot, '.github/workflows/release-binaries.yml'), 'utf8'),
   readFile(resolve(docsRoot, 'site/index.mdx'), 'utf8'),
+  readFile(resolve(docsRoot, 'site/guide/download.md'), 'utf8'),
   readFile(resolve(docsRoot, 'site/guide/source-build.md'), 'utf8'),
   readFile(resolve(docsRoot, 'site/api/overview.md'), 'utf8'),
   readFile(resolve(docsRoot, 'site/api/errors.md'), 'utf8'),
@@ -74,6 +80,10 @@ const assertions = [
   [rspressConfig.includes('checkDeadLinks: true'), 'Rspress dead-link checking must remain enabled'],
   [home.includes('src: ./boxd-hero.png'), 'homepage hero must use a base-safe relative URL'],
   [home.includes('@upstash/box@0.6.3'), 'homepage must name the pinned SDK baseline'],
+  [home.includes('/guide/download'), 'homepage must lead users to binary downloads'],
+  [download.includes('https://github.com/Payhon/boxd/releases'), 'download guide must link to GitHub Releases'],
+  [download.includes('runtime bundle'), 'download guide must retain the separate runtime boundary'],
+  [download.includes('prerelease'), 'download guide must retain the pre-1.0 release boundary'],
   [workflow.includes('branches: [main]'), 'Pages workflow must deploy the default main branch'],
   [workflow.includes('npm ci --prefix docs'), 'Pages workflow must use the documentation lockfile'],
   [workflow.includes('npm run check --prefix docs'), 'Pages workflow must run the full documentation gate'],
@@ -82,6 +92,11 @@ const assertions = [
   [workflow.includes('actions/setup-node@v7'), 'Pages workflow must use the current Node 24 setup-node action'],
   [workflow.includes('actions/configure-pages@v6'), 'Pages workflow must use the current Node 24 configure-pages action'],
   [workflow.includes('actions/deploy-pages@v5'), 'Pages workflow must use the reviewed deploy action major'],
+  [releaseWorkflow.includes('linux-x86_64'), 'release workflow must build Linux x86_64'],
+  [releaseWorkflow.includes('linux-aarch64'), 'release workflow must build Linux aarch64'],
+  [releaseWorkflow.includes('darwin-arm64'), 'release workflow must build macOS ARM64'],
+  [releaseWorkflow.includes('scripts/phase1-linux-kvm-smoke.sh'), 'release workflow must retain the real Linux KVM gate'],
+  [releaseWorkflow.includes('--prerelease'), 'release workflow must retain the pre-1.0 publication boundary'],
   [sourceBuild.includes('git clone https://github.com/Payhon/boxd.git'), 'source guide must start from repository clone'],
   [sourceBuild.includes('BOXD_EMBEDDED_LIBKRUN_PATH'), 'source guide must include release asset build'],
   [sourceBuild.includes('doctor --json'), 'source guide must include doctor gate'],

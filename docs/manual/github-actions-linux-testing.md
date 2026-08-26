@@ -208,3 +208,12 @@ Phase 1 KVM smoke 通过后，Phase 4 还需要三类相互独立的 Linux 原�
 清单和触发命令见 [authenticated differential 手册](github-actions-phase4-differential.md)
 与 [native recovery 手册](github-actions-phase4-recovery.md)。仓库没有匹配 runner 或外部
 资产时，保持 queued/blocked 是正确结果，不等于 Phase 4 通过。
+
+## 7. 发布二进制复用真实 KVM 门禁
+
+`.github/workflows/release-binaries.yml` 在 tag 发布前分别调用同一个
+`scripts/phase1-linux-kvm-smoke.sh` 验证 Linux x86_64 与 aarch64 binary。它额外要求
+runner 标签 `boxd-release`、protected `release` environment 和目标专属发布资产；只有
+两个架构都完成真实 guest lifecycle/restart/egress 后，publish job 才会创建可下载的
+GitHub prerelease。变量、签名和 tag 说明见
+[GitHub Actions 原生发布手册](github-actions-release.md)。

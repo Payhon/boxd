@@ -36,8 +36,13 @@ impl From<String> for CliFailure {
     }
 }
 
+const BUILD_VERSION: &str = match option_env!("BOXD_BUILD_VERSION") {
+    Some(version) => version,
+    None => env!("CARGO_PKG_VERSION"),
+};
+
 #[derive(Debug, Parser)]
-#[command(name = "boxd", version, about = "boxd control-plane host")]
+#[command(name = "boxd", version = BUILD_VERSION, about = "boxd control-plane host")]
 struct Cli {
     #[command(subcommand)]
     command: Command,

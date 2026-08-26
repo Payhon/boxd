@@ -1,10 +1,10 @@
 # 5 分钟开始
 
-这一页帮助你在全新 Mac 上拉取仓库、验证工具链并构建控制面。它不会把“编译成功”写成“真实 microVM 已运行”；真实沙盒还需要下一页列出的固定发行资产。
+这一页从已经下载好的 `boxd` 二进制开始，完成初始化、签名 runtime 导入和服务就绪检查。没有二进制时先按 [下载预编译二进制](./download) 选择宿主平台；普通用户不需要安装 Rust。
 
-## 1. 确认机器
+## 1. 确认宿主虚拟化
 
-首发宿主要求 macOS 14+、Apple Silicon，并启用 Hypervisor.framework：
+macOS 14+、Apple Silicon：
 
 ```bash
 uname -s
@@ -13,54 +13,80 @@ sw_vers -productVersion
 sysctl -n kern.hv_support
 ```
 
-预期依次看到 `Darwin`、`arm64`、不低于 14 的版本，以及 `1`。
+预期依次看到 `Darwin`、`arm64`、不低于 14 的版本和 `1`。
 
-## 2. 安装基础工具
-
-```bash
-xcode-select --install
-brew install rustup protobuf node@22 ffmpeg
-rustup-init -y
-source "$HOME/.cargo/env"
-```
-
-仓库固定 Rust `1.94.0`；Console 与 SDK contract 门禁使用 Node 22.x。
-
-## 3. 获取源码
+Ubuntu 24.04 x86_64/aarch64：
 
 ```bash
-git clone https://github.com/Payhon/boxd.git
-cd boxd
-rustup show active-toolchain
-node --version
+uname -s
+uname -m
+test -c /dev/kvm && test -r /dev/kvm && test -w /dev/kvm
+cat /sys/fs/cgroup/cgroup.controllers
 ```
 
-## 4. 先验证源码
+需要原生或可靠透传的 KVM，并委派 `cpu`、`memory`、`pids` cgroup v2 controllers。普通 GitHub-hosted runner 和未开启 nested virtualization 的云主机不满足真实 guest 要求。
+
+## 2. 确认二进制
 
 ```bash
-cargo fmt --all -- --check
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-cargo test --workspace
+boxd --version
+boxd --help
 ```
 
-验证固定 SDK contract：
+下载归档中的 `build-manifest.json` 会绑定 release version、Git commit、目标平台，以及内嵌 libkrun/firmware SHA-256。公开产物当前是 compatibility-subset prerelease，不是 1.0 声明。
+
+## 3. 准备签名 runtime
+
+预编译二进制只包含控制面、Console、固定 libkrun v1.19.4 与 firmware ABI 5。真实运行仍需要与宿主架构匹配的签名 runtime bundle及其 32-byte Ed25519 raw public key：
 
 ```bash
-npm ci --prefix compat/upstash-box-0.6.3
-npm run check:manifest --prefix compat/upstash-box-0.6.3
-npm run check:coverage --prefix compat/upstash-box-0.6.3
-npm test --prefix compat/upstash-box-0.6.3
+export BOXD_RUNTIME_BUNDLE=/absolute/path/box-runtime-node-<arch>-22.x.y.tar.zst
+export BOXD_RUNTIME_KEY_ID=<reviewed-key-id>
+export BOXD_RUNTIME_PUBLIC_KEY=<single-line-base64-public-key>
 ```
 
-## 5. 构建开发产物
+语言 rootfs、`box-agent` 和可选 Chromium 体积较大，因此不会塞进控制面归档。runtime 缺失、签名错误或架构不匹配都会 fail closed。
+
+## 4. 初始化实例
 
 ```bash
-cargo build --locked --release -p boxd
-target/release/boxd --version
+umask 077
+export BOXD_RUN_DIR="$HOME/.local/share/boxd"
+export BOXD_CONFIG="$BOXD_RUN_DIR/boxd.toml"
+mkdir -p "$BOXD_RUN_DIR"
+
+export BOXD_ADMIN_PASSWORD='replace-with-a-local-password'
+export BOXD_MASTER_KEY="$(openssl rand -hex 32)"
+boxd init --config "$BOXD_CONFIG"
 ```
 
-:::warning 这一步还不能启动真实 Box
-不带六个 `BOXD_EMBEDDED_*` 构建变量的产物只能用于 CLI/config/源码验证。`serve` 会因缺少内嵌 libkrun 与 firmware 资产而明确失败。这是安全门禁，不是安装脚本故障。
-:::
+`init` 会在标准输出中只显示一次 compatibility API key。立即保存到密码管理器，不要写进配置、日志或 Git。
 
-接下来进入 [从源码运行](./source-build)，准备 libkrun、签名 runtime bundle、配置与 API key。
+编辑配置中的 `[runtime]`，保留 `verify_signatures=true`，并把 `trusted_signing_keys` 设置为实际 key id 与公钥。不要继续使用示例 registry，也不要关闭签名验证。
+
+## 5. 导入并诊断
+
+```bash
+boxd config validate -c "$BOXD_CONFIG"
+boxd runtime import "$BOXD_RUNTIME_BUNDLE" -c "$BOXD_CONFIG"
+boxd doctor --json -c "$BOXD_CONFIG"
+```
+
+只有 `doctor` 输出 `overall: true` 才继续。macOS 会检查 HVF entitlement 和 code signature；Linux 会检查 `/dev/kvm`、cgroup v2 与 seccomp enforcement。
+
+## 6. 启动服务
+
+```bash
+boxd serve -c "$BOXD_CONFIG"
+```
+
+另开终端验证：
+
+```bash
+curl --fail http://127.0.0.1:7331/health/live
+curl --fail http://127.0.0.1:7331/health/ready
+```
+
+然后打开 `http://127.0.0.1:7331/console`，或按 [API 概览](../api/overview) 使用固定 `@upstash/box@0.6.3` SDK。
+
+需要从固定上游资产自行构建、做发行审计或开发贡献时，进入 [从源码构建](./source-build)。

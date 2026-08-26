@@ -1,6 +1,6 @@
 # 认识 boxd
 
-boxd 是一个用 Rust 构建的本地 Sandbox-as-a-Service 控制面。它面向需要在 macOS 上运行不可信或临时开发任务的开发者，并将公开的 `@upstash/box@0.6.3` API 作为兼容目标。
+boxd 是一个用 Rust 构建的本地 Sandbox-as-a-Service 控制面。它面向需要在 macOS Apple Silicon 或原生 Linux KVM 上运行不可信、临时开发任务的开发者，并将公开的 `@upstash/box@0.6.3` API 作为兼容目标。
 
 ## 它解决什么问题
 
@@ -44,4 +44,4 @@ libkrun + HVF ─── Linux microVM ─── box-agent
 4. **可恢复**：Box、run、schedule、snapshot 和 operation 状态可持久化并在 daemon 重启后协调。
 5. **证据分层**：源码测试、hosted CI、macOS HVF、Linux KVM 和正式发行验收分别记录。
 
-下一步从 [5 分钟开始](./quick-start) 了解仓库，再按 [从源码运行](./source-build) 完成真实沙盒启动。
+下一步先 [下载预编译二进制](./download)，再按 [5 分钟开始](./quick-start) 完成真实沙盒启动；只有贡献代码或审计发行输入时才需要 [从源码构建](./source-build)。

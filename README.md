@@ -5,6 +5,17 @@
 
 **Website & documentation:** [https://payhon.github.io/boxd/](https://payhon.github.io/boxd/)
 
+## Download preview binaries
+
+Precompiled compatibility-subset previews for macOS Apple Silicon, Linux x86_64,
+and Linux aarch64 are published on the
+[GitHub Releases page](https://github.com/Payhon/boxd/releases). Each release
+contains target-specific archives, `SHA256SUMS`, and GitHub build provenance;
+users do not need Rust or a local source build. A separately signed runtime
+bundle is still required before a real Box can boot. See the
+[binary download guide](https://payhon.github.io/boxd/guide/download) for exact
+verification and installation steps.
+
 `boxd` is a local Sandbox-as-a-Service control plane whose compatibility target is
 the public API of `@upstash/box@0.6.3` at upstream commit
 `677ca0827a6f54bc328b4b3e97d32a7cc5ac1934`.
@@ -87,6 +98,13 @@ artifact scripts, and SDK example syntax on GitHub-hosted Ubuntu runners.
 [`phase1-linux-kvm.yml`](.github/workflows/phase1-linux-kvm.yml) is a manual,
 native KVM gate routed only to a self-hosted Linux runner labeled `boxd-kvm`.
 Hosted source tests are not presented as real KVM evidence.
+[`release-binaries.yml`](.github/workflows/release-binaries.yml) builds the three
+native download archives on protected self-hosted release runners. Both Linux
+targets must pass the real KVM lifecycle/restart/egress gate; the macOS target
+must pass Developer ID signing and Apple notarization before a tag can become a
+GitHub prerelease. Runner assets, signing secrets, and trigger instructions are
+documented in the
+[release workflow manual](docs/manual/github-actions-release.md).
 The Phase 4 manual workflows similarly require protected self-hosted native
 runners: `phase4-authenticated-differential.yml` owns a fresh local daemon and
 executes all 82 pinned SDK cases; `phase4-load-recovery.yml` runs the 64-Box
