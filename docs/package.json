@@ -14,6 +14,7 @@
   },
   "devDependencies": {
     "@rspress/core": "2.0.20",
+    "mermaid": "11.17.2",
     "typescript": "5.9.2"
   }
 }

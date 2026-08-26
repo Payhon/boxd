@@ -1,21 +1,32 @@
+import Flowchart from '../../theme/Flowchart';
+
+export const mobileAccessFlow = `
+flowchart TB
+  accTitle: 移动端安全访问 boxd 的推荐流程
+  accDescr: iOS、Android 或 React Native 应用使用自己的会话访问应用后端，由后端保存受限 boxd API key、完成租户与 Box 授权，再调用 boxd 和 Linux microVM。
+
+  Mobile["iOS · Android · React Native"]
+  Backend["Your application backend"]
+  Boxd["boxd control plane"]
+  VM["Linux microVM"]
+
+  Mobile -->|"app session"| Backend
+  Backend -->|"scoped boxd API key"| Boxd
+  Boxd -->|"authorized Box operation"| VM
+`;
+
 # 移动端集成
 
 boxd 当前没有发布独立的 iOS、Android 或 React Native SDK。移动端应通过自己的应用后端访问 boxd；本栏目提供可复制的 React Native 参考组件和 HTTP/SSE 接入模式，不把示例误写成已发布包。
 
 ## 推荐架构
 
-```text
-iOS / Android / React Native
-          │ app session
-          ▼
-   Your application backend
-          │ scoped boxd API key
-          ▼
-         boxd
-          │
-          ▼
-      Linux microVM
-```
+<Flowchart
+  chart={mobileAccessFlow}
+  title="移动端经应用后端访问 boxd"
+  description="API key 只保留在服务端，应用后端负责授权映射、quota 与审计"
+  size="compact"
+/>
 
 为什么不建议 App 直连：
 

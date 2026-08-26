@@ -1,0 +1,82 @@
+import Flowchart from '../../theme/Flowchart';
+
+export const architectureFlow = `
+flowchart TB
+  accTitle: boxd 系统架构与进程边界
+  accDescr: SDK 和控制台分别进入兼容与管理路由，再汇入 domain use cases。核心通过 repository 持久化，并通过 supervisor 启动独立 worker 和 libkrun。box-agent 位于带私有磁盘的 Linux microVM 内，以 vsock 与核心通信。
+
+  subgraph Entry["调用入口"]
+    direction LR
+    SDK["SDK / Mobile backend"]
+    Console["Embedded Console"]
+  end
+
+  subgraph Control["boxd serve · 控制面"]
+    direction TB
+    Compat["Salvo compatibility router"]
+    Admin["Salvo admin router"]
+    Core["Domain / Use Cases"]
+    Repos[("SeaORM repositories")]
+    Runtime["Sandbox Supervisor"]
+  end
+
+  subgraph WorkerBoundary["每个 Box 的 worker 进程"]
+    direction TB
+    Worker["boxd __vmm-worker"]
+    Krun["libkrun v1.19.4 · HVF / KVM"]
+  end
+
+  subgraph Guest["Linux microVM · guest 边界"]
+    direction LR
+    Agent["box-agent"]
+    Disk[("private raw ext4")]
+  end
+
+  SDK --> Compat
+  Console --> Admin
+  Compat --> Core
+  Admin --> Core
+  Core -->|"repository port"| Repos
+  Core -->|"runtime port"| Runtime
+  Runtime --> Worker
+  Worker --> Krun
+  Krun --> Agent
+  Agent --- Disk
+  Core <-->|"versioned vsock RPC"| Agent
+`;
+
+# 系统架构
+
+boxd 将 API 控制面、domain/use cases、repository、runtime supervisor 和 microVM worker 分层，避免 handler 直接访问数据库、磁盘或 FFI。
+
+<Flowchart
+  chart={architectureFlow}
+  title="控制面、worker 与 guest 的信任边界"
+  description="箭头表示调用或协议方向；分组框表示独立进程与 microVM 边界"
+  size="wide"
+/>
+
+## 进程边界
+
+每个活跃 Box 使用同一个可执行文件启动隐藏 worker 子进程。稳定版 `krun_start_enter()` 会消费配置并在 VM 停止时调用 `exit()`，因此 FFI 不能在长期 HTTP 进程中直接运行。
+
+## 数据边界
+
+- 默认 SQLite WAL；repository/migration 同时支持 PostgreSQL/MySQL；
+- base runtime disk 永远只读，每个 Box 克隆独立 raw ext4 私盘；
+- snapshot 使用 APFS clonefile/Linux reflink，缺失时退化为有界 sparse copy；
+- secret 使用 AEAD，API key 只保存 HMAC 与前缀；
+- guest 文件操作经 agent/私盘，不默认共享宿主目录。
+
+## Runtime bundle
+
+```text
+box-runtime-node-arm64-<version>.tar.zst
+├── manifest.json
+├── manifest.sig
+├── rootfs.raw
+├── sbom.spdx.json
+└── licenses/
+```
+
+控制面校验架构、agent protocol、checksum、签名与 trust root 后才导入。运行中的 Box 固定 bundle content hash，升级不会原地替换其基础镜像。

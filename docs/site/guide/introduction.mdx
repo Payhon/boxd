@@ -1,3 +1,26 @@
+import Flowchart from '../../theme/Flowchart';
+
+export const localControlFlow = `
+flowchart TB
+  accTitle: boxd 本地沙盒调用流程
+  accDescr: Upstash Box SDK 请求进入 boxd HTTP API，控制面持久化状态并启动独立 worker，随后通过 libkrun 在 Linux microVM 中运行 box-agent。
+
+  SDK["@upstash/box SDK"]
+  API["boxd HTTP API"]
+  DB[("SQLite / PostgreSQL / MySQL")]
+  Worker["boxd __vmm-worker"]
+  Hypervisor["libkrun v1.19.4 · HVF / KVM"]
+  VM["Linux microVM"]
+  Agent["box-agent"]
+
+  SDK -->|"兼容请求"| API
+  API -->|"持久化状态"| DB
+  API -->|"隔离进程"| Worker
+  Worker --> Hypervisor
+  Hypervisor --> VM
+  VM -->|"vsock"| Agent
+`;
+
 # 认识 boxd
 
 boxd 是一个用 Rust 构建的本地 Sandbox-as-a-Service 控制面。它面向需要在 macOS Apple Silicon 或原生 Linux KVM 上运行不可信、临时开发任务的开发者，并将公开的 `@upstash/box@0.6.3` API 作为兼容目标。
@@ -8,18 +31,11 @@ Agent、代码生成器、自动化测试和 Browser 工作流都需要一个可
 
 boxd 的选择是：一个本地控制面，一个 Box 对应一个 Linux microVM。
 
-```text
-@upstash/box SDK
-        │
-        ▼
-   boxd HTTP API ─── SQLite / PostgreSQL / MySQL
-        │
-        ▼
-boxd __vmm-worker
-        │
-        ▼
-libkrun + HVF ─── Linux microVM ─── box-agent
-```
+<Flowchart
+  chart={localControlFlow}
+  title="从 SDK 请求到隔离 microVM"
+  description="控制面负责状态，worker 与 microVM 承载不可信工作负载"
+/>
 
 ## 适合的场景
 
